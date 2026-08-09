@@ -258,15 +258,30 @@ export async function saveStudentDraft(input: {
       input.studentId,
       input.sessionId,
     );
+    const currentDraft = session.draft;
+    if (!currentDraft) throw new AccessDeniedError();
     assertAllowedLanguage(input.language, session.task.allowedLanguages);
+    if (
+      currentDraft.sourceCode === input.sourceCode &&
+      session.language === input.language
+    ) {
+      return {
+        revision: currentDraft.revision,
+        savedAt: currentDraft.updatedAt.toISOString(),
+        changed: false,
+      };
+    }
+
     const draft = await tx.draft.update({
       where: { codingSessionId: session.id },
       data: { sourceCode: input.sourceCode, revision: { increment: 1 } },
     });
-    await tx.codingSession.update({
-      where: { id: session.id },
-      data: { language: input.language },
-    });
+    if (session.language !== input.language) {
+      await tx.codingSession.update({
+        where: { id: session.id },
+        data: { language: input.language },
+      });
+    }
     await createEvent(tx, {
       codingSessionId: session.id,
       type: "DRAFT_SAVED",
@@ -274,6 +289,7 @@ export async function saveStudentDraft(input: {
     return {
       revision: draft.revision,
       savedAt: draft.updatedAt.toISOString(),
+      changed: true,
     };
   }, transactionOptions);
 }
@@ -308,20 +324,30 @@ export async function runStudentDraft(
       input.studentId,
       input.sessionId,
     );
+    const currentDraft = session.draft;
+    if (!currentDraft) throw new AccessDeniedError();
     assertAllowedLanguage(input.language, session.task.allowedLanguages);
 
-    await tx.draft.update({
-      where: { codingSessionId: session.id },
-      data: { sourceCode: input.sourceCode, revision: { increment: 1 } },
-    });
-    await tx.codingSession.update({
-      where: { id: session.id },
-      data: { language: input.language },
-    });
-    await createEvent(tx, {
-      codingSessionId: session.id,
-      type: "DRAFT_SAVED",
-    });
+    const draftChanged = currentDraft.sourceCode !== input.sourceCode;
+    const languageChanged = session.language !== input.language;
+    if (draftChanged) {
+      await tx.draft.update({
+        where: { codingSessionId: session.id },
+        data: { sourceCode: input.sourceCode, revision: { increment: 1 } },
+      });
+    }
+    if (languageChanged) {
+      await tx.codingSession.update({
+        where: { id: session.id },
+        data: { language: input.language },
+      });
+    }
+    if (draftChanged || languageChanged) {
+      await createEvent(tx, {
+        codingSessionId: session.id,
+        type: "DRAFT_SAVED",
+      });
+    }
 
     const latestRun = await tx.runAttempt.aggregate({
       where: { codingSessionId: session.id },

@@ -66,9 +66,9 @@ export function ClassroomOverviewPage({
           tone="emerald"
         />
         <MetricCard
-          label="Submitted"
+          label="Submitted students"
           value={classroom.submittedCount}
-          detail={`${classroom.pendingCount} pending`}
+          detail={`${classroom.pendingCount} pending for latest practical`}
           tone="amber"
         />
       </section>

@@ -14,6 +14,7 @@ import {
   saveDraftAction,
   submitDraftAction,
 } from "./actions";
+import { draftVersionChanged, type DraftVersion } from "./draft-version";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 type SaveState = "saving" | "saved" | "failed";
@@ -41,15 +42,17 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const [submitting, setSubmitting] = useState(false);
   const [submission, setSubmission] = useState<PersistedSubmission>();
   const [submissionFailure, setSubmissionFailure] = useState<string>();
-  const initial = useRef(true);
+  const lastPersisted = useRef<DraftVersion>({
+    sourceCode: workspace.draft.sourceCode,
+    language: workspace.session.language,
+  });
   const latestSave = useRef(0);
   const idempotencyKey = useRef<string | null>(null);
 
   useEffect(() => {
-    if (initial.current) {
-      initial.current = false;
-      return;
-    }
+    const requestedVersion = { sourceCode: source, language };
+    if (!draftVersionChanged(lastPersisted.current, requestedVersion)) return;
+
     const requestNumber = latestSave.current + 1;
     latestSave.current = requestNumber;
     setSaveState("saving");
@@ -62,6 +65,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       });
       if (requestNumber !== latestSave.current) return;
       if (result.ok) {
+        lastPersisted.current = requestedVersion;
         setSaveState("saved");
       } else {
         setSaveState("failed");
@@ -81,6 +85,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     });
     if (result.ok) {
       setRun(result.run);
+      lastPersisted.current = { sourceCode: source, language };
       setSaveState("saved");
     } else {
       setRunFailure(result.message);
@@ -101,6 +106,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     if (result.ok) {
       setSubmission(result.submission);
       setRun(result.submission.result);
+      lastPersisted.current = { sourceCode: source, language };
       setSaveState("saved");
     } else {
       setSubmissionFailure(result.message);

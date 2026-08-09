@@ -8,19 +8,19 @@ Status reflects repository behavior as of 2026-08-09.
 - Teacher classroom creation and practical draft/publish actions.
 - Explicit database-backed routes for the seeded student workspace, practical progress, and submission review.
 - A server-resolved seeded student/teacher identity boundary that accepts no browser user ID or role.
-- Active `CodingSession` plus one mutable `Draft`; server autosave resumes after refresh and exposes Saving, Saved, and Save failed states.
+- Active `CodingSession` plus one mutable `Draft`; change-aware server autosave resumes after refresh, skips identical updates, and exposes Saving, Saved, and Save failed states.
 - Server-owned `ServerExecutionProvider` with a deterministic mock implementation.
 - Persisted `RunAttempt` and immutable `ResultSnapshot` records.
 - Immutable, numbered `SubmissionAttempt` records with exact source/result snapshots and student-scoped idempotency.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
+- Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
 - Unit, database integration, and critical browser tests.
 
 ## Partial
 
 - The actor resolver is non-production and fixed to seeded identities. It enforces service authorization but does not authenticate the person using the browser.
 - Only the seeded practical vertical slice uses persisted workspace/submission/review behavior; remaining unmatched product paths may still use the legacy catch-all.
-- Classroom cards/overview still show placeholder submission totals rather than querying persisted attempts.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
 
@@ -46,4 +46,3 @@ Status reflects repository behavior as of 2026-08-09.
 - Cross-institution plagiarism matching.
 - Automated cheating verdicts, guilt scores, or automatic copy/paste blocking.
 - Broad integrations, social/chat features, or autonomous grading.
-

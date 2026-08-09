@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db/prisma";
+import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
 import {
   getOrCreateStudentWorkspace,
   getSubmissionForTeacher,
@@ -19,6 +20,7 @@ const outsiderId = `integration-outsider-${suffix}`;
 const otherTeacherId = `integration-teacher-${suffix}`;
 const classroomId = "dsa-2026";
 const studentId = "demo-student-1";
+const secondStudentId = "demo-student-2";
 const teacherId = "demo-teacher";
 
 const passingProvider: ServerExecutionProvider = {
@@ -93,10 +95,48 @@ describe.sequential("persisted student-attempt service", () => {
     await prisma.$disconnect();
   });
 
-  it("creates, updates, and resumes one active draft", async () => {
+  it("reports zero submitted students from persisted data", async () => {
+    const overview = await getClassroomOverviewViewModel(teacherId, classroomId);
+    expect(overview?.task?.id).toBe(taskId);
+    expect(overview?.submittedCount).toBe(0);
+    expect(overview?.pendingCount).toBe(3);
+    await expect(
+      getClassroomOverviewViewModel(otherTeacherId, classroomId),
+    ).resolves.toBeNull();
+  });
+
+  it("skips unchanged saves and persists later edits exactly once each", async () => {
     const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
     expect(workspace.session.attemptNumber).toBe(1);
     expect(workspace.draft.sourceCode).toContain("fail_test");
+
+    const initialDraft = await prisma.draft.findUniqueOrThrow({
+      where: { codingSessionId: workspace.session.id },
+    });
+    const initialEvents = await prisma.codeEvent.count({
+      where: { codingSessionId: workspace.session.id },
+    });
+    const resumedUnchanged = await getOrCreateStudentWorkspace(studentId, taskId);
+    expect(resumedUnchanged.session.id).toBe(workspace.session.id);
+    expect(
+      await prisma.codeEvent.count({ where: { codingSessionId: workspace.session.id } }),
+    ).toBe(initialEvents);
+
+    const hydrationNoOp = await saveStudentDraft({
+      studentId,
+      sessionId: workspace.session.id,
+      language: workspace.session.language,
+      sourceCode: workspace.draft.sourceCode,
+    });
+    expect(hydrationNoOp.changed).toBe(false);
+    expect(hydrationNoOp.revision).toBe(initialDraft.revision);
+    const afterNoOp = await prisma.draft.findUniqueOrThrow({
+      where: { codingSessionId: workspace.session.id },
+    });
+    expect(afterNoOp.updatedAt).toEqual(initialDraft.updatedAt);
+    expect(
+      await prisma.codeEvent.count({ where: { codingSessionId: workspace.session.id } }),
+    ).toBe(initialEvents);
 
     const saved = await saveStudentDraft({
       studentId,
@@ -104,11 +144,45 @@ describe.sequential("persisted student-attempt service", () => {
       language: "CPP",
       sourceCode: "int main() { return 0; }",
     });
+    expect(saved.changed).toBe(true);
     expect(saved.revision).toBe(1);
+    expect(
+      await prisma.codeEvent.count({
+        where: { codingSessionId: workspace.session.id, type: "DRAFT_SAVED" },
+      }),
+    ).toBe(1);
+
+    const identical = await saveStudentDraft({
+      studentId,
+      sessionId: workspace.session.id,
+      language: "CPP",
+      sourceCode: "int main() { return 0; }",
+    });
+    expect(identical.changed).toBe(false);
+    expect(identical.savedAt).toBe(saved.savedAt);
+    expect(
+      await prisma.codeEvent.count({
+        where: { codingSessionId: workspace.session.id, type: "DRAFT_SAVED" },
+      }),
+    ).toBe(1);
+
+    const later = await saveStudentDraft({
+      studentId,
+      sessionId: workspace.session.id,
+      language: "CPP",
+      sourceCode: "int main() { return 1; }",
+    });
+    expect(later.changed).toBe(true);
+    expect(later.revision).toBe(2);
+    expect(
+      await prisma.codeEvent.count({
+        where: { codingSessionId: workspace.session.id, type: "DRAFT_SAVED" },
+      }),
+    ).toBe(2);
 
     const resumed = await getOrCreateStudentWorkspace(studentId, taskId);
     expect(resumed.session.id).toBe(workspace.session.id);
-    expect(resumed.draft.sourceCode).toBe("int main() { return 0; }");
+    expect(resumed.draft.sourceCode).toBe("int main() { return 1; }");
   });
 
   it("enforces active classroom membership", async () => {
@@ -158,6 +232,12 @@ describe.sequential("persisted student-attempt service", () => {
     ).rejects.toThrow(/immutable Labrix record/);
   });
 
+  it("counts one student with one persisted submission", async () => {
+    const overview = await getClassroomOverviewViewModel(teacherId, classroomId);
+    expect(overview?.submittedCount).toBe(1);
+    expect(overview?.pendingCount).toBe(2);
+  });
+
   it("returns the same submission for a repeated idempotency key", async () => {
     const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
     const key = randomUUID();
@@ -189,6 +269,16 @@ describe.sequential("persisted student-attempt service", () => {
     ).toBe(1);
   });
 
+  it("does not inflate completion for one student's multiple attempts", async () => {
+    const attempts = await prisma.submissionAttempt.count({
+      where: { taskId, studentId },
+    });
+    expect(attempts).toBeGreaterThan(1);
+    const overview = await getClassroomOverviewViewModel(teacherId, classroomId);
+    expect(overview?.submittedCount).toBe(1);
+    expect(overview?.pendingCount).toBe(2);
+  });
+
   it("creates a new numbered session and attempt for resubmission", async () => {
     const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
     expect(workspace.session.attemptNumber).toBeGreaterThan(1);
@@ -211,6 +301,23 @@ describe.sequential("persisted student-attempt service", () => {
     expect(attempts.map((attempt) => attempt.attemptNumber)).toEqual(
       Array.from({ length: attempts.length }, (_, index) => index + 1),
     );
+  });
+
+  it("counts multiple students with persisted submissions", async () => {
+    const workspace = await getOrCreateStudentWorkspace(secondStudentId, taskId);
+    await submitStudentDraft(
+      {
+        studentId: secondStudentId,
+        sessionId: workspace.session.id,
+        language: "CPP",
+        sourceCode: "int main() { return 0; }",
+        idempotencyKey: randomUUID(),
+      },
+      passingProvider,
+    );
+    const overview = await getClassroomOverviewViewModel(teacherId, classroomId);
+    expect(overview?.submittedCount).toBe(2);
+    expect(overview?.pendingCount).toBe(1);
   });
 
   it("stores events in deterministic chronological sequence", async () => {

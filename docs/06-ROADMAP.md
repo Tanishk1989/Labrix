@@ -27,11 +27,10 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 ## Later slices
 
-1. Replace remaining catch-all task/submission paths and make classroom summaries attempt-aware.
+1. Replace remaining catch-all task/submission paths and complete broader task/submission navigation.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
 3. Version deterministic evidence signals and teacher-facing definitions.
 4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance.
 5. Pilot hardening: concurrency, deadlines/timezones, retention/deletion, audit, accessibility, backup, and incident paths.
 
 Do not pull screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, broad integrations, or automated verdicts into these slices.
-

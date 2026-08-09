@@ -18,6 +18,8 @@ flowchart TB
 
 The browser sends resource IDs and source input, never a trusted user ID or role. Server actions resolve the fixed demo actor and services re-check membership/ownership with the requested resource. This boundary is replaceable by real authentication; it is not production identity security.
 
+Teacher classroom queries are owner-scoped. Latest-practical completion is derived from active student memberships and distinct submission student IDs. Client autosave compares source/language with the last successfully persisted version; the server repeats that comparison transactionally before changing a draft, timestamp, revision, or event timeline.
+
 ## Persisted model
 
 - `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.
@@ -41,4 +43,3 @@ Explicit routes take precedence over `src/app/[[...slug]]/page.tsx`. New product
 No student source runs in Next.js. The current server provider only simulates deterministic feedback. A production adapter must call an isolated runner with explicit time, memory, process, filesystem, output, and network limits.
 
 Only five foundation events are captured. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.
-
