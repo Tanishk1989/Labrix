@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlatformRole { 
+  TEACHER
+  STUDENT
+}
+enum ClassroomStatus { 
+  ACTIVE
+  ARCHIVED
+}
+enum MembershipRole { 
+  TEACHER
+  STUDENT
+}
+enum TaskStatus { 
+  DRAFT
+  PUBLISHED
+}
+enum AllowedLanguage { 
+  CPP
+  JAVA
+}
+
+model User {
+  id String @id @default(cuid())
+  name String
+  email String @unique
+  platformRole PlatformRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classroomsOwned Classroom[] @relation("ClassroomOwner")
+  memberships ClassMembership[]
+  tasksAuthored Task[] @relation("TaskAuthor")
+}
+model Classroom {
+  id String @id @default(cuid())
+  name String
+  subject String
+  section String
+  ownerTeacherId String
+  joinCode String @unique
+  status ClassroomStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ownerTeacher User @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id])
+  memberships ClassMembership[]
+  tasks Task[]
+}
+model ClassMembership {
+  id String @id @default(cuid())
+  classroomId String
+  userId String
+  role MembershipRole
+  joinedAt DateTime @default(now())
+  active Boolean @default(true)
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([classroomId, userId])
+}
+model Task {
+  id String @id @default(cuid())
+  classroomId String
+  authorTeacherId String
+  title String
+  instructions String
+  constraints String?
+  allowedLanguages AllowedLanguage[]
+  status TaskStatus @default(DRAFT)
+  deadline DateTime?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  authorTeacher User @relation("TaskAuthor", fields: [authorTeacherId], references: [id])
+  testCases TestCase[]
+}
+model TestCase {
+  id String @id @default(cuid())
+  taskId String
+  position Int
+  input String
+  expectedOutput String
+  visible Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  @@unique([taskId, position])
+}

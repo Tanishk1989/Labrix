@@ -1,0 +1,58 @@
+import { describe, expect, it } from "vitest";
+import {
+  createPracticalDraftSchema,
+  createPracticalPublishSchema,
+} from "@/features/task-authoring/schema";
+
+const valid = {
+  title: "Array pairs",
+  instructions: "Find a pair.",
+  constraints: "",
+  allowedLanguages: ["CPP"] as const,
+  deadlineLocal: "2099-01-01T10:00",
+  testCases: [{ clientId: "one", input: "", expectedOutput: "0" }],
+};
+describe("create practical validation", () => {
+  it("requires title, instructions, language, and expected output for publishing", () => {
+    const result = createPracticalPublishSchema.safeParse({
+      ...valid,
+      title: " ",
+      instructions: " ",
+      allowedLanguages: [],
+      testCases: [{ clientId: "one", input: "", expectedOutput: "" }],
+    });
+    expect(result.success).toBe(false);
+  });
+  it("allows empty stdin", () =>
+    expect(createPracticalPublishSchema.safeParse(valid).success).toBe(true));
+  it("rejects a past publish deadline", () =>
+    expect(
+      createPracticalPublishSchema.safeParse({
+        ...valid,
+        deadlineLocal: "2020-01-01T10:00",
+      }).success,
+    ).toBe(false));
+  it("allows incomplete safe drafts", () =>
+    expect(
+      createPracticalDraftSchema.safeParse({
+        ...valid,
+        title: "",
+        instructions: "",
+        allowedLanguages: [],
+        testCases: [{ clientId: "one", input: "", expectedOutput: "" }],
+      }).success,
+    ).toBe(true));
+  it("keeps test case order", () => {
+    const result = createPracticalPublishSchema.parse({
+      ...valid,
+      testCases: [
+        { clientId: "one", input: "a", expectedOutput: "a" },
+        { clientId: "two", input: "b", expectedOutput: "b" },
+      ],
+    });
+    expect(result.testCases.map((test) => test.clientId)).toEqual([
+      "one",
+      "two",
+    ]);
+  });
+});
