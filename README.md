@@ -10,10 +10,10 @@ Labrix presents evidence for teacher judgment. It does not declare cheating or a
 
 ## Current repository state
 
-- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed classroom completion summaries and teacher progress/review; server-side membership and teacher-ownership checks for this slice.
-- **Partial:** identity uses fixed non-production server-owned demo actors rather than real authentication; practical management is incomplete; only the seeded vertical slice has replaced the broad legacy catch-all.
+- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed classroom completion summaries and teacher progress/review; server-side membership and teacher-ownership checks; additive local account status and provider-neutral external identity schema.
+- **Partial:** Clerk is approved but not integrated; runtime identity still uses fixed non-production server-owned demo actors. Practical management is incomplete, and only the seeded vertical slice has replaced the broad legacy catch-all.
 - **Mock:** execution results are simulated from deterministic source markers. Java and C++ are not compiled or executed. The visible role selector changes demo presentation and is not authentication.
-- **Planned:** production authentication, isolated execution, broader task/submission navigation, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
+- **Planned:** Clerk sign-in/session UI and a Clerk-backed server actor resolver; isolated execution; broader task/submission navigation; deterministic evidence signals; AI-assisted explanation/feedback/viva generation; and pilot hardening.
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
 See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.

@@ -15,11 +15,12 @@ Status reflects repository behavior as of 2026-08-09.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
+- Provider-neutral local identity persistence: `User.accountStatus` and optional `ExternalIdentity` mappings with database uniqueness by provider/subject and local user/provider.
 - Unit, database integration, and critical browser tests.
 
 ## Partial
 
-- The actor resolver is non-production and fixed to seeded identities. It enforces service authorization but does not authenticate the person using the browser.
+- Clerk is approved as the future authentication provider but is not installed or integrated. The actor resolver remains non-production and fixed to seeded identities; it enforces service authorization but does not authenticate the person using the browser.
 - Only the seeded practical vertical slice uses persisted workspace/submission/review behavior; remaining unmatched product paths may still use the legacy catch-all.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
@@ -32,9 +33,9 @@ Status reflects repository behavior as of 2026-08-09.
 
 ## Planned
 
-- Production authentication, account lifecycle, and authenticated actor resolution.
+- Clerk email/password authentication UI and sessions, local onboarding, account lifecycle enforcement, sign-out/expiry handling, and a provider-neutral authenticated actor resolver.
 - Isolated production execution with queues, limits, retries, and observability.
-- Persisted attempt-aware classroom summary counts and complete submission navigation.
+- Complete task/submission navigation beyond the seeded vertical slice.
 - Versioned deterministic evidence signals beyond the five foundation events.
 - AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.
 - Concurrency, retention/deletion, deadline/timezone, accessibility, and operations hardening.

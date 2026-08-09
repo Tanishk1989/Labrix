@@ -18,6 +18,18 @@ flowchart TB
 
 The browser sends resource IDs and source input, never a trusted user ID or role. Server actions resolve the fixed demo actor and services re-check membership/ownership with the requested resource. This boundary is replaceable by real authentication; it is not production identity security.
 
+Clerk is approved but not integrated. The additive identity foundation stores local `User.accountStatus` and optional `ExternalIdentity` records. Existing demo users require no external identity. The production resolver target is:
+
+```mermaid
+flowchart LR
+  C["Clerk-validated server session"] --> S["Provider subject"]
+  S --> E["ExternalIdentity"]
+  E --> U["Labrix User"]
+  U --> P["Local account status, role, ownership, membership, and permissions"]
+```
+
+Clerk will establish identity and session validity only. PostgreSQL remains authoritative for authorization. Email, browser-selected roles, and provider metadata are not identity-linking or authorization inputs.
+
 Teacher classroom queries are owner-scoped. Latest-practical completion is derived from active student memberships and distinct submission student IDs. Client autosave compares source/language with the last successfully persisted version; the server repeats that comparison transactionally before changing a draft, timestamp, revision, or event timeline.
 
 ## Persisted model
@@ -28,6 +40,8 @@ Teacher classroom queries are owner-scoped. Latest-practical completion is deriv
 - `ResultSnapshot`: provider outcome and per-test JSON; updates are rejected by a database trigger.
 - `SubmissionAttempt`: numbered exact source plus associated result; updates are rejected by a database trigger.
 - `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
+- `User.accountStatus`: local `ACTIVE`/`DISABLED` lifecycle policy; existing users default to `ACTIVE`.
+- `ExternalIdentity`: optional provider/subject link to an existing local user. Composite uniqueness prevents a provider subject from mapping twice and prevents duplicate same-provider identities for one local user.
 
 Submission creation uses a serializable transaction to create the attempt, close the active session, and append its event. Unique constraints enforce attempt numbering, one submission per session, one result per submission, and student-scoped idempotency.
 

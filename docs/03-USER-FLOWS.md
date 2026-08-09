@@ -42,6 +42,12 @@ flowchart LR
 
 **Status:** implemented for persisted attempts in the seeded classroom.
 
+## Identity transition
+
+**Current:** server code resolves fixed seeded demo actors. Existing seeded users remain unlinked and `ACTIVE`; no browser-supplied user ID or role is trusted.
+
+**Production target:** Clerk will validate an email/password session. A server-only resolver will map the Clerk subject through `ExternalIdentity` to a local `User`, then enforce local account status, platform role, classroom ownership, and membership from PostgreSQL. Clerk UI, sessions, onboarding, and this resolver are planned, not implemented.
+
 ## Failure and security behavior
 
 - Invalid, unenrolled, cross-student, or non-owner access fails in server services.

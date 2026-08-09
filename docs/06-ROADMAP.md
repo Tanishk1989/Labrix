@@ -17,13 +17,34 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete. Real authentication, execution, AI, and advanced evidence were intentionally excluded.
 
-## Recommended next slice — production identity and authorization
+## Phase 2A — authentication architecture decision
 
-- Select and implement authentication/account lifecycle.
-- Replace fixed demo actors with authenticated server session resolution.
+- Clerk proves identity and session validity.
+- Labrix PostgreSQL owns role, status, ownership, membership, and permissions.
+- Verified email/password is the first sign-in method; students self-register, while teachers are provisioned by an administrator or invitation process.
+
+**Status:** decision complete. Clerk is approved but not integrated.
+
+## Phase 2B.1 — provider-neutral local identity foundation
+
+- Add local `ACTIVE`/`DISABLED` account status.
+- Add optional provider/subject identity mappings without changing seeded users or runtime identity.
+- Keep the fixed demo resolver operational until the authenticated resolver is ready.
+
+**Status:** implemented. Authentication UI and sessions remain planned.
+
+## Phase 2B.2 — Clerk integration and authenticated authorization
+
+- Install and configure Clerk for separate development and production instances.
+- Add verified email/password sign-in, student registration, sign-out, and session-expiry handling.
+- Resolve the authenticated provider subject to a local user on the server and enforce account status.
+- Add student join-code onboarding and an admin-controlled teacher-provisioning path without email auto-linking.
+- Make the fixed demo resolver unavailable in production.
 - Apply reusable authorization to every current and remaining route.
 - Add cross-classroom, cross-student, expired-session, and account-status tests.
 - Keep the execution provider mocked while identity is hardened.
+
+**Status:** planned.
 
 ## Later slices
 

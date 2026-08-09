@@ -32,6 +32,12 @@ The MVP uses Next.js/React/TypeScript, Prisma/PostgreSQL, Monaco, Zod, Vitest, a
 
 Screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, and automated guilt verdicts are outside the MVP.
 
+### D-008 — Clerk authentication with local Labrix authorization
+
+**Accepted 2026-08-09.** Clerk will prove identity and server-session validity only. Labrix PostgreSQL remains authoritative for platform role, `ACTIVE`/`DISABLED` account status, classroom ownership, membership, and product permissions. The server will map a Clerk subject through an optional provider-neutral `ExternalIdentity` record to an existing local `User`; email is not an authentication identity key and accounts are never linked automatically by matching email.
+
+Initial authentication will use verified email and password with Clerk Hobby session defaults. Students may self-register locally as `STUDENT` and require a valid join code for classroom access. Teachers are administrator/invitation provisioned; no browser role choice can grant `TEACHER`. Separate Clerk development and production instances are required. MFA, email invitations, and webhooks are deferred. The fixed seeded demo resolver remains current during the transition and must be unavailable in production once authenticated resolution is implemented.
+
 ### D-014 — Labrix is the canonical product name
 
 **Accepted 2026-08-09.** Labrix is the only active product name. Pulse, CodePulse, and CodeClass are legacy names retained only in historical/migration context. Safe user-facing branding, package metadata, demo labels, seed labels, and storage prefixes use Labrix. Database tables, route parameters, environment variables, and unrelated technical identifiers are not renamed merely for branding.
@@ -45,10 +51,6 @@ Screen/webcam recording, gamification, mobile coding, cross-institution plagiari
 **Accepted 2026-08-09, non-production.** Browser requests do not supply a trusted user ID or role. Workspace operations resolve `demo-student-1`; teacher review resolves `demo-teacher`; services enforce current membership or classroom ownership. Production authentication must replace this resolver before pilot use.
 
 ## Proposed / unresolved
-
-### D-008 — Authentication and account lifecycle
-
-Choose the authentication provider, institution onboarding, role assignment, session policy, recovery, and account-status rules.
 
 ### D-009 — Evidence policy
 
@@ -73,4 +75,3 @@ Select provider/model, data region/retention, training-use policy, redaction, pr
 ### D-015 — Test visibility and assessment model
 
 Current authoring creates visible tests only. Decide whether hidden tests, grading, rubrics, and result disclosure remain post-MVP.
-

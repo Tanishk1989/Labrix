@@ -12,6 +12,11 @@ enum PlatformRole {
   STUDENT
 }
 
+enum AccountStatus {
+  ACTIVE
+  DISABLED
+}
+
 enum ClassroomStatus {
   ACTIVE
   ARCHIVED
@@ -58,13 +63,28 @@ model User {
   name               String
   email              String              @unique
   platformRole       PlatformRole
+  accountStatus      AccountStatus       @default(ACTIVE)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  externalIdentities ExternalIdentity[]
   classroomsOwned    Classroom[]         @relation("ClassroomOwner")
   memberships        ClassMembership[]
   tasksAuthored      Task[]              @relation("TaskAuthor")
   codingSessions     CodingSession[]     @relation("StudentCodingSessions")
   submissionAttempts SubmissionAttempt[] @relation("StudentSubmissions")
+}
+
+model ExternalIdentity {
+  id              String   @id @default(cuid())
+  userId          String
+  provider        String
+  providerSubject String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@unique([userId, provider])
 }
 
 model Classroom {
