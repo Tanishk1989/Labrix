@@ -1,57 +1,44 @@
 # Architecture
 
-## Current architecture
+## Current vertical slice
 
-The repository uses Next.js 16.3 App Router and React 19.2 with strict TypeScript. PostgreSQL is accessed through Prisma 6. Classroom and practical server actions validate input with Zod. Monaco is dynamically loaded in a client catch-all route. Vitest covers selected domain/validation/provider rules; Playwright covers one demo journey.
-
-The current implementation has two data paths:
-
-- `/classes`, `/classes/[classroomId]`, and `/classes/[classroomId]/tasks/new` use Prisma-backed server pages/actions.
-- `/tasks/*`, `/submissions/*`, student progress, and several fallback pages are rendered by `src/app/[[...slug]]/page.tsx` from typed mock data and client/session state.
-
-Authentication is not implemented. `getDemoTeacher()` and the hard-coded demo student are temporary actors; the session-scoped role selector changes presentation only.
-
-## Target MVP boundaries
+Labrix uses Next.js 16.3 App Router, React 19.2, strict TypeScript, Prisma 6/PostgreSQL, Monaco, Zod, Vitest, and Playwright.
 
 ```mermaid
 flowchart TB
-  UI["Next.js UI and server actions"] --> AUTH["Authentication and authorization"]
-  AUTH --> DOMAIN["Classroom, practical, session, submission domain"]
-  DOMAIN --> DB[("PostgreSQL via Prisma")]
-  DOMAIN --> EXEC["ExecutionProvider client"]
-  EXEC --> SANDBOX["Isolated runner or provider"]
-  DOMAIN --> RULES["Deterministic evidence rules"]
-  RULES --> DB
-  DB --> AI["AI adapter: summaries, drafts, viva"]
-  AI --> REVIEW["Teacher review UI"]
-  DB --> REVIEW
+  UI["Workspace and review UI"] --> A["Server actions / server pages"]
+  A --> ID["Non-production seeded actor resolver"]
+  ID --> AUTHZ["Membership and teacher-ownership checks"]
+  AUTHZ --> SVC["Attempt service"]
+  SVC --> DB[("PostgreSQL via Prisma")]
+  SVC --> EP["ServerExecutionProvider"]
+  EP --> MOCK["Deterministic mock; no code execution"]
+  DB --> REVIEW["Persisted teacher progress and review"]
 ```
 
-- **Web boundary:** renders UI, validates requests, authorizes access, orchestrates domain services, and never executes student programs.
-- **Persistence boundary:** stores identities, memberships, practicals, current drafts/sessions, immutable attempts, result snapshots, evidence events/signals, and AI-output provenance.
-- **Execution boundary:** sends source and tests to an isolated system with explicit language, time, memory, process, filesystem, output, and network limits.
-- **Evidence boundary:** records approved lightweight events and calculates versioned deterministic signals. It must preserve the facts behind every displayed signal.
-- **AI boundary:** consumes the minimum approved context and returns advisory, labeled output. Submission and deterministic review remain available if AI fails.
+The browser sends resource IDs and source input, never a trusted user ID or role. Server actions resolve the fixed demo actor and services re-check membership/ownership with the requested resource. This boundary is replaceable by real authentication; it is not production identity security.
 
-## Route inventory
+## Persisted model
 
-- **Explicit, database-backed:** `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`.
-- **Catch-all demo behavior:** `/`, `/tasks/[taskId]`, `/tasks/[taskId]/my-submissions`, `/submissions/[submissionId]`, `/classes/[classroomId]/students`, `/classes/[classroomId]/tasks`, and other unmatched paths.
+- `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.
+- `Draft`: the one mutable source buffer for a session.
+- `RunAttempt`: immutable source used for one server-owned provider request.
+- `ResultSnapshot`: provider outcome and per-test JSON; updates are rejected by a database trigger.
+- `SubmissionAttempt`: numbered exact source plus associated result; updates are rejected by a database trigger.
+- `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
 
-Before implementing a route, confirm whether the explicit route or optional catch-all will resolve it and remove ambiguity deliberately rather than extending the catch-all.
+Submission creation uses a serializable transaction to create the attempt, close the active session, and append its event. Unique constraints enforce attempt numbering, one submission per session, one result per submission, and student-scoped idempotency.
 
-## Data integrity rules
+## Route boundary
 
-- A current draft is mutable and uniquely scoped to student, practical, and language (or to a documented session model).
-- A submission attempt is append-only after creation. Snapshot source, language, practical/test version, and results needed for later review.
-- Evidence derived from an attempt retains event/rule version and provenance.
-- Practical edits must not retroactively change a historical attempt’s displayed test facts.
-- Database transactions must make attempt creation and its required snapshots atomic.
+- **Database-backed:** `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`, `/tasks/[taskId]`, `/classes/[classroomId]/students`, and `/submissions/[submissionId]`.
+- **Legacy catch-all remains:** unmatched routes such as `/tasks/[taskId]/my-submissions` and `/classes/[classroomId]/tasks`.
 
-## Operational constraints
+Explicit routes take precedence over `src/app/[[...slug]]/page.tsx`. New product behavior should use explicit routes and server services rather than expanding the catch-all.
 
-- Do not place runner credentials or AI secrets in client bundles.
-- Apply server authorization to every read and write using the authenticated user and classroom membership.
-- Define retention, deletion, consent/notice, and access logging before collecting process evidence in production.
-- Treat execution and AI providers as replaceable adapters, not route-level vendor calls.
+## Execution and evidence boundaries
+
+No student source runs in Next.js. The current server provider only simulates deterministic feedback. A production adapter must call an isolated runner with explicit time, memory, process, filesystem, output, and network limits.
+
+Only five foundation events are captured. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.
 

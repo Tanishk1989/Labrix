@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { DemoRole } from "@/domain/tasks/models";
 
 const DemoRoleContext = createContext<DemoRole>("teacher");
-const demoRoleStorageKey = "codeclass:demo-role";
+const demoRoleStorageKey = "labrix:demo-role";
 
 export function getStoredDemoRole(): DemoRole {
   if (typeof window === "undefined") return "teacher";
@@ -104,7 +104,7 @@ export function AppShell({
           <span className="grid size-8 place-items-center rounded-lg bg-indigo-600 text-white">
             <Code2 size={18} aria-hidden="true" />
           </span>
-          CodeClass
+          Labrix
         </Link>
         <p className="mt-1 px-2 text-xs text-[var(--text-muted)]">
           Programming practicals
@@ -158,7 +158,7 @@ export function AppShell({
                 <span className="grid size-8 place-items-center rounded-lg bg-indigo-600 text-white">
                   <Code2 size={18} />
                 </span>
-                CodeClass
+                Labrix
               </Link>
               <button
                 className="icon-button"

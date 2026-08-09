@@ -18,7 +18,7 @@ Then inspect the relevant routes, Prisma schema and migrations, authorization bo
 
 ## Product invariants
 
-- Pulse is a teacher-first coding classroom, not a generic online compiler.
+- Labrix is a teacher-first coding lab platform, not a generic online compiler. Pulse, CodePulse, and CodeClass are legacy names.
 - Preserve: Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review.
 - Evidence supports teacher judgment; it never declares a student guilty or labels behavior as cheating.
 - Do not automatically block copy/paste. Capture proportionate metadata only when the product policy permits it.
@@ -69,4 +69,3 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
-

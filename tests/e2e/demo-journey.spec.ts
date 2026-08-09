@@ -14,6 +14,7 @@ test("professor demo: teacher, student, and teacher progress journey", async ({ 
   await expect(page.getByRole("heading", { name: "Your practicals" })).toBeVisible();
   await page.getByRole("link", { name: "Start practical" }).click();
   await expect(page.getByRole("heading", { name: "Array Sum" })).toBeVisible();
+  await expect(page.getByText(/Simulated execution only/)).toBeVisible();
 
   await page.getByRole("button", { name: "Run" }).click();
   await expect(page.getByText("1/2 provided tests passed")).toBeVisible();
@@ -21,10 +22,12 @@ test("professor demo: teacher, student, and teacher progress journey", async ({ 
   await editor.click();
   await page.keyboard.press("Control+A");
   await page.keyboard.type("#include <iostream>\nusing namespace std;\nint main() { return 0; }");
+  await expect(page.getByText("Saved to Labrix")).toBeVisible();
   await page.getByRole("button", { name: "Run" }).click();
   await expect(page.getByText("Passed all provided tests")).toBeVisible();
   await page.getByRole("button", { name: "Submit" }).click();
   await expect(page.getByText("Submitted successfully")).toBeVisible();
+  await expect(page.getByRole("link", { name: "View persisted submission" })).toBeVisible();
 
   await page.getByLabel("Demo role").selectOption("teacher");
   await page.goto("/classes/dsa-2026/students");
@@ -33,5 +36,7 @@ test("professor demo: teacher, student, and teacher progress journey", async ({ 
   await expect(page.getByText("Submitted").first()).toBeVisible();
   await page.getByRole("link", { name: "Review" }).first().click();
   await expect(page.getByRole("heading", { name: /submission/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Process timeline" })).toBeVisible();
+  await expect(page.getByText("Immutable submission created")).toBeVisible();
   expect(browserErrors).toEqual([]);
 });

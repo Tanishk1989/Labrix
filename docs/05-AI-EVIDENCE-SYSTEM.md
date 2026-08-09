@@ -1,16 +1,16 @@
 # AI and evidence system
 
-This system is **planned**. No evidence capture, signal calculation, AI integration, or viva generation is implemented in the current repository.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Deterministic evidence signals, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
 
 ## Purpose and boundary
 
-Pulse should help a teacher understand a coding process and decide what to inspect or ask. It must not infer guilt, produce a cheating verdict, or make an academic decision automatically.
+Labrix should help a teacher understand a coding process and decide what to inspect or ask. It must not infer guilt, produce a cheating verdict, or make an academic decision automatically.
 
 Copy/paste remains available. A paste can be ordinary and legitimate; at most, approved metadata becomes one contextual fact among many.
 
 ## Lightweight evidence for the MVP
 
-Subject to an approved privacy and retention policy, capture only events needed to reconstruct a useful process summary:
+The current slice captures only server timestamps, event order, session ID, and relevant run/submission IDs. Later event expansion remains subject to an approved privacy and retention policy:
 
 - coding-session start/resume/end and draft-save checkpoints;
 - language changes and coarse edit counts or size deltas;
@@ -64,4 +64,3 @@ Questions should test understanding, not accuse. Do not reveal hidden policy thr
 - Keep deterministic facts visually distinct from generated interpretation.
 - Test prompt injection from source/comments and require the model to treat source as data, not instructions.
 - Evaluate grounding, neutrality, usefulness, and false implication before pilot release.
-

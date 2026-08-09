@@ -1,8 +1,10 @@
-# Pulse product
+# Labrix product
 
 ## Purpose
 
-Pulse helps teachers run programming practicals and review how students arrived at a submission, not only whether the final code passed visible tests. It is teacher-first: student tooling exists to make classroom setup, review, feedback, and viva preparation more reliable and efficient.
+Labrix is a teacher-first, process-aware coding lab platform that captures the student’s coding journey and converts it into actionable evidence, feedback, and viva guidance for teachers.
+
+Pulse, CodePulse, and CodeClass are legacy names. Labrix is the only active product name.
 
 ## Core workflow
 
@@ -10,7 +12,7 @@ Pulse helps teachers run programming practicals and review how students arrived 
 
 - A teacher owns a classroom, publishes a practical, chooses languages, adds tests, and sets an optional deadline.
 - A student opens the practical, works in a persisted coding session, receives bounded run feedback, and creates an immutable submission attempt.
-- Pulse derives measurable process signals and presents evidence with context.
+- Labrix derives measurable process signals and presents evidence with context.
 - A teacher reviews the source, result snapshot, process evidence, and AI-assisted viva prompts, then exercises human judgment.
 
 ## Product principles
@@ -40,4 +42,3 @@ The current feature-by-feature classification is in `docs/02-MVP.md`.
 - Every attempt remains reviewable with the exact submitted source and result snapshot.
 - Evidence is understandable, attributable, and neutrally worded.
 - A teacher can use implementation-specific viva prompts and record their own conclusion outside any automated guilt score.
-

@@ -1,37 +1,34 @@
-# Pulse
+# Labrix
 
-Pulse is a teacher-first, process-aware coding classroom. Teachers create classrooms and practicals; students write, run, and submit code; teachers review immutable attempts with lightweight process evidence and implementation-specific viva prompts.
+Labrix is a teacher-first, process-aware coding lab platform that captures the student’s coding journey and converts it into actionable evidence, feedback, and viva guidance for teachers.
 
-The intended workflow is:
+The core workflow is:
 
 **Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review**
 
-Pulse presents evidence for teacher judgment. It does not declare cheating, and it does not automatically block copy/paste.
+Labrix presents evidence for teacher judgment. It does not declare cheating or automatically block copy/paste. Pulse, CodePulse, and CodeClass are legacy product names.
 
 ## Current repository state
 
-This repository is a hybrid prototype, not a complete MVP.
+- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed teacher progress/review; server-side membership and teacher-ownership checks for this slice.
+- **Partial:** identity uses fixed non-production server-owned demo actors rather than real authentication; classroom overview summary counts do not yet consume persisted attempts; practical management is incomplete; only the seeded vertical slice has replaced the broad legacy catch-all.
+- **Mock:** execution results are simulated from deterministic source markers. Java and C++ are not compiled or executed. The visible role selector changes demo presentation and is not authentication.
+- **Planned:** production authentication, isolated execution, broader task/submission navigation, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
+- **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
-- **Implemented:** Next.js App Router shell; PostgreSQL/Prisma persistence for users, classrooms, memberships, practicals, and visible test cases; teacher-side classroom creation and practical draft/publish actions; Monaco editor integration; unit and Playwright configuration.
-- **Partial:** teacher/student routes and classroom views mix database records with demo data; authorization is limited to hard-coded demo actors; practical authoring supports create/update during one form session but has no general management UI.
-- **Mock:** code execution, student submissions, progress, and submission review use deterministic client-side demo state. Student source is not compiled or run.
-- **Planned:** real authentication and authorization, persistent coding sessions and drafts, immutable submission attempts, isolated execution, evidence capture and deterministic signals, teacher evidence review, AI-assisted summaries/feedback/viva questions.
-- **Out of scope for the MVP:** screen or webcam recording, gamification, mobile coding, cross-institution plagiarism detection, and automated guilt verdicts.
-
-See [docs/02-MVP.md](docs/02-MVP.md) for the detailed status boundary.
+See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
 
 ## Stack
 
-- Next.js 16.3 App Router, React 19.2, and strict TypeScript
-- Tailwind CSS 4 and Lucide React
+- Next.js 16.3 App Router, React 19.2, strict TypeScript, Tailwind CSS 4
 - PostgreSQL through Prisma 6
 - Monaco through `@monaco-editor/react`
 - React Hook Form and Zod
-- Vitest unit tests and Playwright browser tests
+- Vitest unit/integration tests and Playwright browser tests
 
 ## Local development
 
-Requirements: Node.js/npm and a PostgreSQL database available through `DATABASE_URL`.
+Provide a PostgreSQL `DATABASE_URL` in an ignored local environment file. Never commit it.
 
 ```bash
 npm install
@@ -41,23 +38,24 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/classes`. The role selector is a prototype preview, not authentication.
+Open `http://127.0.0.1:3000/classes`. The seeded actor resolver and role preview are explicitly non-production.
 
-Useful checks:
+Checks:
 
 ```bash
 npm run lint
 npm run typecheck
 npm test
+npm run test:integration
 npm run test:e2e
 npm run build
 ```
 
-`npm run test:integration` is defined, but no `tests/integration` suite currently exists.
-
 ## Safety boundary
 
-Never execute untrusted student code in the Next.js process. The current `MockExecutionProvider` only produces deterministic fake results. Production execution must use a separately isolated provider or sandbox with resource limits and operational controls.
+Untrusted student code must never execute inside Next.js. `ServerMockExecutionProvider` only simulates outcomes. Production execution requires a separate isolated provider or sandbox with explicit resource and network controls.
+
+Submission attempts and result snapshots are protected from updates by database triggers. Repeated submission requests are deduplicated by a student-scoped idempotency key; a later resubmission creates a new numbered attempt.
 
 ## Documentation
 

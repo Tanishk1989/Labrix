@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { getDemoTeacher } from "@/lib/auth/demo-actor";
+import { resolveDemoStudentActor } from "@/server/actors/demo-session";
 
 type Result = { ok: true; classroomId: string } | { ok: false; message: string };
 const createSchema = z.object({
@@ -33,7 +34,7 @@ export async function createClassroom(values: unknown): Promise<Result> {
     revalidatePath("/classes");
     return { ok: true, classroomId: classroom.id };
   } catch {
-    return { ok: false, message: "CodeClass could not create the classroom. Try again." };
+    return { ok: false, message: "Labrix could not create the classroom. Try again." };
   }
 }
 
@@ -42,8 +43,8 @@ export async function joinClassroom(code: string): Promise<Result> {
   if (!normalized) return { ok: false, message: "Enter a classroom code." };
   try {
     const classroom = await prisma.classroom.findUnique({ where: { joinCode: normalized } });
-    const student = await prisma.user.findUnique({ where: { id: "demo-student-1" } });
-    if (!classroom || !student) return { ok: false, message: "We could not find that classroom code." };
+    const student = await resolveDemoStudentActor();
+    if (!classroom) return { ok: false, message: "We could not find that classroom code." };
     await prisma.classMembership.upsert({
       where: { classroomId_userId: { classroomId: classroom.id, userId: student.id } },
       update: { active: true, role: MembershipRole.STUDENT },
@@ -53,6 +54,6 @@ export async function joinClassroom(code: string): Promise<Result> {
     revalidatePath(`/classes/${classroom.id}`);
     return { ok: true, classroomId: classroom.id };
   } catch {
-    return { ok: false, message: "CodeClass could not join the classroom. Try again." };
+    return { ok: false, message: "Labrix could not join the classroom. Try again." };
   }
 }

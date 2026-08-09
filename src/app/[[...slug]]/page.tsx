@@ -32,7 +32,7 @@ import {
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const provider = new MockExecutionProvider();
 const task = demoClassroom.tasks[0];
-const demoSubmissionStorageKey = "codeclass:demo-submitted-at";
+const demoSubmissionStorageKey = "labrix:legacy-demo-submitted-at";
 const taskSchema = z.object({
   title: z.string().min(3),
   deadline: z.string().min(1),

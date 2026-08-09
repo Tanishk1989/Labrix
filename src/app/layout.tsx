@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CodeClass",
-  description: "Coding practical classroom demo",
+  title: "Labrix",
+  description:
+    "Teacher-first, process-aware coding labs with actionable evidence and viva guidance.",
 };
 export default function RootLayout({
   children,

@@ -7,89 +7,221 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum PlatformRole { 
+enum PlatformRole {
   TEACHER
   STUDENT
 }
-enum ClassroomStatus { 
+
+enum ClassroomStatus {
   ACTIVE
   ARCHIVED
 }
-enum MembershipRole { 
+
+enum MembershipRole {
   TEACHER
   STUDENT
 }
-enum TaskStatus { 
+
+enum TaskStatus {
   DRAFT
   PUBLISHED
 }
-enum AllowedLanguage { 
+
+enum AllowedLanguage {
   CPP
   JAVA
 }
 
+enum CodingSessionStatus {
+  ACTIVE
+  SUBMITTED
+}
+
+enum RunResultState {
+  COMPLETED
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+  INTERNAL_ERROR
+}
+
+enum CodeEventType {
+  SESSION_STARTED
+  DRAFT_SAVED
+  RUN_REQUESTED
+  RUN_COMPLETED
+  SUBMISSION_CREATED
+}
+
 model User {
-  id String @id @default(cuid())
-  name String
-  email String @unique
-  platformRole PlatformRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  classroomsOwned Classroom[] @relation("ClassroomOwner")
-  memberships ClassMembership[]
-  tasksAuthored Task[] @relation("TaskAuthor")
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  platformRole       PlatformRole
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  classroomsOwned    Classroom[]         @relation("ClassroomOwner")
+  memberships        ClassMembership[]
+  tasksAuthored      Task[]              @relation("TaskAuthor")
+  codingSessions     CodingSession[]     @relation("StudentCodingSessions")
+  submissionAttempts SubmissionAttempt[] @relation("StudentSubmissions")
 }
+
 model Classroom {
-  id String @id @default(cuid())
-  name String
-  subject String
-  section String
+  id             String            @id @default(cuid())
+  name           String
+  subject        String
+  section        String
   ownerTeacherId String
-  joinCode String @unique
-  status ClassroomStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ownerTeacher User @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id])
-  memberships ClassMembership[]
-  tasks Task[]
+  joinCode       String            @unique
+  status         ClassroomStatus   @default(ACTIVE)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  ownerTeacher   User              @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id])
+  memberships    ClassMembership[]
+  tasks          Task[]
 }
+
 model ClassMembership {
-  id String @id @default(cuid())
+  id          String         @id @default(cuid())
   classroomId String
-  userId String
-  role MembershipRole
-  joinedAt DateTime @default(now())
-  active Boolean @default(true)
-  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  role        MembershipRole
+  joinedAt    DateTime       @default(now())
+  active      Boolean        @default(true)
+  classroom   Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([classroomId, userId])
 }
+
 model Task {
-  id String @id @default(cuid())
-  classroomId String
-  authorTeacherId String
-  title String
-  instructions String
-  constraints String?
-  allowedLanguages AllowedLanguage[]
-  status TaskStatus @default(DRAFT)
-  deadline DateTime?
-  publishedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  authorTeacher User @relation("TaskAuthor", fields: [authorTeacherId], references: [id])
-  testCases TestCase[]
+  id                 String              @id @default(cuid())
+  classroomId        String
+  authorTeacherId    String
+  title              String
+  instructions       String
+  constraints        String?
+  allowedLanguages   AllowedLanguage[]
+  status             TaskStatus          @default(DRAFT)
+  deadline           DateTime?
+  publishedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  classroom          Classroom           @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  authorTeacher      User                @relation("TaskAuthor", fields: [authorTeacherId], references: [id])
+  testCases          TestCase[]
+  codingSessions     CodingSession[]
+  submissionAttempts SubmissionAttempt[]
 }
+
 model TestCase {
-  id String @id @default(cuid())
-  taskId String
-  position Int
-  input String
+  id             String   @id @default(cuid())
+  taskId         String
+  position       Int
+  input          String
   expectedOutput String
-  visible Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  visible        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
   @@unique([taskId, position])
+}
+
+model CodingSession {
+  id            String              @id @default(cuid())
+  taskId        String
+  studentId     String
+  attemptNumber Int
+  status        CodingSessionStatus @default(ACTIVE)
+  language      AllowedLanguage     @default(CPP)
+  startedAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  submittedAt   DateTime?
+  task          Task                @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  student       User                @relation("StudentCodingSessions", fields: [studentId], references: [id], onDelete: Restrict)
+  draft         Draft?
+  runs          RunAttempt[]
+  submission    SubmissionAttempt?
+  events        CodeEvent[]
+
+  @@unique([taskId, studentId, attemptNumber])
+  @@index([taskId, studentId, status])
+}
+
+model Draft {
+  id              String        @id @default(cuid())
+  codingSessionId String        @unique
+  sourceCode      String
+  revision        Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  codingSession   CodingSession @relation(fields: [codingSessionId], references: [id], onDelete: Cascade)
+}
+
+model RunAttempt {
+  id                 String          @id @default(cuid())
+  codingSessionId    String
+  sequence           Int
+  language           AllowedLanguage
+  sourceCodeSnapshot String
+  requestedAt        DateTime        @default(now())
+  completedAt        DateTime?
+  codingSession      CodingSession   @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
+  resultSnapshot     ResultSnapshot?
+  events             CodeEvent[]
+
+  @@unique([codingSessionId, sequence])
+}
+
+model ResultSnapshot {
+  id           String             @id @default(cuid())
+  runAttemptId String             @unique
+  state        RunResultState
+  passedTests  Int
+  totalTests   Int
+  errorText    String?
+  testResults  Json
+  createdAt    DateTime           @default(now())
+  runAttempt   RunAttempt         @relation(fields: [runAttemptId], references: [id], onDelete: Restrict)
+  submission   SubmissionAttempt?
+}
+
+model SubmissionAttempt {
+  id                 String          @id @default(cuid())
+  taskId             String
+  studentId          String
+  codingSessionId    String          @unique
+  resultSnapshotId   String          @unique
+  attemptNumber      Int
+  idempotencyKey     String
+  language           AllowedLanguage
+  sourceCodeSnapshot String
+  submittedAt        DateTime        @default(now())
+  task               Task            @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  student            User            @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
+  codingSession      CodingSession   @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
+  resultSnapshot     ResultSnapshot  @relation(fields: [resultSnapshotId], references: [id], onDelete: Restrict)
+  events             CodeEvent[]
+
+  @@unique([taskId, studentId, attemptNumber])
+  @@unique([studentId, idempotencyKey])
+  @@index([taskId, studentId, submittedAt])
+}
+
+model CodeEvent {
+  id                  String             @id @default(cuid())
+  codingSessionId     String
+  sequence            Int
+  type                CodeEventType
+  runAttemptId        String?
+  submissionAttemptId String?
+  occurredAt          DateTime           @default(now())
+  codingSession       CodingSession      @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
+  runAttempt          RunAttempt?        @relation(fields: [runAttemptId], references: [id], onDelete: Restrict)
+  submissionAttempt   SubmissionAttempt? @relation(fields: [submissionAttemptId], references: [id], onDelete: Restrict)
+
+  @@unique([codingSessionId, sequence])
+  @@index([codingSessionId, occurredAt])
 }

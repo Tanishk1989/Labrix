@@ -1,6 +1,6 @@
 # Contributing
 
-Pulse uses a lightweight two-person workflow.
+Labrix uses a lightweight two-person workflow.
 
 1. **Issue or task:** describe the user problem, scope, product-status impact, dependencies, and exclusions. Link any unresolved decision in `docs/07-DECISIONS.md`.
 2. **Acceptance criteria:** write observable outcomes before implementation, including authorization, persistence, evidence wording, failure states, and test expectations where relevant.
@@ -12,4 +12,3 @@ Pulse uses a lightweight two-person workflow.
 8. **Documentation:** update README/status tables, architecture, flows, decisions, and operational notes whenever behavior, data, scope, or constraints change.
 
 Prefer small pull requests that deliver one coherent vertical slice. Do not combine opportunistic redesigns or cleanup with feature work unless the task explicitly includes them.
-
