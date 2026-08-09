@@ -7,8 +7,10 @@ Labrix uses Next.js 16.3 App Router, React 19.2, strict TypeScript, Prisma 6/Pos
 ```mermaid
 flowchart TB
   UI["Workspace and review UI"] --> A["Server actions / server pages"]
-  A --> ID["Non-production seeded actor resolver"]
-  ID --> AUTHZ["Membership and teacher-ownership checks"]
+  A --> ID["Explicit demo or Clerk identity adapter"]
+  ID -->|"Clerk"| MAP["ExternalIdentity to local User"]
+  MAP --> AUTHZ
+  ID -->|"Demo"| AUTHZ["Membership and teacher-ownership checks"]
   AUTHZ --> SVC["Attempt service"]
   SVC --> DB[("PostgreSQL via Prisma")]
   SVC --> EP["ServerExecutionProvider"]
@@ -16,9 +18,9 @@ flowchart TB
   DB --> REVIEW["Persisted teacher progress and review"]
 ```
 
-The browser sends resource IDs and source input, never a trusted user ID or role. Server actions resolve the fixed demo actor and services re-check membership/ownership with the requested resource. This boundary is replaceable by real authentication; it is not production identity security.
+The browser sends resource IDs and source input, never a trusted user ID, provider subject, role, or account status. Every persisted page/action resolves its actor server-side, and services re-check membership/ownership with the requested resource.
 
-Clerk is approved but not integrated. The additive identity foundation stores local `User.accountStatus` and optional `ExternalIdentity` records. Existing demo users require no external identity. The production resolver target is:
+Clerk is integrated behind a provider-neutral adapter. The identity foundation stores local `User.accountStatus` and optional `ExternalIdentity` records. Existing demo users require no external identity. The implemented Clerk resolver is:
 
 ```mermaid
 flowchart LR
@@ -28,7 +30,9 @@ flowchart LR
   U --> P["Local account status, role, ownership, membership, and permissions"]
 ```
 
-Clerk will establish identity and session validity only. PostgreSQL remains authoritative for authorization. Email, browser-selected roles, and provider metadata are not identity-linking or authorization inputs.
+Clerk establishes identity and session validity only. PostgreSQL remains authoritative for authorization. Email, browser-selected roles, and provider metadata are not identity-linking or authorization inputs. Missing, malformed, unlinked, disabled, or unavailable Clerk identity fails closed.
+
+`src/proxy.ts` performs an optimistic signed-in check and keeps authentication/static routes reachable. It is not the authorization boundary. `resolveCurrentActor()` runs again beside every protected database read or mutation. `demo` mode is local/test-only and production rejects it; `clerk` mode never falls back.
 
 Teacher classroom queries are owner-scoped. Latest-practical completion is derived from active student memberships and distinct submission student IDs. Client autosave compares source/language with the last successfully persisted version; the server repeats that comparison transactionally before changing a draft, timestamp, revision, or event timeline.
 

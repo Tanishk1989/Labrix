@@ -10,10 +10,10 @@ Labrix presents evidence for teacher judgment. It does not declare cheating or a
 
 ## Current repository state
 
-- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed classroom completion summaries and teacher progress/review; server-side membership and teacher-ownership checks; additive local account status and provider-neutral external identity schema.
-- **Partial:** Clerk is approved but not integrated; runtime identity still uses fixed non-production server-owned demo actors. Practical management is incomplete, and only the seeded vertical slice has replaced the broad legacy catch-all.
+- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed classroom completion summaries and teacher progress/review; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; provider-neutral authenticated actor resolution for explicitly linked users; local account-status enforcement; and controlled identity linking.
+- **Partial:** production authentication is not complete until student onboarding and a security acceptance pass. `demo` remains an explicit non-production resolver mode; `clerk` resolves only existing linked Labrix users. Practical management is incomplete, and only the persisted vertical slice has replaced the broad legacy catch-all.
 - **Mock:** execution results are simulated from deterministic source markers. Java and C++ are not compiled or executed. The visible role selector changes demo presentation and is not authentication.
-- **Planned:** Clerk sign-in/session UI and a Clerk-backed server actor resolver; isolated execution; broader task/submission navigation; deterministic evidence signals; AI-assisted explanation/feedback/viva generation; and pilot hardening.
+- **Planned:** automatic student creation and join-code onboarding, administrator-controlled teacher provisioning, isolated execution, broader task/submission navigation, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
 See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
@@ -22,13 +22,14 @@ See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
 
 - Next.js 16.3 App Router, React 19.2, strict TypeScript, Tailwind CSS 4
 - PostgreSQL through Prisma 6
+- Clerk Next.js SDK for external identity and secure sessions
 - Monaco through `@monaco-editor/react`
 - React Hook Form and Zod
 - Vitest unit/integration tests and Playwright browser tests
 
 ## Local development
 
-Provide a PostgreSQL `DATABASE_URL` in an ignored local environment file. Never commit it.
+Copy the variable names from `.env.example` into an ignored `.env.local`; provide `DATABASE_URL`, Clerk development-instance keys, and an explicit `LABRIX_IDENTITY_MODE`. Never commit values.
 
 ```bash
 npm install
@@ -38,7 +39,16 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/classes`. The seeded actor resolver and role preview are explicitly non-production.
+With `LABRIX_IDENTITY_MODE=demo`, open `http://127.0.0.1:3000/classes`; the seeded actors and role preview are explicitly non-production. With `clerk`, sign in at `/sign-in`; only explicitly linked local users can enter the product.
+
+For local Clerk verification, explicitly link existing users using verified Clerk user IDs. The command never matches email or changes roles:
+
+```bash
+npm run auth:link-clerk -- --user-id demo-student-1 --clerk-subject <verified-clerk-user-id>
+npm run auth:link-clerk -- --user-id demo-teacher --clerk-subject <verified-clerk-user-id>
+```
+
+Use a different Clerk account for each mapping. Duplicate or conflicting mappings are rejected.
 
 Checks:
 

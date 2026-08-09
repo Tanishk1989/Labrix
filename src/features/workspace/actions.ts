@@ -1,22 +1,15 @@
 "use server";
 
-import { z } from "zod";
-import { resolveDemoStudentActor } from "@/server/actors/demo-session";
+import {
+  requireActorRole,
+  resolveCurrentActor,
+} from "@/server/actors/current-actor";
 import {
   runStudentDraft,
   saveStudentDraft,
   submitStudentDraft,
 } from "@/server/attempts/service";
-
-const languageSchema = z.enum(["CPP", "JAVA"]);
-const draftInputSchema = z.object({
-  sessionId: z.string().cuid(),
-  language: languageSchema,
-  sourceCode: z.string().max(200_000),
-});
-const submissionInputSchema = draftInputSchema.extend({
-  idempotencyKey: z.string().uuid(),
-});
+import { draftInputSchema, submissionInputSchema } from "./input-schema";
 
 export async function saveDraftAction(input: unknown) {
   const parsed = draftInputSchema.safeParse(input);
@@ -24,7 +17,10 @@ export async function saveDraftAction(input: unknown) {
     return { ok: false as const, message: "The draft could not be saved." };
   }
   try {
-    const actor = await resolveDemoStudentActor();
+    const actor = requireActorRole(
+      await resolveCurrentActor({ demoActor: "student" }),
+      "STUDENT",
+    );
     const saved = await saveStudentDraft({ studentId: actor.id, ...parsed.data });
     return { ok: true as const, ...saved };
   } catch {
@@ -41,7 +37,10 @@ export async function runDraftAction(input: unknown) {
     return { ok: false as const, message: "The simulated run could not start." };
   }
   try {
-    const actor = await resolveDemoStudentActor();
+    const actor = requireActorRole(
+      await resolveCurrentActor({ demoActor: "student" }),
+      "STUDENT",
+    );
     const run = await runStudentDraft({ studentId: actor.id, ...parsed.data });
     return { ok: true as const, run };
   } catch {
@@ -58,7 +57,10 @@ export async function submitDraftAction(input: unknown) {
     return { ok: false as const, message: "The submission could not be created." };
   }
   try {
-    const actor = await resolveDemoStudentActor();
+    const actor = requireActorRole(
+      await resolveCurrentActor({ demoActor: "student" }),
+      "STUDENT",
+    );
     const submission = await submitStudentDraft({
       studentId: actor.id,
       ...parsed.data,

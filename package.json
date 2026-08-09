@@ -17,9 +17,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "demo:check": "tsx scripts/demo-check.ts",
     "demo:reset": "tsx scripts/demo-reset.ts",
-    "demo": "npm.cmd run demo:check && next dev"
+    "demo": "npm.cmd run demo:check && next dev",
+    "auth:link-clerk": "tsx scripts/link-clerk-identity.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.7.1",
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.19.2",
     "lucide-react": "^1.28.0",

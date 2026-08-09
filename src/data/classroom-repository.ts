@@ -23,9 +23,43 @@ export function getClassroomsForTeacher(teacherId: string) {
   });
 }
 
+export function getClassroomsForStudent(studentId: string) {
+  return prisma.classroom.findMany({
+    where: {
+      status: "ACTIVE",
+      memberships: {
+        some: {
+          userId: studentId,
+          role: "STUDENT",
+          active: true,
+        },
+      },
+    },
+    include: classroomSummaryInclude,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export function getOwnedClassroomById(teacherId: string, id: string) {
   return prisma.classroom.findFirst({
     where: { id, ownerTeacherId: teacherId },
+    include: classroomSummaryInclude,
+  });
+}
+
+export function getClassroomForStudentById(studentId: string, id: string) {
+  return prisma.classroom.findFirst({
+    where: {
+      id,
+      status: "ACTIVE",
+      memberships: {
+        some: {
+          userId: studentId,
+          role: "STUDENT",
+          active: true,
+        },
+      },
+    },
     include: classroomSummaryInclude,
   });
 }

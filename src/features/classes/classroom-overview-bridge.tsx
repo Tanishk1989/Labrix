@@ -55,6 +55,8 @@ function StudentClassroomOverview({ classroom }: { classroom: ClassroomOverviewV
   );
 }
 
-export function ClassroomOverviewBridge({ classroom, teacherContent }: { classroom: ClassroomOverviewViewModel; teacherContent: React.ReactNode }) {
-  return useDemoRole() === "student" ? <StudentClassroomOverview classroom={classroom} /> : teacherContent;
+export function ClassroomOverviewBridge({ classroom, teacherContent, resolvedRole }: { classroom: ClassroomOverviewViewModel; teacherContent: React.ReactNode; resolvedRole?: "TEACHER" | "STUDENT" }) {
+  const demoRole = useDemoRole();
+  const student = resolvedRole ? resolvedRole === "STUDENT" : demoRole === "student";
+  return student ? <StudentClassroomOverview classroom={classroom} /> : teacherContent;
 }

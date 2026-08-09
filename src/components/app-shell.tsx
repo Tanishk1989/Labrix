@@ -1,9 +1,11 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Code2, ChevronRight, LayoutGrid, Menu, X } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useIdentityMode } from "@/components/identity-mode-provider";
 import type { DemoRole } from "@/domain/tasks/models";
 
 const DemoRoleContext = createContext<DemoRole>("teacher");
@@ -93,6 +95,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const identityMode = useIdentityMode();
   return (
     <DemoRoleContext.Provider value={role}>
       <div className="min-h-screen bg-[var(--page-bg)] text-[var(--text-primary)]">
@@ -112,9 +115,11 @@ export function AppShell({
         <div className="mt-8 border-t border-transparent pt-0">
           <Navigation />
         </div>
-        <div className="mt-auto">
-          <DemoRoleControl role={role} setRole={setRole} />
-        </div>
+        {identityMode === "demo" && (
+          <div className="mt-auto">
+            <DemoRoleControl role={role} setRole={setRole} />
+          </div>
+        )}
       </aside>
       <div className="lg:pl-60">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[var(--border)] bg-white/95 px-4 backdrop-blur sm:px-6">
@@ -127,16 +132,20 @@ export function AppShell({
             <Menu size={20} />
           </button>
           <div className="flex-1" />
-          <button
-            type="button"
-            className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-indigo-500"
-          >
-            <span className="grid size-7 place-items-center rounded-full bg-slate-200 text-xs">
-              TM
-            </span>
-            <span className="hidden sm:block">Tanis M.</span>
-            <ChevronDown size={15} aria-hidden="true" />
-          </button>
+          {identityMode === "clerk" ? (
+            <UserButton />
+          ) : (
+            <button
+              type="button"
+              className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
+              <span className="grid size-7 place-items-center rounded-full bg-slate-200 text-xs">
+                TM
+              </span>
+              <span className="hidden sm:block">Tanis M.</span>
+              <ChevronDown size={15} aria-hidden="true" />
+            </button>
+          )}
         </header>
         <main className="mx-auto w-full max-w-[1280px] px-4 py-7 sm:px-6 lg:px-8">
           {children}
@@ -171,9 +180,11 @@ export function AppShell({
             <div className="mt-8">
               <Navigation />
             </div>
-            <div className="mt-auto">
-              <DemoRoleControl role={role} setRole={setRole} />
-            </div>
+            {identityMode === "demo" && (
+              <div className="mt-auto">
+                <DemoRoleControl role={role} setRole={setRole} />
+              </div>
+            )}
           </aside>
         </div>
       )}

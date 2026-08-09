@@ -1,4 +1,8 @@
-import { getOwnedClassroomById } from "@/data/classroom-repository";
+import type { PlatformRole } from "@prisma/client";
+import {
+  getClassroomForStudentById,
+  getOwnedClassroomById,
+} from "@/data/classroom-repository";
 import { summarizePracticalCompletion } from "./practical-completion";
 
 export type ClassroomOverviewViewModel = {
@@ -20,10 +24,14 @@ export type ClassroomOverviewViewModel = {
 };
 
 export async function getClassroomOverviewViewModel(
-  teacherId: string,
+  userId: string,
   id: string,
+  role: PlatformRole = "TEACHER",
 ): Promise<ClassroomOverviewViewModel | null> {
-  const classroom = await getOwnedClassroomById(teacherId, id);
+  const classroom =
+    role === "TEACHER"
+      ? await getOwnedClassroomById(userId, id)
+      : await getClassroomForStudentById(userId, id);
   if (!classroom) return null;
 
   const studentIds = classroom.memberships

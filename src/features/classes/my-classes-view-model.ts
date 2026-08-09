@@ -1,5 +1,9 @@
 import type { ClassroomSummaryRecord } from "@/data/classroom-repository";
-import { getClassroomsForTeacher } from "@/data/classroom-repository";
+import {
+  getClassroomsForStudent,
+  getClassroomsForTeacher,
+} from "@/data/classroom-repository";
+import type { PlatformRole } from "@prisma/client";
 import { summarizePracticalCompletion } from "./practical-completion";
 
 export type ClassroomCardViewModel = {
@@ -60,9 +64,14 @@ function toCard(classroom: ClassroomSummaryRecord): ClassroomCardViewModel {
 }
 
 export async function getMyClassesViewModel(
-  teacherId: string,
+  userId: string,
+  role: PlatformRole = "TEACHER",
 ): Promise<MyClassesViewModel> {
-  const activeClasses = (await getClassroomsForTeacher(teacherId)).map(toCard);
+  const records =
+    role === "TEACHER"
+      ? await getClassroomsForTeacher(userId)
+      : await getClassroomsForStudent(userId);
+  const activeClasses = records.map(toCard);
   const dueSoon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   return {
     summary: {

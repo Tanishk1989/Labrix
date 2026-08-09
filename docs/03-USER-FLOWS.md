@@ -15,26 +15,26 @@ flowchart LR
 
 ## Teacher: create and publish
 
-1. The seeded server-side teacher opens an owned classroom.
+1. The server resolves either the seeded demo teacher or an explicitly linked Clerk user whose local role is `TEACHER`.
 2. The teacher creates a practical with instructions, languages, visible tests, and optional deadline.
 3. Labrix validates teacher ownership before saving a draft or publishing.
 
-**Status:** persisted for the demo teacher; production authentication and complete practical management remain planned.
+**Status:** persisted for the demo teacher and explicitly linked active teachers. Automatic teacher provisioning and complete practical management remain planned.
 
 ## Student: resume, run, and submit
 
-1. The server resolves the seeded student and verifies active classroom membership.
+1. The server resolves either the seeded demo student or an explicitly linked Clerk user whose local role is `STUDENT`, then verifies active classroom membership.
 2. Labrix loads or creates the one active coding session and draft for the practical attempt.
 3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
 4. Run saves the current draft, records request/completion events, calls the server-owned mock provider, and stores its result snapshot.
 5. Submit repeats the simulated run for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`.
 6. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
 
-**Status:** implemented for the seeded practical. Execution is clearly simulated.
+**Status:** implemented for the seeded practical in demo mode and linked active students in Clerk mode. Execution is clearly simulated.
 
 ## Teacher: review
 
-1. The server resolves the seeded teacher and verifies classroom ownership.
+1. The server resolves the teacher and verifies the local `TEACHER` role plus classroom ownership.
 2. Practical progress reads the latest persisted attempt for each enrolled student.
 3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
 4. Review shows the immutable source/result snapshots, attempt number, timestamp, run count, and ordered foundation timeline.
@@ -44,9 +44,11 @@ flowchart LR
 
 ## Identity transition
 
-**Current:** server code resolves fixed seeded demo actors. Existing seeded users remain unlinked and `ACTIVE`; no browser-supplied user ID or role is trusted.
+**Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in production. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
 
-**Production target:** Clerk will validate an email/password session. A server-only resolver will map the Clerk subject through `ExternalIdentity` to a local `User`, then enforce local account status, platform role, classroom ownership, and membership from PostgreSQL. Clerk UI, sessions, onboarding, and this resolver are planned, not implemented.
+**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated Labrix user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
+
+**Explicit local verification:** an administrator runs the non-public linking command with an existing Labrix user ID and verified Clerk subject. The command does not match email, create users, change roles, or create teachers.
 
 ## Failure and security behavior
 

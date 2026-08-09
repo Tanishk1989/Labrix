@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoShell } from "@/components/app-shell";
-import { resolveDemoTeacherActor } from "@/server/actors/demo-session";
+import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getTeacherClassroomProgress } from "@/server/attempts/service";
 
-async function loadProgress(classroomId: string) {
+async function loadProgress(teacherId: string, classroomId: string) {
   try {
-    const actor = await resolveDemoTeacherActor();
-    return await getTeacherClassroomProgress(actor.id, classroomId);
+    return await getTeacherClassroomProgress(teacherId, classroomId);
   } catch {
     notFound();
   }
@@ -19,7 +18,11 @@ export default async function StudentProgressPage({
   params: Promise<{ classroomId: string }>;
 }) {
   const { classroomId } = await params;
-  const progress = await loadProgress(classroomId);
+  const actor = await resolveCurrentActorForPage({
+    demoActor: "teacher",
+    requiredRole: "TEACHER",
+  });
+  const progress = await loadProgress(actor.id, classroomId);
   const submitted = progress.students.filter((student) => student.latestSubmission).length;
   return (
       <DemoShell>

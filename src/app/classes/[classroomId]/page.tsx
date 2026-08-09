@@ -3,7 +3,7 @@ import { DemoShell } from "@/components/app-shell";
 import { ClassroomOverviewBridge } from "@/features/classes/classroom-overview-bridge";
 import { ClassroomOverviewPage } from "@/features/classes/classroom-overview-page";
 import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
-import { resolveDemoTeacherActor } from "@/server/actors/demo-session";
+import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 
 export default async function ClassroomPage({
   params,
@@ -11,14 +11,19 @@ export default async function ClassroomPage({
   params: Promise<{ classroomId: string }>;
 }) {
   const { classroomId } = await params;
-  const teacher = await resolveDemoTeacherActor();
-  const classroom = await getClassroomOverviewViewModel(teacher.id, classroomId);
+  const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
+  const classroom = await getClassroomOverviewViewModel(
+    actor.id,
+    classroomId,
+    actor.role,
+  );
   if (!classroom) notFound();
   return (
     <DemoShell>
       <ClassroomOverviewBridge
         classroom={classroom}
         teacherContent={<ClassroomOverviewPage classroom={classroom} />}
+        resolvedRole={actor.source === "external-identity" ? actor.role : undefined}
       />
     </DemoShell>
   );

@@ -7,7 +7,7 @@ import { useDemoRole } from "@/components/app-shell";
 import { JoinClassroomButton } from "./classroom-setup-actions";
 import type { MyClassesViewModel } from "./my-classes-view-model";
 
-function StudentMyClasses({ viewModel }: { viewModel: MyClassesViewModel }) {
+function StudentMyClasses({ viewModel, allowJoin }: { viewModel: MyClassesViewModel; allowJoin: boolean }) {
   return (
     <>
       <section>
@@ -30,12 +30,14 @@ function StudentMyClasses({ viewModel }: { viewModel: MyClassesViewModel }) {
           ))}
           {viewModel.activeClasses.length === 0 && <EmptyState title="No active classes" description="You have no active programming classrooms yet." />}
         </div>
-        <JoinClassroomButton />
+        {allowJoin && <JoinClassroomButton />}
       </section>
     </>
   );
 }
 
-export function MyClassesBridge({ viewModel, teacherContent }: { viewModel: MyClassesViewModel; teacherContent: React.ReactNode }) {
-  return useDemoRole() === "student" ? <StudentMyClasses viewModel={viewModel} /> : teacherContent;
+export function MyClassesBridge({ viewModel, teacherContent, resolvedRole, allowJoin = true }: { viewModel: MyClassesViewModel; teacherContent: React.ReactNode; resolvedRole?: "TEACHER" | "STUDENT"; allowJoin?: boolean }) {
+  const demoRole = useDemoRole();
+  const student = resolvedRole ? resolvedRole === "STUDENT" : demoRole === "student";
+  return student ? <StudentMyClasses viewModel={viewModel} allowJoin={allowJoin} /> : teacherContent;
 }

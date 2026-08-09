@@ -1,0 +1,35 @@
+import type { PlatformRole } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { DisabledAccountError } from "./account-status";
+import {
+  ActorRoleDeniedError,
+  requireActorRole,
+  resolveCurrentActor,
+  UnauthenticatedActorError,
+  UnlinkedActorError,
+  type CurrentActor,
+} from "./current-actor";
+import { InvalidExternalIdentityError } from "./external-identity-source";
+
+export async function resolveCurrentActorForPage(options: {
+  demoActor?: "student" | "teacher";
+  requiredRole?: PlatformRole;
+} = {}): Promise<CurrentActor> {
+  try {
+    const actor = await resolveCurrentActor({ demoActor: options.demoActor });
+    return options.requiredRole
+      ? requireActorRole(actor, options.requiredRole)
+      : actor;
+  } catch (error) {
+    if (error instanceof UnauthenticatedActorError) redirect("/sign-in");
+    if (error instanceof UnlinkedActorError) redirect("/unlinked-account");
+    if (error instanceof DisabledAccountError) redirect("/disabled-account");
+    if (
+      error instanceof InvalidExternalIdentityError ||
+      error instanceof ActorRoleDeniedError
+    ) {
+      redirect("/unauthorized");
+    }
+    throw error;
+  }
+}

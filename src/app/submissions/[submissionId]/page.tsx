@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoShell } from "@/components/app-shell";
-import { resolveDemoTeacherActor } from "@/server/actors/demo-session";
+import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getSubmissionForTeacher } from "@/server/attempts/service";
 
 const eventLabels = {
@@ -12,10 +12,9 @@ const eventLabels = {
   SUBMISSION_CREATED: "Immutable submission created",
 } as const;
 
-async function loadReview(submissionId: string) {
+async function loadReview(teacherId: string, submissionId: string) {
   try {
-    const actor = await resolveDemoTeacherActor();
-    return await getSubmissionForTeacher(actor.id, submissionId);
+    return await getSubmissionForTeacher(teacherId, submissionId);
   } catch {
     notFound();
   }
@@ -27,7 +26,11 @@ export default async function SubmissionReviewPage({
   params: Promise<{ submissionId: string }>;
 }) {
   const { submissionId } = await params;
-  const review = await loadReview(submissionId);
+  const actor = await resolveCurrentActorForPage({
+    demoActor: "teacher",
+    requiredRole: "TEACHER",
+  });
+  const review = await loadReview(actor.id, submissionId);
   return (
       <DemoShell>
         <Link href={`/classes/${review.task.classroom.id}/students`} className="text-sm font-medium text-indigo-700">

@@ -36,15 +36,23 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 ## Phase 2B.2 — Clerk integration and authenticated authorization
 
 - Install and configure Clerk for separate development and production instances.
-- Add verified email/password sign-in, student registration, sign-out, and session-expiry handling.
+- Add verified email/password sign-in/sign-up shell, sign-out, and session-expiry handling.
 - Resolve the authenticated provider subject to a local user on the server and enforce account status.
-- Add student join-code onboarding and an admin-controlled teacher-provisioning path without email auto-linking.
 - Make the fixed demo resolver unavailable in production.
 - Apply reusable authorization to every current and remaining route.
 - Add cross-classroom, cross-student, expired-session, and account-status tests.
 - Keep the execution provider mocked while identity is hardened.
 
-**Status:** planned.
+**Status:** implemented for explicitly linked existing users and the persisted vertical slice. Production authentication remains partial pending onboarding and security acceptance.
+
+## Next authentication slice — student onboarding
+
+- Create a local `STUDENT` only after a verified Clerk sign-up reaches an explicit onboarding flow.
+- Require a valid classroom join code before creating active membership.
+- Make retries transactional and idempotent without linking by email.
+- Define administrator-controlled teacher provisioning separately.
+
+**Status:** planned. No automatic user, membership, or teacher creation exists yet.
 
 ## Later slices
 

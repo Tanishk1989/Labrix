@@ -16,11 +16,15 @@ Status reflects repository behavior as of 2026-08-09.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
 - Provider-neutral local identity persistence: `User.accountStatus` and optional `ExternalIdentity` mappings with database uniqueness by provider/subject and local user/provider.
+- Clerk SDK, Next.js 16 proxy integration, public sign-in/sign-up shell, sign-out/account control, and server-side Clerk session adapter.
+- A provider-neutral `resolveCurrentActor()` maps a server-verified Clerk subject to an explicitly linked local user and enforces local account status and role before existing resource authorization.
+- Controlled local/admin identity linking by explicit Labrix user ID and verified Clerk subject; no email matching or public linking endpoint.
 - Unit, database integration, and critical browser tests.
 
 ## Partial
 
-- Clerk is approved as the future authentication provider but is not installed or integrated. The actor resolver remains non-production and fixed to seeded identities; it enforces service authorization but does not authenticate the person using the browser.
+- Production authentication remains incomplete until automatic student onboarding and a security acceptance pass. Newly signed-up Clerk accounts remain unlinked and cannot access Labrix product data.
+- Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
 - Only the seeded practical vertical slice uses persisted workspace/submission/review behavior; remaining unmatched product paths may still use the legacy catch-all.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
@@ -28,12 +32,13 @@ Status reflects repository behavior as of 2026-08-09.
 ## Mock
 
 - Execution derives outcomes from source markers such as `fail_test`, `compile_error`, and `runtime_error`. Java/C++ are not compiled.
-- The role selector is session-scoped presentation preview, not authentication or authorization.
+- In explicit demo mode, the role selector is session-scoped presentation preview, not authentication or authorization. Clerk mode hides it.
 - Remaining catch-all pages, including legacy “my submissions” and practical-list variants, retain demo behavior.
 
 ## Planned
 
-- Clerk email/password authentication UI and sessions, local onboarding, account lifecycle enforcement, sign-out/expiry handling, and a provider-neutral authenticated actor resolver.
+- Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
+- Administrator-controlled teacher provisioning. Email invitations, webhooks, MFA, and social login remain outside this slice.
 - Isolated production execution with queues, limits, retries, and observability.
 - Complete task/submission navigation beyond the seeded vertical slice.
 - Versioned deterministic evidence signals beyond the five foundation events.

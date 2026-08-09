@@ -50,6 +50,12 @@ Initial authentication will use verified email and password with Clerk Hobby ses
 
 **Accepted 2026-08-09, non-production.** Browser requests do not supply a trusted user ID or role. Workspace operations resolve `demo-student-1`; teacher review resolves `demo-teacher`; services enforce current membership or classroom ownership. Production authentication must replace this resolver before pilot use.
 
+### D-018 — Explicit identity resolver modes and linking
+
+**Accepted 2026-08-09.** `LABRIX_IDENTITY_MODE` must be explicitly `demo` or `clerk`; missing/invalid configuration fails, production rejects `demo`, and Clerk failures never fall back. In Clerk mode, the server-verified subject is mapped through `ExternalIdentity`, then PostgreSQL supplies account status and role. Existing service membership and ownership checks remain mandatory.
+
+Initial linking is a controlled non-public command using an existing Labrix user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated Labrix user. Automatic student onboarding and teacher provisioning require later accepted implementation work.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { DemoShell } from "@/components/app-shell";
 import { PersistedWorkspace } from "@/features/workspace/persisted-workspace";
-import { resolveDemoStudentActor } from "@/server/actors/demo-session";
+import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getOrCreateStudentWorkspace } from "@/server/attempts/service";
 
-async function loadWorkspace(taskId: string) {
+async function loadWorkspace(studentId: string, taskId: string) {
   try {
-    const actor = await resolveDemoStudentActor();
-    return await getOrCreateStudentWorkspace(actor.id, taskId);
+    return await getOrCreateStudentWorkspace(studentId, taskId);
   } catch {
     notFound();
   }
@@ -19,7 +18,11 @@ export default async function TaskWorkspacePage({
   params: Promise<{ taskId: string }>;
 }) {
   const { taskId } = await params;
-  const workspace = await loadWorkspace(taskId);
+  const actor = await resolveCurrentActorForPage({
+    demoActor: "student",
+    requiredRole: "STUDENT",
+  });
+  const workspace = await loadWorkspace(actor.id, taskId);
   return (
     <DemoShell>
       <PersistedWorkspace workspace={workspace} />
