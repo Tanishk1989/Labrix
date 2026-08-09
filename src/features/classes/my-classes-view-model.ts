@@ -34,7 +34,20 @@ export type MyClassesViewModel = {
   archivedClasses: ClassroomCardViewModel[];
 };
 
-function toCard(classroom: ClassroomSummaryRecord): ClassroomCardViewModel {
+export function countVisiblePracticals(
+  tasks: Array<{ status: "DRAFT" | "PUBLISHED" }>,
+  role: PlatformRole,
+) {
+  const publishedCount = tasks.filter(
+    (task) => task.status === "PUBLISHED",
+  ).length;
+  return role === "STUDENT" ? Math.min(publishedCount, 1) : publishedCount;
+}
+
+function toCard(
+  classroom: ClassroomSummaryRecord,
+  role: PlatformRole,
+): ClassroomCardViewModel {
   const studentIds = classroom.memberships
     .filter((membership) => membership.role === "STUDENT")
     .map((membership) => membership.userId);
@@ -52,7 +65,7 @@ function toCard(classroom: ClassroomSummaryRecord): ClassroomCardViewModel {
     subject: classroom.subject,
     section: classroom.section,
     studentCount: studentIds.length,
-    activePracticalCount: classroom.tasks.filter((task) => task.status === "PUBLISHED").length,
+    activePracticalCount: countVisiblePracticals(classroom.tasks, role),
     nearestDeadline: latest?.deadline?.toISOString() ?? null,
     joinCode: classroom.joinCode,
     status: "ACTIVE",
@@ -71,7 +84,7 @@ export async function getMyClassesViewModel(
     role === "TEACHER"
       ? await getClassroomsForTeacher(userId)
       : await getClassroomsForStudent(userId);
-  const activeClasses = records.map(toCard);
+  const activeClasses = records.map((classroom) => toCard(classroom, role));
   const dueSoon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   return {
     summary: {
