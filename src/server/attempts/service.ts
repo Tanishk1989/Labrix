@@ -19,8 +19,7 @@ import type {
 } from "@/server/execution/provider";
 import {
   buildResultBreakdown,
-  calculateSuggestedScore,
-  type ResultBreakdown,
+  snapshotBreakdown,
 } from "@/server/execution/result-grading";
 
 const workspaceSessionInclude = {
@@ -326,49 +325,6 @@ function fromRunResultState(state: RunResultState): ServerExecutionResult["state
 type StoredTestResult = Omit<ServerExecutionTestResult, "visibility"> & {
   visibility?: TestVisibility;
 };
-
-type SnapshotBreakdownSource = {
-  state: RunResultState;
-  passedTests: number;
-  totalTests: number;
-  visiblePassedTests: number | null;
-  visibleTotalTests: number | null;
-  hiddenPassedTests: number | null;
-  hiddenTotalTests: number | null;
-  suggestedScore: number | null;
-};
-
-export function snapshotBreakdown(
-  snapshot: SnapshotBreakdownSource,
-): ResultBreakdown {
-  if (
-    snapshot.visiblePassedTests !== null &&
-    snapshot.visibleTotalTests !== null &&
-    snapshot.hiddenPassedTests !== null &&
-    snapshot.hiddenTotalTests !== null &&
-    snapshot.suggestedScore !== null
-  ) {
-    return {
-      visiblePassedTests: snapshot.visiblePassedTests,
-      visibleTotalTests: snapshot.visibleTotalTests,
-      hiddenPassedTests: snapshot.hiddenPassedTests,
-      hiddenTotalTests: snapshot.hiddenTotalTests,
-      suggestedScore: snapshot.suggestedScore,
-    };
-  }
-
-  return {
-    visiblePassedTests: snapshot.passedTests,
-    visibleTotalTests: snapshot.totalTests,
-    hiddenPassedTests: 0,
-    hiddenTotalTests: 0,
-    suggestedScore: calculateSuggestedScore(
-      fromRunResultState(snapshot.state),
-      snapshot.passedTests,
-      snapshot.totalTests,
-    ),
-  };
-}
 
 function publicTestResults(testResults: StoredTestResult[]) {
   return testResults

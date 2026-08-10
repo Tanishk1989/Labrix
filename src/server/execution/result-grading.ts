@@ -1,3 +1,4 @@
+import type { RunResultState } from "@prisma/client";
 import type {
   ServerExecutionResult,
   ServerExecutionTestResult,
@@ -10,6 +11,17 @@ export interface ResultBreakdown {
   hiddenPassedTests: number;
   hiddenTotalTests: number;
   suggestedScore: number;
+}
+
+export interface SnapshotBreakdownSource {
+  state: RunResultState;
+  passedTests: number;
+  totalTests: number;
+  visiblePassedTests: number | null;
+  visibleTotalTests: number | null;
+  hiddenPassedTests: number | null;
+  hiddenTotalTests: number | null;
+  suggestedScore: number | null;
 }
 
 function countByVisibility(
@@ -32,6 +44,38 @@ export function calculateSuggestedScore(
 ) {
   if (state !== "completed" || totalTests <= 0) return 0;
   return Math.round((passedTests / totalTests) * 100) / 10;
+}
+
+export function snapshotBreakdown(
+  snapshot: SnapshotBreakdownSource,
+): ResultBreakdown {
+  if (
+    snapshot.visiblePassedTests !== null &&
+    snapshot.visibleTotalTests !== null &&
+    snapshot.hiddenPassedTests !== null &&
+    snapshot.hiddenTotalTests !== null &&
+    snapshot.suggestedScore !== null
+  ) {
+    return {
+      visiblePassedTests: snapshot.visiblePassedTests,
+      visibleTotalTests: snapshot.visibleTotalTests,
+      hiddenPassedTests: snapshot.hiddenPassedTests,
+      hiddenTotalTests: snapshot.hiddenTotalTests,
+      suggestedScore: snapshot.suggestedScore,
+    };
+  }
+
+  return {
+    visiblePassedTests: snapshot.passedTests,
+    visibleTotalTests: snapshot.totalTests,
+    hiddenPassedTests: 0,
+    hiddenTotalTests: 0,
+    suggestedScore: calculateSuggestedScore(
+      snapshot.state.toLowerCase() as ServerExecutionResult["state"],
+      snapshot.passedTests,
+      snapshot.totalTests,
+    ),
+  };
 }
 
 export function buildResultBreakdown(

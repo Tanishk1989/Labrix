@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db/prisma";
 import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
+import { getStudentOverview } from "@/server/student/overview";
 import {
   getOrCreateStudentWorkspace,
   getSubmissionForStudent,
@@ -14,6 +15,8 @@ import type {
   ServerExecutionProvider,
   ServerExecutionRequest,
 } from "@/server/execution/provider";
+
+vi.mock("server-only", () => ({}));
 
 const suffix = randomUUID().slice(0, 8);
 const taskId = `integration-task-${suffix}`;
@@ -266,6 +269,21 @@ describe.sequential("persisted student-attempt service", () => {
     expect(JSON.stringify(studentView)).not.toContain("hidden-input");
     expect(JSON.stringify(studentView)).not.toContain("hidden-output");
     expect(JSON.stringify(studentView)).not.toContain(hiddenTest.id);
+    const historyView = await getStudentOverview(studentId);
+    const historyAttempt = historyView.submissions.find(
+      (attempt) => attempt.id === submission.id,
+    );
+    expect(historyAttempt).toMatchObject({
+      visiblePassedTests: 1,
+      visibleTotalTests: 1,
+      hiddenPassedTests: 1,
+      hiddenTotalTests: 1,
+      suggestedScore: 10,
+      publishedReviewExists: false,
+    });
+    expect(JSON.stringify(historyView)).not.toContain("hidden-input");
+    expect(JSON.stringify(historyView)).not.toContain("hidden-output");
+    expect(JSON.stringify(historyView)).not.toContain(hiddenTest.id);
     await expect(
       prisma.submissionAttempt.update({
         where: { id: stored.id },

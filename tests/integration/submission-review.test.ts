@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db/prisma";
+import { getStudentOverview } from "@/server/student/overview";
 import {
   getSubmissionForStudent,
   getSubmissionForTeacher,
@@ -11,6 +12,8 @@ import {
   SubmissionReviewAccessError,
   SubmissionReviewValidationError,
 } from "@/server/reviews/submission-review";
+
+vi.mock("server-only", () => ({}));
 
 const suffix = randomUUID().slice(0, 8);
 const teacherId = `review-teacher-${suffix}`;
@@ -183,6 +186,21 @@ describe.sequential("teacher submission reviews", () => {
     ]);
     expect(teacherView.review?.status).toBe("DRAFT");
     expect(studentView.review).toBeNull();
+    const overview = await getStudentOverview(studentId);
+    const attempt = overview.submissions.find(
+      (item) => item.id === submissionIds[0],
+    );
+    expect(attempt).toMatchObject({
+      suggestedScore: 5,
+      visiblePassedTests: 1,
+      visibleTotalTests: 2,
+      hiddenPassedTests: 0,
+      hiddenTotalTests: 0,
+      publishedReviewExists: false,
+    });
+    expect(JSON.stringify(overview)).not.toContain(
+      "Good direction; explain the edge case.",
+    );
   });
 
   it("publishes feedback only to the owner student", async () => {
@@ -200,6 +218,11 @@ describe.sequential("teacher submission reviews", () => {
       marksOutOf: 10,
       feedback: "Correct approach. Add clearer variable names.",
     });
+    const overview = await getStudentOverview(studentId);
+    expect(
+      overview.submissions.find((item) => item.id === submissionIds[0])
+        ?.publishedReviewExists,
+    ).toBe(true);
     await expect(
       getSubmissionForStudent(otherStudentId, submissionIds[0]),
     ).rejects.toBeInstanceOf(AccessDeniedError);
