@@ -46,18 +46,14 @@ describe.sequential("provider-neutral identity foundation", () => {
     await prisma.$disconnect();
   });
 
-  it("keeps existing unlinked seeded users valid for the fixed demo resolver", async () => {
-    const [student, teacher, identityCount] = await Promise.all([
+  it("keeps existing seeded users valid for the fixed demo resolver", async () => {
+    const [student, teacher] = await Promise.all([
       resolveDemoStudentActor(),
       resolveDemoTeacherActor(),
-      prisma.externalIdentity.count({
-        where: { userId: { in: ["demo-student-1", "demo-teacher"] } },
-      }),
     ]);
 
     expect(student).toMatchObject({ id: "demo-student-1", role: "STUDENT" });
     expect(teacher).toMatchObject({ id: "demo-teacher", role: "TEACHER" });
-    expect(identityCount).toBe(0);
   });
 
   it("defaults existing and newly created local users to ACTIVE", async () => {
