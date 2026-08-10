@@ -202,16 +202,21 @@ model RunAttempt {
 }
 
 model ResultSnapshot {
-  id           String             @id @default(cuid())
-  runAttemptId String             @unique
-  state        RunResultState
-  passedTests  Int
-  totalTests   Int
-  errorText    String?
-  testResults  Json
-  createdAt    DateTime           @default(now())
-  runAttempt   RunAttempt         @relation(fields: [runAttemptId], references: [id], onDelete: Restrict)
-  submission   SubmissionAttempt?
+  id                 String             @id @default(cuid())
+  runAttemptId       String             @unique
+  state              RunResultState
+  passedTests        Int
+  totalTests         Int
+  visiblePassedTests Int?
+  visibleTotalTests  Int?
+  hiddenPassedTests  Int?
+  hiddenTotalTests   Int?
+  suggestedScore     Float?
+  errorText          String?
+  testResults        Json
+  createdAt          DateTime           @default(now())
+  runAttempt         RunAttempt         @relation(fields: [runAttemptId], references: [id], onDelete: Restrict)
+  submission         SubmissionAttempt?
 }
 
 model SubmissionAttempt {

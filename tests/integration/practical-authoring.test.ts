@@ -25,7 +25,11 @@ function practicalInput(
     publish: boolean;
     title: string;
     instructions: string;
-    testCases: Array<{ input: string; expectedOutput: string }>;
+    testCases: Array<{
+      input: string;
+      expectedOutput: string;
+      visible: boolean;
+    }>;
   }> = {},
 ) {
   return {
@@ -39,7 +43,7 @@ function practicalInput(
     allowedLanguages: ["JAVA" as const],
     deadline: null,
     testCases: overrides.testCases ?? [
-      { input: "2", expectedOutput: "2" },
+      { input: "2", expectedOutput: "2", visible: true },
     ],
   };
 }
@@ -227,7 +231,10 @@ describe.sequential("teacher practical authoring lifecycle", () => {
   it("allows test replacement on a published practical before student activity", async () => {
     const result = await saveTeacherPractical(
       practicalInput(freshPublishedTaskId, {
-        testCases: [{ input: "3", expectedOutput: "3" }],
+        testCases: [
+          { input: "3", expectedOutput: "3", visible: true },
+          { input: "secret", expectedOutput: "hidden", visible: false },
+        ],
       }),
     );
     const task = await prisma.task.findUniqueOrThrow({
@@ -240,6 +247,12 @@ describe.sequential("teacher practical authoring lifecycle", () => {
     expect(task.testCases[0]).toMatchObject({
       input: "3",
       expectedOutput: "3",
+      visible: true,
+    });
+    expect(task.testCases[1]).toMatchObject({
+      input: "secret",
+      expectedOutput: "hidden",
+      visible: false,
     });
   });
 
@@ -261,7 +274,7 @@ describe.sequential("teacher practical authoring lifecycle", () => {
     const error = await saveTeacherPractical(
       practicalInput(lockedTaskId, {
         title: "Should not be saved",
-        testCases: [{ input: "99", expectedOutput: "99" }],
+        testCases: [{ input: "99", expectedOutput: "99", visible: true }],
       }),
     ).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(PracticalAuthoringError);
@@ -298,6 +311,7 @@ describe.sequential("teacher practical authoring lifecycle", () => {
         testCases: testsBefore.map((testCase) => ({
           input: testCase.input,
           expectedOutput: testCase.expectedOutput,
+          visible: testCase.visible,
         })),
       }),
     );
@@ -322,5 +336,24 @@ describe.sequential("teacher practical authoring lifecycle", () => {
     expect(error).toMatchObject({
       code: "CLASSROOM_UNAVAILABLE",
     });
+  });
+
+  it("treats a visibility change as destructive after student activity", async () => {
+    const testCase = await prisma.testCase.findFirstOrThrow({
+      where: { taskId: lockedTaskId },
+    });
+    await expect(
+      saveTeacherPractical(
+        practicalInput(lockedTaskId, {
+          testCases: [
+            {
+              input: testCase.input,
+              expectedOutput: testCase.expectedOutput,
+              visible: false,
+            },
+          ],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "TESTS_LOCKED" });
   });
 });

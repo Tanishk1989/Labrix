@@ -5,6 +5,7 @@ const testCaseSchema = z.object({
   clientId: z.string().min(1),
   input: z.string(),
   expectedOutput: z.string(),
+  visible: z.boolean(),
 });
 export const createPracticalBaseSchema = z.object({
   title: z.string(),
@@ -44,7 +45,7 @@ export const createPracticalPublishSchema =
         path: ["allowedLanguages"],
         message: "Select at least one language.",
       });
-    if (value.testCases.length === 0)
+    if (!value.testCases.some((testCase) => testCase.visible))
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["testCases"],

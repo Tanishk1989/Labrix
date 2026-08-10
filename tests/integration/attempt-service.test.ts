@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
 import {
   getOrCreateStudentWorkspace,
+  getSubmissionForStudent,
   getSubmissionForTeacher,
   runStudentDraft,
   saveStudentDraft,
@@ -32,6 +33,7 @@ const passingProvider: ServerExecutionProvider = {
       testId: test.id,
       passed: true,
       actualOutput: test.expectedOutput,
+      visibility: test.visibility,
     })),
   })),
 };
@@ -65,7 +67,15 @@ describe.sequential("persisted student-attempt service", () => {
         status: "PUBLISHED",
         publishedAt: new Date(),
         testCases: {
-          create: [{ position: 1, input: "1", expectedOutput: "1" }],
+          create: [
+            { position: 1, input: "1", expectedOutput: "1", visible: true },
+            {
+              position: 2,
+              input: "hidden-input",
+              expectedOutput: "hidden-output",
+              visible: false,
+            },
+          ],
         },
       },
     });
@@ -203,6 +213,14 @@ describe.sequential("persisted student-attempt service", () => {
       passingProvider,
     );
     expect(run.passedTests).toBe(1);
+    expect(run.visibleTotalTests).toBe(1);
+    expect(run.hiddenTotalTests).toBe(0);
+    expect(run.testResults).toHaveLength(1);
+    expect(passingProvider.execute).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tests: [expect.objectContaining({ visibility: "VISIBLE" })],
+      }),
+    );
     expect(await prisma.resultSnapshot.count({ where: { id: run.resultSnapshotId } })).toBe(1);
   });
 
@@ -223,7 +241,31 @@ describe.sequential("persisted student-attempt service", () => {
       include: { resultSnapshot: true },
     });
     expect(stored.sourceCodeSnapshot).toBe("// exact source\nint main() { return 0; }");
-    expect(stored.resultSnapshot.passedTests).toBe(1);
+    expect(stored.resultSnapshot.passedTests).toBe(2);
+    expect(stored.resultSnapshot.visiblePassedTests).toBe(1);
+    expect(stored.resultSnapshot.hiddenPassedTests).toBe(1);
+    expect(stored.resultSnapshot.hiddenTotalTests).toBe(1);
+    expect(stored.resultSnapshot.suggestedScore).toBe(10);
+    expect(passingProvider.execute).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tests: expect.arrayContaining([
+          expect.objectContaining({ visibility: "VISIBLE" }),
+          expect.objectContaining({ visibility: "HIDDEN" }),
+        ]),
+      }),
+    );
+
+    const studentView = await getSubmissionForStudent(studentId, submission.id);
+    const hiddenTest = await prisma.testCase.findFirstOrThrow({
+      where: { taskId, visible: false },
+      select: { id: true },
+    });
+    expect(studentView.result.testResults).toHaveLength(1);
+    expect(studentView.result.hiddenPassedTests).toBe(1);
+    expect(studentView.result.hiddenTotalTests).toBe(1);
+    expect(JSON.stringify(studentView)).not.toContain("hidden-input");
+    expect(JSON.stringify(studentView)).not.toContain("hidden-output");
+    expect(JSON.stringify(studentView)).not.toContain(hiddenTest.id);
     await expect(
       prisma.submissionAttempt.update({
         where: { id: stored.id },
@@ -354,5 +396,16 @@ describe.sequential("persisted student-attempt service", () => {
     expect(review.sourceCode).toBe("public class Main {}");
     expect(review.runCount).toBe(1);
     expect(review.events.at(-1)?.type).toBe("SUBMISSION_CREATED");
+    expect(review.result.testResults).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          visibility: "HIDDEN",
+          input: "hidden-input",
+          expectedOutput: "hidden-output",
+          actualOutput: "hidden-output",
+        }),
+      ]),
+    );
   });
+
 });

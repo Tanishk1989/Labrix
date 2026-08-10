@@ -8,7 +8,7 @@ const validPractical = {
   allowedLanguages: ["JAVA"] as const,
   deadlineLocal: "",
   testCases: [
-    { clientId: "visible-1", input: "1", expectedOutput: "1" },
+    { clientId: "visible-1", input: "1", expectedOutput: "1", visible: true },
   ],
 };
 
@@ -23,12 +23,19 @@ describe("practical publish validation", () => {
     ["title", { title: "   " }],
     ["instructions", { instructions: "   " }],
     ["allowed language", { allowedLanguages: [] }],
-    ["visible test", { testCases: [] }],
+    [
+      "visible test",
+      {
+        testCases: [
+          { clientId: "hidden-1", input: "2", expectedOutput: "2", visible: false },
+        ],
+      },
+    ],
     [
       "expected output",
       {
         testCases: [
-          { clientId: "visible-1", input: "1", expectedOutput: "   " },
+          { clientId: "visible-1", input: "1", expectedOutput: "   ", visible: true },
         ],
       },
     ],
@@ -39,5 +46,17 @@ describe("practical publish validation", () => {
         ...override,
       }).success,
     ).toBe(false);
+  });
+
+  it("accepts visible and hidden tests when every expected output is present", () => {
+    expect(
+      createPracticalPublishSchema.safeParse({
+        ...validPractical,
+        testCases: [
+          ...validPractical.testCases,
+          { clientId: "hidden-1", input: "2", expectedOutput: "2", visible: false },
+        ],
+      }).success,
+    ).toBe(true);
   });
 });

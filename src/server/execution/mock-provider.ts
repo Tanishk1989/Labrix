@@ -41,6 +41,7 @@ export class ServerMockExecutionProvider implements ServerExecutionProvider {
       passed: !shouldFail || index === 0,
       actualOutput:
         !shouldFail || index === 0 ? test.expectedOutput : "0",
+      visibility: test.visibility,
     }));
 
     return {

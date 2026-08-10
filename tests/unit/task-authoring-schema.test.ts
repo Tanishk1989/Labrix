@@ -10,7 +10,7 @@ const valid = {
   constraints: "",
   allowedLanguages: ["CPP"] as const,
   deadlineLocal: "2099-01-01T10:00",
-  testCases: [{ clientId: "one", input: "", expectedOutput: "0" }],
+  testCases: [{ clientId: "one", input: "", expectedOutput: "0", visible: true }],
 };
 describe("create practical validation", () => {
   it("requires title, instructions, language, and expected output for publishing", () => {
@@ -19,7 +19,7 @@ describe("create practical validation", () => {
       title: " ",
       instructions: " ",
       allowedLanguages: [],
-      testCases: [{ clientId: "one", input: "", expectedOutput: "" }],
+      testCases: [{ clientId: "one", input: "", expectedOutput: "", visible: true }],
     });
     expect(result.success).toBe(false);
   });
@@ -39,15 +39,15 @@ describe("create practical validation", () => {
         title: "",
         instructions: "",
         allowedLanguages: [],
-        testCases: [{ clientId: "one", input: "", expectedOutput: "" }],
+        testCases: [{ clientId: "one", input: "", expectedOutput: "", visible: true }],
       }).success,
     ).toBe(true));
   it("keeps test case order", () => {
     const result = createPracticalPublishSchema.parse({
       ...valid,
       testCases: [
-        { clientId: "one", input: "a", expectedOutput: "a" },
-        { clientId: "two", input: "b", expectedOutput: "b" },
+        { clientId: "one", input: "a", expectedOutput: "a", visible: true },
+        { clientId: "two", input: "b", expectedOutput: "b", visible: false },
       ],
     });
     expect(result.testCases.map((test) => test.clientId)).toEqual([
