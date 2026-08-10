@@ -15,7 +15,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Immutable, idempotent submission/result snapshots.
 - Five-event timeline and database-backed teacher progress/review.
 
-**Status:** complete. Real authentication, execution, AI, and advanced evidence were intentionally excluded.
+**Status:** complete. Real execution, AI, and advanced evidence were intentionally excluded.
 
 ## Phase 2A — authentication architecture decision
 
@@ -23,7 +23,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Labrix PostgreSQL owns role, status, ownership, membership, and permissions.
 - Verified email/password is the first sign-in method; students self-register, while teachers are provisioned by an administrator or invitation process.
 
-**Status:** decision complete. Clerk is approved but not integrated.
+**Status:** decision complete. Clerk integration status is tracked in the Phase 2B slices below.
 
 ## Phase 2B.1 — provider-neutral local identity foundation
 
@@ -31,32 +31,46 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Add optional provider/subject identity mappings without changing seeded users or runtime identity.
 - Keep the fixed demo resolver operational until the authenticated resolver is ready.
 
-**Status:** implemented. Authentication UI and sessions remain planned.
+**Status:** complete.
 
 ## Phase 2B.2 — Clerk integration and authenticated authorization
 
-- Install and configure Clerk for separate development and production instances.
+- Configure Clerk for separate development and production instances.
 - Add verified email/password sign-in/sign-up shell, sign-out, and session-expiry handling.
 - Resolve the authenticated provider subject to a local user on the server and enforce account status.
 - Make the fixed demo resolver unavailable in production.
-- Apply reusable authorization to every current and remaining route.
-- Add cross-classroom, cross-student, expired-session, and account-status tests.
 - Keep the execution provider mocked while identity is hardened.
 
-**Status:** implemented for explicitly linked existing users and the persisted vertical slice. Production authentication remains partial pending onboarding and security acceptance.
+**Status:** partial. Linked-user resolution is implemented; administrator-controlled teacher provisioning and the final security acceptance pass remain.
 
-## Next authentication slice — student onboarding
+## Phase 2B.3 — student join-code onboarding
 
-- Create a local `STUDENT` only after a verified Clerk sign-up reaches an explicit onboarding flow.
+- Create a local `STUDENT` only after a verified Clerk sign-up reaches the onboarding flow.
 - Require a valid classroom join code before creating active membership.
 - Make retries transactional and idempotent without linking by email.
-- Define administrator-controlled teacher provisioning separately.
+- Keep teacher creation administrator-controlled.
 
-**Status:** planned. No automatic user, membership, or teacher creation exists yet.
+**Status:** complete.
+
+## Persisted UI and navigation
+
+- Provide role-aware teacher and student dashboards.
+- Use explicit database-backed routes for classes, practicals, progress, submissions, review, and the coding workspace.
+- Scope teacher queries by ownership and student queries by active membership and resource ownership.
+
+**Status:** implemented for the primary routes. Remaining unmatched legacy catch-all routes still need retirement.
+
+## Phase 3C.1 — single-practical authoring lifecycle
+
+- Allow teachers to create and edit the current single-problem practical model.
+- Validate publication requirements on the server.
+- Block destructive test replacement after persisted student activity exists.
+
+**Status:** complete for the single-problem MVP. Multi-problem authoring and practical versioning remain out of this slice.
 
 ## Later slices
 
-1. Replace remaining catch-all task/submission paths and complete broader task/submission navigation.
+1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
 3. Version deterministic evidence signals and teacher-facing definitions.
 4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance.
