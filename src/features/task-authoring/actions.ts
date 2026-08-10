@@ -1,14 +1,86 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/db/prisma";
 import {
   requireActorRole,
   resolveCurrentActor,
 } from "@/server/actors/current-actor";
-import { createPracticalDraftSchema, createPracticalPublishSchema, type CreatePracticalFormValues } from "./schema";
+import {
+  PracticalAuthoringError,
+  saveTeacherPractical,
+} from "@/server/practicals/authoring";
+import {
+  createPracticalDraftSchema,
+  createPracticalPublishSchema,
+  type CreatePracticalFormValues,
+} from "./schema";
 
 type Result = { ok: true; taskId: string } | { ok: false; message: string };
-async function persist(classroomId: string, taskId: string | undefined, values: CreatePracticalFormValues, publish: boolean): Promise<Result> { const parsed = (publish ? createPracticalPublishSchema : createPracticalDraftSchema).safeParse(values); if (!parsed.success) return { ok: false, message: "Review the highlighted fields before continuing." }; try { const teacher = requireActorRole(await resolveCurrentActor({ demoActor: "teacher" }), "TEACHER"); const classroom = await prisma.classroom.findFirst({ where: { id: classroomId, ownerTeacherId: teacher.id } }); if (!classroom) return { ok: false, message: "This classroom is unavailable." }; const data = parsed.data; const deadline = data.deadlineLocal ? new Date(data.deadlineLocal) : null; const task = await prisma.$transaction(async (tx) => { const taskData = { title: data.title.trim(), instructions: data.instructions.trim(), constraints: data.constraints?.trim() || null, allowedLanguages: data.allowedLanguages, deadline, status: publish ? "PUBLISHED" as const : "DRAFT" as const, publishedAt: publish ? new Date() : null }; const saved = taskId ? await tx.task.update({ where: { id: taskId, authorTeacherId: teacher.id, classroomId }, data: taskData }) : await tx.task.create({ data: { ...taskData, classroomId, authorTeacherId: teacher.id } }); await tx.testCase.deleteMany({ where: { taskId: saved.id } }); if (data.testCases.length) await tx.testCase.createMany({ data: data.testCases.map((testCase, index) => ({ taskId: saved.id, position: index + 1, input: testCase.input, expectedOutput: testCase.expectedOutput, visible: true })) }); return saved; }); revalidatePath("/classes"); revalidatePath(`/classes/${classroomId}`); return { ok: true, taskId: task.id }; } catch { return { ok: false, message: "The practical could not be saved. Try again." }; } }
-export async function saveTaskDraft(classroomId: string, taskId: string | undefined, values: CreatePracticalFormValues) { return persist(classroomId, taskId, values, false); }
-export async function publishTask(classroomId: string, taskId: string | undefined, values: CreatePracticalFormValues) { return persist(classroomId, taskId, values, true); }
+
+async function persist(
+  classroomId: string,
+  taskId: string | undefined,
+  values: CreatePracticalFormValues,
+  publish: boolean,
+): Promise<Result> {
+  const parsed = (
+    publish ? createPracticalPublishSchema : createPracticalDraftSchema
+  ).safeParse(values);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Review the highlighted fields before continuing.",
+    };
+  }
+
+  try {
+    const teacher = requireActorRole(
+      await resolveCurrentActor({ demoActor: "teacher" }),
+      "TEACHER",
+    );
+    const data = parsed.data;
+    const task = await saveTeacherPractical({
+      teacherId: teacher.id,
+      classroomId,
+      taskId,
+      publish,
+      title: data.title,
+      instructions: data.instructions,
+      constraints: data.constraints?.trim() || null,
+      allowedLanguages: data.allowedLanguages,
+      deadline: data.deadlineLocal ? new Date(data.deadlineLocal) : null,
+      testCases: data.testCases.map((testCase) => ({
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+      })),
+    });
+    revalidatePath("/classes");
+    revalidatePath(`/classes/${classroomId}`);
+    revalidatePath("/practicals");
+    return { ok: true, taskId: task.taskId };
+  } catch (error) {
+    if (error instanceof PracticalAuthoringError) {
+      return { ok: false, message: error.message };
+    }
+    return {
+      ok: false,
+      message: "The practical could not be saved. Try again.",
+    };
+  }
+}
+
+export async function saveTaskDraft(
+  classroomId: string,
+  taskId: string | undefined,
+  values: CreatePracticalFormValues,
+) {
+  return persist(classroomId, taskId, values, false);
+}
+
+export async function publishTask(
+  classroomId: string,
+  taskId: string | undefined,
+  values: CreatePracticalFormValues,
+) {
+  return persist(classroomId, taskId, values, true);
+}
