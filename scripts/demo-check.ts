@@ -16,7 +16,7 @@ async function main() {
     if (!classroom) throw new Error("Demo classroom is not seeded.");
     console.log("Demo check passed: database is reachable and DSA Practical Lab is ready.");
   } catch {
-    console.error("Demo check failed: CodeClass could not reach the demo database or the seed is missing. Run npm.cmd run demo:reset after confirming the development database.");
+    console.error("Demo check failed: Labrix could not reach the demo database or the seed is missing. Run npm.cmd run demo:reset after confirming the development database.");
     process.exitCode = 1;
   } finally {
     await prisma.$disconnect();

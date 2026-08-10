@@ -1,37 +1,35 @@
-# Pulse
+# Labrix
 
-Pulse is a teacher-first, process-aware coding classroom. Teachers create classrooms and practicals; students write, run, and submit code; teachers review immutable attempts with lightweight process evidence and implementation-specific viva prompts.
+Labrix is a teacher-first, process-aware coding lab platform that captures the student’s coding journey and converts it into actionable evidence, feedback, and viva guidance for teachers.
 
-The intended workflow is:
+The core workflow is:
 
 **Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review**
 
-Pulse presents evidence for teacher judgment. It does not declare cheating, and it does not automatically block copy/paste.
+Labrix presents evidence for teacher judgment. It does not declare cheating or automatically block copy/paste. Pulse, CodePulse, and CodeClass are legacy product names.
 
 ## Current repository state
 
-This repository is a hybrid prototype, not a complete MVP.
+- **Implemented:** Next.js classroom/practical persistence; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; teacher-authored draft/published marks and feedback per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; and controlled identity linking.
+- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model, and unmatched legacy paths still use the catch-all.
+- **Mock:** execution results are simulated from deterministic source markers. Java and C++ are not compiled or executed. The visible role selector changes demo presentation and is not authentication.
+- **Planned:** administrator-controlled teacher provisioning, authentication security hardening, isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
+- **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
-- **Implemented:** Next.js App Router shell; PostgreSQL/Prisma persistence for users, classrooms, memberships, practicals, and visible test cases; teacher-side classroom creation and practical draft/publish actions; Monaco editor integration; unit and Playwright configuration.
-- **Partial:** teacher/student routes and classroom views mix database records with demo data; authorization is limited to hard-coded demo actors; practical authoring supports create/update during one form session but has no general management UI.
-- **Mock:** code execution, student submissions, progress, and submission review use deterministic client-side demo state. Student source is not compiled or run.
-- **Planned:** real authentication and authorization, persistent coding sessions and drafts, immutable submission attempts, isolated execution, evidence capture and deterministic signals, teacher evidence review, AI-assisted summaries/feedback/viva questions.
-- **Out of scope for the MVP:** screen or webcam recording, gamification, mobile coding, cross-institution plagiarism detection, and automated guilt verdicts.
-
-See [docs/02-MVP.md](docs/02-MVP.md) for the detailed status boundary.
+See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
 
 ## Stack
 
-- Next.js 16.3 App Router, React 19.2, and strict TypeScript
-- Tailwind CSS 4 and Lucide React
+- Next.js 16.3 App Router, React 19.2, strict TypeScript, Tailwind CSS 4
 - PostgreSQL through Prisma 6
+- Clerk Next.js SDK for external identity and secure sessions
 - Monaco through `@monaco-editor/react`
 - React Hook Form and Zod
-- Vitest unit tests and Playwright browser tests
+- Vitest unit/integration tests and Playwright browser tests
 
 ## Local development
 
-Requirements: Node.js/npm and a PostgreSQL database available through `DATABASE_URL`.
+Copy the variable names from `.env.example` into an ignored `.env.local`; provide `DATABASE_URL`, Clerk development-instance keys, and an explicit `LABRIX_IDENTITY_MODE`. Never commit values.
 
 ```bash
 npm install
@@ -41,23 +39,33 @@ npm run db:seed
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/classes`. The role selector is a prototype preview, not authentication.
+With `LABRIX_IDENTITY_MODE=demo`, open `http://127.0.0.1:3000/classes`; the seeded actors and role preview are explicitly non-production. With `clerk`, sign in at `/sign-in`; only explicitly linked local users can enter the product.
 
-Useful checks:
+For local Clerk verification, explicitly link existing users using verified Clerk user IDs. The command never matches email or changes roles:
+
+```bash
+npm run auth:link-clerk -- --user-id demo-student-1 --clerk-subject <verified-clerk-user-id>
+npm run auth:link-clerk -- --user-id demo-teacher --clerk-subject <verified-clerk-user-id>
+```
+
+Use a different Clerk account for each mapping. Duplicate or conflicting mappings are rejected.
+
+Checks:
 
 ```bash
 npm run lint
 npm run typecheck
 npm test
+npm run test:integration
 npm run test:e2e
 npm run build
 ```
 
-`npm run test:integration` is defined, but no `tests/integration` suite currently exists.
-
 ## Safety boundary
 
-Never execute untrusted student code in the Next.js process. The current `MockExecutionProvider` only produces deterministic fake results. Production execution must use a separately isolated provider or sandbox with resource limits and operational controls.
+Untrusted student code must never execute inside Next.js. `ServerMockExecutionProvider` only simulates outcomes. Production execution requires a separate isolated provider or sandbox with explicit resource and network controls.
+
+Submission attempts and result snapshots are protected from updates by database triggers. Repeated submission requests are deduplicated by a student-scoped idempotency key; a later resubmission creates a new numbered attempt.
 
 ## Documentation
 
@@ -69,4 +77,3 @@ Never execute untrusted student code in the Next.js process. The current `MockEx
 - [Roadmap](docs/06-ROADMAP.md)
 - [Decisions](docs/07-DECISIONS.md)
 - [Contributing](CONTRIBUTING.md)
-

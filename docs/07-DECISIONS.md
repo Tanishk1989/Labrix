@@ -1,68 +1,87 @@
 # Decisions
 
-Use this log for product or technical choices that affect scope, data, safety, or architecture. “Accepted” entries are current constraints; “Proposed” entries still require owner approval.
+“Accepted” entries are current constraints. “Proposed / unresolved” entries require owner approval.
 
 ## Accepted
 
 ### D-001 — Teacher-first workflow
 
-Pulse centers Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review. Student tooling serves this classroom review loop.
+Labrix centers Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review.
 
 ### D-002 — Evidence is not a verdict
 
-Pulse presents neutral, inspectable facts and deterministic signals. It does not declare cheating, compute guilt, or automate sanctions. Copy/paste is not automatically blocked.
+Labrix presents neutral, inspectable facts. It does not declare cheating, compute guilt, automate sanctions, or automatically block copy/paste.
 
 ### D-003 — Immutable attempts and persistent drafts
 
-Student drafts are recoverable mutable work. Each explicit submission creates an immutable attempt with the snapshots required for historical review.
+Drafts are recoverable mutable work. Each explicit submission creates an immutable attempt with historical source and result snapshots.
 
 ### D-004 — Isolated execution
 
-Untrusted code never runs inside the Next.js process. Production execution uses an isolated provider or sandbox behind `ExecutionProvider`.
+Untrusted code never runs inside Next.js. Production execution uses an isolated provider or sandbox behind an execution-provider boundary.
 
 ### D-005 — Deterministic facts, advisory AI
 
-Rules calculate measurable evidence. AI may explain, summarize, draft feedback, and generate viva questions; its output is labeled, reviewable, and non-authoritative.
+Rules calculate measurable evidence. AI may later explain, summarize, draft feedback, and generate viva questions; its output is labeled and non-authoritative.
 
 ### D-006 — Preserve the current stack
 
-The MVP continues with Next.js/React/TypeScript, Prisma/PostgreSQL, Monaco, Zod, Vitest, and Playwright unless a later accepted decision records a change.
+The MVP uses Next.js/React/TypeScript, Prisma/PostgreSQL, Monaco, Zod, Vitest, and Playwright unless a later accepted decision changes it.
 
 ### D-007 — Explicit MVP exclusions
 
-Screen recording, webcam monitoring, gamification, mobile coding, cross-institution plagiarism, and automated guilt verdicts are outside the MVP.
+Screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, and automated guilt verdicts are outside the MVP.
+
+### D-008 — Clerk authentication with local Labrix authorization
+
+**Accepted 2026-08-09.** Clerk will prove identity and server-session validity only. Labrix PostgreSQL remains authoritative for platform role, `ACTIVE`/`DISABLED` account status, classroom ownership, membership, and product permissions. The server will map a Clerk subject through an optional provider-neutral `ExternalIdentity` record to an existing local `User`; email is not an authentication identity key and accounts are never linked automatically by matching email.
+
+Initial authentication will use verified email and password with Clerk Hobby session defaults. Students may self-register locally as `STUDENT` and require a valid join code for classroom access. Teachers are administrator/invitation provisioned; no browser role choice can grant `TEACHER`. Separate Clerk development and production instances are required. MFA, email invitations, and webhooks are deferred. The fixed seeded demo resolver remains current during the transition and must be unavailable in production once authenticated resolution is implemented.
+
+### D-014 — Labrix is the canonical product name
+
+**Accepted 2026-08-09.** Labrix is the only active product name. Pulse, CodePulse, and CodeClass are legacy names retained only in historical/migration context. Safe user-facing branding, package metadata, demo labels, seed labels, and storage prefixes use Labrix. Database tables, route parameters, environment variables, and unrelated technical identifiers are not renamed merely for branding.
+
+### D-016 — Persisted attempt model names and lifecycle
+
+**Accepted 2026-08-09.** The slice uses `CodingSession`, `Draft`, `RunAttempt`, `ResultSnapshot`, `SubmissionAttempt`, and `CodeEvent`. A numbered session represents one practical attempt; a partial unique index permits one active session per student/practical. `Draft` is mutable. Submission/result snapshots reject updates through database triggers. Student-scoped idempotency returns the same submission for a retried request; later work uses the next numbered session.
+
+### D-017 — Seeded server actor boundary for Slice 1
+
+**Accepted 2026-08-09, non-production.** Browser requests do not supply a trusted user ID or role. Workspace operations resolve `demo-student-1`; teacher review resolves `demo-teacher`; services enforce current membership or classroom ownership. Production authentication must replace this resolver before pilot use.
+
+### D-018 — Explicit identity resolver modes and linking
+
+**Accepted 2026-08-09.** `LABRIX_IDENTITY_MODE` must be explicitly `demo` or `clerk`; missing/invalid configuration fails, production rejects `demo`, and Clerk failures never fall back. In Clerk mode, the server-verified subject is mapped through `ExternalIdentity`, then PostgreSQL supplies account status and role. Existing service membership and ownership checks remain mandatory.
+
+Initial linking is a controlled non-public command using an existing Labrix user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated Labrix user. Automatic student onboarding and teacher provisioning require later accepted implementation work.
+
+### D-019 — Attempt-scoped teacher review
+
+**Accepted 2026-08-10.** Each immutable submission attempt may have one separately mutable teacher review. Marks use a fixed ten-point scale (`marksOutOf = 10`). Draft reviews remain teacher-only; only a published review is visible to the student who owns that attempt. Students cannot create or edit reviews. Rubrics, weighted grading, multi-criteria marks, and AI-generated feedback are outside Phase 4A.
 
 ## Proposed / unresolved
 
-### D-008 — Authentication and account lifecycle
-
-Choose the authentication library/provider, institution onboarding, role assignment, session policy, account recovery, and whether pilot roles are global or solely membership-based.
-
 ### D-009 — Evidence policy
 
-Approve exact event fields, student notice/consent, access roles, retention period, deletion/export behavior, threshold ownership, teacher annotations, and audit requirements before production collection.
+Approve event fields beyond the five foundation events, student notice/consent, access, retention, deletion/export, thresholds, annotations, and audit requirements.
 
-### D-010 — Draft/session identity and concurrency
+### D-010 — Draft concurrency and recovery
 
-Decide whether a draft is unique per student/practical/language or per coding session, how multiple tabs/devices merge, autosave cadence, offline behavior, and recovery/version history.
+The slice uses one draft per coding session with debounced server saves. Decide multi-tab/device conflict behavior, offline support, save history, and recovery guarantees.
 
-### D-011 — Submission and deadline semantics
+### D-011 — Submission and deadline policy
 
-Define idempotency keys, allowed re-submissions, attempt numbering, late/grace rules, timezone source, practical edits after release, and which execution snapshot is required at submit time.
+The slice permits numbered resubmissions and deduplicates retried requests. Define allowed-attempt limits, late/grace rules, timezone source, practical versioning, and result-disclosure policy.
 
 ### D-012 — Execution provider and limits
 
-Select build/buy/provider, supported compiler versions, queue and concurrency targets, resource/network/filesystem limits, test visibility, retention, observability, and outage behavior.
+Select build/buy/provider, compiler versions, queue/concurrency targets, resource/network/filesystem limits, retention, observability, and outage behavior.
 
 ### D-013 — AI provider and governance
 
-Select provider/model, data region and retention, training-use policy, redaction, prompt/version storage, cost limits, human-review UX, evaluation thresholds, and source-code prompt-injection defenses.
-
-### D-014 — Product naming migration
-
-The product is now called Pulse, while the package, UI, storage keys, seed emails, errors, and older docs still use CodeClass/coding-classroom. Decide when and how to migrate naming without bundling it into unrelated feature work.
+Select provider/model, data region/retention, training-use policy, redaction, prompt/version storage, cost limits, human review, evaluation, and prompt-injection defenses.
 
 ### D-015 — Test visibility and assessment model
 
-The schema has a `visible` flag but current authoring creates visible tests only. Decide whether hidden tests, grading, rubrics, and result disclosure remain post-MVP.
-
+Current authoring creates visible tests only. Decide whether hidden tests, grading, rubrics, and result disclosure remain post-MVP.

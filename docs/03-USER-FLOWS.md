@@ -4,51 +4,57 @@
 
 ```mermaid
 flowchart LR
-  C["Classroom"] --> P["Practical"]
-  P --> S["Coding session"]
-  S --> R["Run and feedback"]
+  C["Classroom"] --> P["Published practical"]
+  P --> S["Persisted coding session and draft"]
+  S --> R["Server-owned simulated run"]
   R --> S
-  S --> U["Immutable submission attempt"]
-  U --> E["Evidence and deterministic signals"]
-  E --> T["Teacher review and viva"]
+  S --> U["Immutable numbered submission"]
+  U --> E["Foundation event timeline"]
+  E --> T["Database-backed teacher review"]
 ```
 
-## Teacher: create and publish a practical
+## Teacher: create and publish
 
-1. Sign in as a teacher and open an owned classroom.
-2. Create a practical with instructions, constraints, allowed languages, visible tests, and an optional deadline.
-3. Save an incomplete teacher-only draft or publish a valid practical.
-4. Confirm what students will see.
+1. The server resolves either the seeded demo teacher or an explicitly linked Clerk user whose local role is `TEACHER`.
+2. The teacher creates a practical with instructions, languages, visible tests, and optional deadline.
+3. Labrix validates teacher ownership before saving a draft or publishing.
 
-**Current status:** classroom and practical writes are implemented for a hard-coded demo teacher. Real sign-in, reusable authorization, and complete practical management are planned.
+**Status:** persisted for the demo teacher and explicitly linked active teachers. Automatic teacher provisioning and complete practical management remain planned.
 
-## Student: code, run, and submit
+## Student: resume, run, and submit
 
-1. Sign in, open an enrolled classroom, and choose a published practical.
-2. Start or resume a persisted coding session and draft for the selected language.
-3. Edit freely. Copy/paste remains available; proportionate paste metadata may become evidence, subject to an approved policy.
-4. Run code. Pulse sends it through an isolated execution boundary and shows bounded feedback.
-5. Submit explicitly. Pulse creates a new immutable attempt with source and result snapshots.
-6. Continue working only in a new draft/attempt; the submitted attempt does not change.
+1. The server resolves either the seeded demo student or an explicitly linked Clerk user whose local role is `STUDENT`, then verifies active classroom membership.
+2. Labrix loads or creates the one active coding session and draft for the practical attempt.
+3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
+4. Run saves the current draft, records request/completion events, calls the server-owned mock provider, and stores its result snapshot.
+5. Submit repeats the simulated run for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`.
+6. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
 
-**Current status:** the Monaco workspace and interaction are mock. Source is component state, the autosave label is not backed by storage, execution is simulated, and submission uses tab session state.
+**Status:** implemented for the seeded practical in demo mode and linked active students in Clerk mode. Execution is clearly simulated.
 
-## Teacher: review evidence and prepare a viva
+## Teacher: review
 
-1. Open practical progress and select a student attempt.
-2. Review submitted source, language, timestamp, and snapshotted test results.
-3. Review a neutral timeline and deterministic signals with definitions and underlying facts.
-4. Read an AI-assisted summary and feedback draft, clearly labeled as generated.
-5. Use implementation-specific viva prompts to verify understanding.
-6. Make and record the human academic decision through the institution’s approved process.
+1. The server resolves the teacher and verifies the local `TEACHER` role plus classroom ownership.
+2. Practical progress reads the latest persisted attempt for each enrolled student.
+3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
+4. Review shows the immutable source/result snapshots, attempt number, timestamp, run count, and ordered foundation timeline.
+5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
+6. No cheating score, AI summary, or automated academic decision is produced.
 
-**Current status:** progress and review screens are mock; evidence, AI assistance, viva prompts, and decision recording are planned.
+**Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale.
 
-## Required failure paths
+## Identity transition
 
-- Draft autosave failure must be visible and retryable without discarding the local editor buffer.
-- Execution timeout/provider failure must not corrupt the draft or create a submission.
-- Submission must be idempotent for a single client request and must never overwrite an existing attempt.
-- Unauthorized or unenrolled access must fail on the server, not merely hide a link.
-- AI unavailability must not block submission or teacher access to deterministic evidence.
+**Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in production. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
 
+**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated Labrix user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
+
+**Explicit local verification:** an administrator runs the non-public linking command with an existing Labrix user ID and verified Clerk subject. The command does not match email, create users, change roles, or create teachers.
+
+## Failure and security behavior
+
+- Invalid, unenrolled, cross-student, or non-owner access fails in server services.
+- Autosave failure is visible and does not clear the editor buffer.
+- Provider failure creates bounded internal-error feedback and does not execute source locally.
+- Database uniqueness plus idempotency prevents duplicate submissions.
+- Submission/result database triggers reject later updates.

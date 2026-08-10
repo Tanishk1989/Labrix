@@ -1,2 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
-export default defineConfig({ testDir: "tests/e2e", use: { baseURL: "http://127.0.0.1:3000", ...devices["Desktop Chrome"] }, webServer: { command: "npm.cmd run dev", url: "http://127.0.0.1:3000", reuseExistingServer: !process.env.CI } });
+export default defineConfig({
+  testDir: "tests/e2e",
+  timeout: 120_000,
+  expect: { timeout: 30_000 },
+  use: {
+    baseURL: "http://127.0.0.1:3000",
+    ...devices["Desktop Chrome"],
+  },
+  webServer: {
+    command: "npm.cmd run dev",
+    url: "http://127.0.0.1:3000",
+    reuseExistingServer: !process.env.CI,
+  },
+});

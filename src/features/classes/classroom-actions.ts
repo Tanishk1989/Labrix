@@ -4,7 +4,11 @@ import { MembershipRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
-import { getDemoTeacher } from "@/lib/auth/demo-actor";
+import {
+  requireActorRole,
+  resolveCurrentActor,
+} from "@/server/actors/current-actor";
+import { getIdentityMode } from "@/server/actors/identity-mode";
 
 type Result = { ok: true; classroomId: string } | { ok: false; message: string };
 const createSchema = z.object({
@@ -21,7 +25,10 @@ export async function createClassroom(values: unknown): Promise<Result> {
   const parsed = createSchema.safeParse(values);
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the classroom details." };
   try {
-    const teacher = await getDemoTeacher();
+    const teacher = requireActorRole(
+      await resolveCurrentActor({ demoActor: "teacher" }),
+      "TEACHER",
+    );
     const classroom = await prisma.classroom.create({
       data: {
         ...parsed.data,
@@ -33,17 +40,26 @@ export async function createClassroom(values: unknown): Promise<Result> {
     revalidatePath("/classes");
     return { ok: true, classroomId: classroom.id };
   } catch {
-    return { ok: false, message: "CodeClass could not create the classroom. Try again." };
+    return { ok: false, message: "Labrix could not create the classroom. Try again." };
   }
 }
 
 export async function joinClassroom(code: string): Promise<Result> {
+  if (getIdentityMode() !== "demo") {
+    return {
+      ok: false,
+      message: "Classroom onboarding is not available in this authentication slice.",
+    };
+  }
   const normalized = code.trim().toUpperCase();
   if (!normalized) return { ok: false, message: "Enter a classroom code." };
   try {
     const classroom = await prisma.classroom.findUnique({ where: { joinCode: normalized } });
-    const student = await prisma.user.findUnique({ where: { id: "demo-student-1" } });
-    if (!classroom || !student) return { ok: false, message: "We could not find that classroom code." };
+    const student = requireActorRole(
+      await resolveCurrentActor({ demoActor: "student" }),
+      "STUDENT",
+    );
+    if (!classroom) return { ok: false, message: "We could not find that classroom code." };
     await prisma.classMembership.upsert({
       where: { classroomId_userId: { classroomId: classroom.id, userId: student.id } },
       update: { active: true, role: MembershipRole.STUDENT },
@@ -53,6 +69,6 @@ export async function joinClassroom(code: string): Promise<Result> {
     revalidatePath(`/classes/${classroom.id}`);
     return { ok: true, classroomId: classroom.id };
   } catch {
-    return { ok: false, message: "CodeClass could not join the classroom. Try again." };
+    return { ok: false, message: "Labrix could not join the classroom. Try again." };
   }
 }
