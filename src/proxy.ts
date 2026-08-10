@@ -11,7 +11,14 @@ const publicPaths = [
   "/unauthorized",
 ];
 
-const persistedRoutePrefixes = ["/classes", "/tasks", "/submissions"];
+const persistedRoutePrefixes = [
+  "/dashboard",
+  "/classes",
+  "/practicals",
+  "/progress",
+  "/tasks",
+  "/submissions",
+];
 
 function isPublicPath(pathname: string) {
   return publicPaths.some(
@@ -25,7 +32,7 @@ const clerkProxy = clerkMiddleware(async (auth, request) => {
     unauthenticatedUrl: new URL("/sign-in", request.url).toString(),
   });
   if (request.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL("/classes", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
   if (
     !persistedRoutePrefixes.some(

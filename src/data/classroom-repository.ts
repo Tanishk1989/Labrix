@@ -2,11 +2,23 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 
 export const classroomSummaryInclude = {
-  memberships: { where: { active: true } },
+  memberships: {
+    where: { active: true },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  },
   tasks: {
     orderBy: { createdAt: "desc" as const },
     include: {
-      submissionAttempts: { select: { studentId: true } },
+      submissionAttempts: {
+        orderBy: { attemptNumber: "desc" as const },
+        select: {
+          id: true,
+          studentId: true,
+          attemptNumber: true,
+          submittedAt: true,
+          resultSnapshot: { select: { passedTests: true, totalTests: true } },
+        },
+      },
     },
   },
 } satisfies Prisma.ClassroomInclude;

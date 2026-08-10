@@ -606,6 +606,56 @@ export async function getSubmissionForTeacher(
   };
 }
 
+export async function getSubmissionForStudent(
+  studentId: string,
+  submissionId: string,
+) {
+  const submission = await prisma.submissionAttempt.findFirst({
+    where: { id: submissionId, studentId },
+    include: {
+      student: { select: { id: true, name: true, email: true } },
+      task: {
+        select: {
+          id: true,
+          title: true,
+          classroom: { select: { id: true, name: true } },
+        },
+      },
+      resultSnapshot: true,
+      codingSession: {
+        include: {
+          events: { orderBy: { sequence: "asc" } },
+          _count: { select: { runs: true } },
+        },
+      },
+    },
+  });
+  if (!submission) throw new AccessDeniedError();
+  return {
+    id: submission.id,
+    attemptNumber: submission.attemptNumber,
+    language: submission.language,
+    sourceCode: submission.sourceCodeSnapshot,
+    submittedAt: submission.submittedAt.toISOString(),
+    student: submission.student,
+    task: submission.task,
+    result: {
+      state: fromRunResultState(submission.resultSnapshot.state),
+      passedTests: submission.resultSnapshot.passedTests,
+      totalTests: submission.resultSnapshot.totalTests,
+      errorText: submission.resultSnapshot.errorText,
+      testResults: submission.resultSnapshot.testResults as unknown as ServerExecutionTestResult[],
+    },
+    runCount: submission.codingSession._count.runs,
+    events: submission.codingSession.events.map((event) => ({
+      id: event.id,
+      sequence: event.sequence,
+      type: event.type,
+      occurredAt: event.occurredAt.toISOString(),
+    })),
+  };
+}
+
 export async function getTeacherClassroomProgress(
   teacherId: string,
   classroomId: string,

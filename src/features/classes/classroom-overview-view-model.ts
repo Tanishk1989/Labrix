@@ -21,6 +21,22 @@ export type ClassroomOverviewViewModel = {
     deadline: string | null;
     completion: number;
   } | null;
+  practicals: Array<{
+    id: string;
+    title: string;
+    status: "DRAFT" | "PUBLISHED";
+    deadline: string | null;
+    submittedCount: number;
+    completionPercentage: number;
+  }>;
+  outstandingStudents: Array<{ id: string; name: string; email: string }>;
+  studentLatestSubmission: {
+    id: string;
+    attemptNumber: number;
+    submittedAt: string;
+    passedTests: number;
+    totalTests: number;
+  } | null;
 };
 
 export async function getClassroomOverviewViewModel(
@@ -42,6 +58,9 @@ export async function getClassroomOverviewViewModel(
     studentIds,
     task?.submissionAttempts.map((submission) => submission.studentId) ?? [],
   );
+  const studentLatestSubmission = role === "STUDENT"
+    ? task?.submissionAttempts.find((submission) => submission.studentId === userId) ?? null
+    : null;
 
   return {
     id: classroom.id,
@@ -59,6 +78,39 @@ export async function getClassroomOverviewViewModel(
           title: task.title,
           deadline: task.deadline?.toISOString() ?? null,
           completion: completion.completionPercentage,
+        }
+      : null,
+    practicals: classroom.tasks.map((item) => {
+      const submittedIds = new Set(item.submissionAttempts.map((submission) => submission.studentId));
+      return {
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        deadline: item.deadline?.toISOString() ?? null,
+        submittedCount: submittedIds.size,
+        completionPercentage: studentIds.length === 0 ? 0 : Math.round((submittedIds.size / studentIds.length) * 100),
+      };
+    }),
+    outstandingStudents: task
+      ? classroom.memberships
+          .filter(
+            (membership) =>
+              membership.role === "STUDENT" &&
+              !task.submissionAttempts.some((submission) => submission.studentId === membership.userId),
+          )
+          .map((membership) => ({
+            id: membership.user.id,
+            name: membership.user.name,
+            email: membership.user.email,
+          }))
+      : [],
+    studentLatestSubmission: studentLatestSubmission
+      ? {
+          id: studentLatestSubmission.id,
+          attemptNumber: studentLatestSubmission.attemptNumber,
+          submittedAt: studentLatestSubmission.submittedAt.toISOString(),
+          passedTests: studentLatestSubmission.resultSnapshot.passedTests,
+          totalTests: studentLatestSubmission.resultSnapshot.totalTests,
         }
       : null,
   };

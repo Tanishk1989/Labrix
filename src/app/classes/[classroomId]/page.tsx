@@ -19,7 +19,7 @@ export default async function ClassroomPage({
   );
   if (!classroom) notFound();
   return (
-    <DemoShell>
+    <DemoShell actor={actor}>
       <ClassroomOverviewBridge
         classroom={classroom}
         teacherContent={<ClassroomOverviewPage classroom={classroom} />}

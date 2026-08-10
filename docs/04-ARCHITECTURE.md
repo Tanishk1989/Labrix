@@ -51,7 +51,7 @@ Submission creation uses a serializable transaction to create the attempt, close
 
 ## Route boundary
 
-- **Database-backed:** `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`, `/tasks/[taskId]`, `/classes/[classroomId]/students`, and `/submissions/[submissionId]`.
+- **Database-backed:** `/dashboard`, `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`, `/classes/[classroomId]/tasks/[taskId]/edit`, `/practicals`, `/practicals/[taskId]`, `/progress`, `/tasks/[taskId]`, `/classes/[classroomId]/students`, `/submissions`, and `/submissions/[submissionId]`. Teacher queries are ownership-scoped; student queries are active-membership and resource-ownership scoped.
 - **Legacy catch-all remains:** unmatched routes such as `/tasks/[taskId]/my-submissions` and `/classes/[classroomId]/tasks`.
 
 Explicit routes take precedence over `src/app/[[...slug]]/page.tsx`. New product behavior should use explicit routes and server services rather than expanding the catch-all.

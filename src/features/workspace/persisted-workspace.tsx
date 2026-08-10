@@ -2,239 +2,44 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { CheckCircle2, CircleX, Cloud, Play, Send, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AllowedLanguage } from "@prisma/client";
-import type {
-  PersistedRun,
-  PersistedSubmission,
-  StudentWorkspace,
-} from "@/server/attempts/service";
-import {
-  runDraftAction,
-  saveDraftAction,
-  submitDraftAction,
-} from "./actions";
+import type { PersistedRun, PersistedSubmission, StudentWorkspace } from "@/server/attempts/service";
+import { runDraftAction, saveDraftAction, submitDraftAction } from "./actions";
 import { draftVersionChanged, type DraftVersion } from "./draft-version";
 
-const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
-type SaveState = "saving" | "saved" | "failed";
+const Editor=dynamic(()=>import("@monaco-editor/react"),{ssr:false});
+type SaveState="saving"|"saved"|"failed";
+function saveLabel(state:SaveState){return state==="saving"?"Saving…":state==="failed"?"Save failed":"Saved";}
+function resultLabel(result:PersistedRun){if(result.state!=="completed")return result.errorText??"Simulated run failed.";return result.passedTests===result.totalTests?"Passed all provided tests":`${result.passedTests}/${result.totalTests} provided tests passed`;}
 
-function saveLabel(state: SaveState) {
-  if (state === "saving") return "Saving…";
-  if (state === "failed") return "Save failed";
-  return "Saved to Labrix";
-}
+export function PersistedWorkspace({workspace}:{workspace:StudentWorkspace}){
+  const [source,setSource]=useState(workspace.draft.sourceCode);
+  const [language,setLanguage]=useState<AllowedLanguage>(workspace.session.language);
+  const [saveState,setSaveState]=useState<SaveState>("saved");
+  const [saveMessage,setSaveMessage]=useState<string>();
+  const [run,setRun]=useState<PersistedRun>();
+  const [runFailure,setRunFailure]=useState<string>();
+  const [running,setRunning]=useState(false);
+  const [submitting,setSubmitting]=useState(false);
+  const [submission,setSubmission]=useState<PersistedSubmission>();
+  const [submissionFailure,setSubmissionFailure]=useState<string>();
+  const lastPersisted=useRef<DraftVersion>({sourceCode:workspace.draft.sourceCode,language:workspace.session.language});
+  const latestSave=useRef(0);
+  const idempotencyKey=useRef<string|null>(null);
 
-function resultLabel(result: PersistedRun) {
-  if (result.state !== "completed") return result.errorText ?? "Simulated run failed.";
-  if (result.passedTests === result.totalTests) return "Passed all provided tests";
-  return `${result.passedTests}/${result.totalTests} provided tests passed`;
-}
+  useEffect(()=>{const requestedVersion={sourceCode:source,language};if(!draftVersionChanged(lastPersisted.current,requestedVersion))return;const requestNumber=latestSave.current+1;latestSave.current=requestNumber;setSaveState("saving");setSaveMessage(undefined);const timer=window.setTimeout(async()=>{const result=await saveDraftAction({sessionId:workspace.session.id,sourceCode:source,language});if(requestNumber!==latestSave.current)return;if(result.ok){lastPersisted.current=requestedVersion;setSaveState("saved");}else{setSaveState("failed");setSaveMessage(result.message);}},650);return()=>window.clearTimeout(timer);},[language,source,workspace.session.id]);
+  async function runCode(){setRunning(true);setRunFailure(undefined);const result=await runDraftAction({sessionId:workspace.session.id,sourceCode:source,language});if(result.ok){setRun(result.run);lastPersisted.current={sourceCode:source,language};setSaveState("saved");}else setRunFailure(result.message);setRunning(false);}
+  async function submitCode(){setSubmitting(true);setSubmissionFailure(undefined);idempotencyKey.current??=crypto.randomUUID();const result=await submitDraftAction({sessionId:workspace.session.id,sourceCode:source,language,idempotencyKey:idempotencyKey.current});if(result.ok){setSubmission(result.submission);setRun(result.submission.result);lastPersisted.current={sourceCode:source,language};setSaveState("saved");}else setSubmissionFailure(result.message);setSubmitting(false);}
 
-export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace }) {
-  const [source, setSource] = useState(workspace.draft.sourceCode);
-  const [language, setLanguage] = useState<AllowedLanguage>(workspace.session.language);
-  const [saveState, setSaveState] = useState<SaveState>("saved");
-  const [saveMessage, setSaveMessage] = useState<string>();
-  const [run, setRun] = useState<PersistedRun>();
-  const [runFailure, setRunFailure] = useState<string>();
-  const [running, setRunning] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submission, setSubmission] = useState<PersistedSubmission>();
-  const [submissionFailure, setSubmissionFailure] = useState<string>();
-  const lastPersisted = useRef<DraftVersion>({
-    sourceCode: workspace.draft.sourceCode,
-    language: workspace.session.language,
-  });
-  const latestSave = useRef(0);
-  const idempotencyKey = useRef<string | null>(null);
-
-  useEffect(() => {
-    const requestedVersion = { sourceCode: source, language };
-    if (!draftVersionChanged(lastPersisted.current, requestedVersion)) return;
-
-    const requestNumber = latestSave.current + 1;
-    latestSave.current = requestNumber;
-    setSaveState("saving");
-    setSaveMessage(undefined);
-    const timer = window.setTimeout(async () => {
-      const result = await saveDraftAction({
-        sessionId: workspace.session.id,
-        sourceCode: source,
-        language,
-      });
-      if (requestNumber !== latestSave.current) return;
-      if (result.ok) {
-        lastPersisted.current = requestedVersion;
-        setSaveState("saved");
-      } else {
-        setSaveState("failed");
-        setSaveMessage(result.message);
-      }
-    }, 650);
-    return () => window.clearTimeout(timer);
-  }, [language, source, workspace.session.id]);
-
-  async function runCode() {
-    setRunning(true);
-    setRunFailure(undefined);
-    const result = await runDraftAction({
-      sessionId: workspace.session.id,
-      sourceCode: source,
-      language,
-    });
-    if (result.ok) {
-      setRun(result.run);
-      lastPersisted.current = { sourceCode: source, language };
-      setSaveState("saved");
-    } else {
-      setRunFailure(result.message);
-    }
-    setRunning(false);
-  }
-
-  async function submitCode() {
-    setSubmitting(true);
-    setSubmissionFailure(undefined);
-    idempotencyKey.current ??= crypto.randomUUID();
-    const result = await submitDraftAction({
-      sessionId: workspace.session.id,
-      sourceCode: source,
-      language,
-      idempotencyKey: idempotencyKey.current,
-    });
-    if (result.ok) {
-      setSubmission(result.submission);
-      setRun(result.submission.result);
-      lastPersisted.current = { sourceCode: source, language };
-      setSaveState("saved");
-    } else {
-      setSubmissionFailure(result.message);
-    }
-    setSubmitting(false);
-  }
-
-  return (
-    <>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-slate-500">
-            {workspace.classroom.name} / Practical
-          </p>
-          <h1 className="text-2xl font-semibold">{workspace.task.title}</h1>
-        </div>
-        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
-          Attempt {workspace.session.attemptNumber}
-        </span>
-      </header>
-
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="whitespace-pre-wrap">{workspace.task.instructions}</p>
-          {workspace.task.constraints && (
-            <>
-              <h2 className="mt-5 font-semibold">Constraints</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">
-                {workspace.task.constraints}
-              </p>
-            </>
-          )}
-          <p className="mt-5 text-sm font-medium">
-            Deadline: {workspace.task.deadline ? new Date(workspace.task.deadline).toLocaleString() : "No deadline"}
-          </p>
-          <h2 className="mt-5 font-semibold">Visible tests</h2>
-          {workspace.task.tests.map((test) => (
-            <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm" key={test.id}>
-              <p className="font-medium">Example {test.position}</p>
-              <pre className="mt-2 whitespace-pre-wrap text-xs">
-                Input: {test.input}{"\n"}Output: {test.expectedOutput}
-              </pre>
-            </div>
-          ))}
-        </section>
-
-        <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b p-3">
-            <label className="text-sm">
-              Language{" "}
-              <select
-                aria-label="Language"
-                className="ml-2 rounded border px-2 py-1"
-                value={language}
-                disabled={Boolean(submission)}
-                onChange={(event) => setLanguage(event.target.value as AllowedLanguage)}
-              >
-                {workspace.task.allowedLanguages.map((allowed) => (
-                  <option value={allowed} key={allowed}>
-                    {allowed === "CPP" ? "C++" : "Java"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span
-              role="status"
-              className={saveState === "failed" ? "text-xs text-rose-700" : "text-xs text-emerald-700"}
-            >
-              {saveLabel(saveState)}
-            </span>
-          </div>
-          {saveMessage && <p role="alert" className="border-b bg-rose-50 p-3 text-sm text-rose-700">{saveMessage}</p>}
-          <div className="h-[360px]">
-            <Editor
-              height="100%"
-              language={language === "CPP" ? "cpp" : "java"}
-              value={source}
-              onChange={(value) => setSource(value ?? "")}
-              theme="vs-dark"
-              options={{ minimap: { enabled: false }, fontSize: 14, readOnly: Boolean(submission) }}
-            />
-          </div>
-          <div className="border-t p-3">
-            <p className="mb-3 text-xs text-amber-700">
-              Simulated execution only — Java and C++ are not compiled in this phase.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <button className="button-secondary" onClick={runCode} disabled={running || submitting || Boolean(submission)}>
-                {running ? "Running simulation…" : "Run"}
-              </button>
-              <button className="button" onClick={submitCode} disabled={running || submitting || Boolean(submission)}>
-                {submitting ? "Submitting…" : "Submit"}
-              </button>
-            </div>
-          </div>
-          {runFailure && <p role="alert" className="border-t bg-rose-50 p-4 text-sm text-rose-700">{runFailure}</p>}
-          {run && (
-            <section className="border-t p-4" aria-label="Simulated result">
-              <p className="font-medium">{resultLabel(run)}</p>
-              {run.testResults.map((testResult) => (
-                <div className="mt-2 flex justify-between rounded bg-slate-50 p-2 text-sm" key={testResult.testId}>
-                  <span>{workspace.task.tests.find((test) => test.id === testResult.testId)?.position ?? "Test"}</span>
-                  <span className={testResult.passed ? "text-emerald-700" : "text-rose-700"}>
-                    {testResult.passed ? "Passed" : `Failed · output: ${testResult.actualOutput}`}
-                  </span>
-                </div>
-              ))}
-            </section>
-          )}
-          {submissionFailure && <p role="alert" className="border-t bg-rose-50 p-4 text-sm text-rose-700">{submissionFailure}</p>}
-          {submission && (
-            <section className="m-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4" role="status">
-              <p className="font-semibold text-emerald-900">Submitted successfully</p>
-              <p className="mt-1 text-sm text-emerald-800">
-                Immutable attempt {submission.attemptNumber} · {new Date(submission.submittedAt).toLocaleString()}
-              </p>
-              <div className="mt-3 flex gap-4">
-                <Link href={`/submissions/${submission.id}`} className="text-sm font-semibold text-emerald-800 underline underline-offset-2">
-                  View persisted submission
-                </Link>
-                <Link href={`/classes/${workspace.classroom.id}`} className="text-sm font-semibold text-emerald-800 underline underline-offset-2">
-                  Return to classroom
-                </Link>
-              </div>
-            </section>
-          )}
-        </section>
-      </div>
-    </>
-  );
+  return <div className="-m-4 sm:-m-6 lg:-m-7"><header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4"><div className="min-w-0 flex-1"><p className="truncate text-xs text-[var(--text-muted)]">{workspace.classroom.name} / {workspace.task.title}</p></div><span role="status" className={`inline-flex items-center gap-1.5 text-xs ${saveState==="failed"?"text-rose-400":"text-[var(--text-secondary)]"}`}><Cloud size={12}/>{saveLabel(saveState)}</span><span className="status-badge status-warning">Attempt #{workspace.session.attemptNumber}</span><button className="button-secondary" onClick={runCode} disabled={running||submitting||Boolean(submission)}><Play size={13}/>{running?"Running simulation…":"Run code"}</button><button className="button" onClick={submitCode} disabled={running||submitting||Boolean(submission)}><Send size={13}/>{submitting?"Submitting…":"Submit solution"}</button></header>
+    {saveMessage?<p role="alert" className="border-b border-rose-500/20 bg-rose-500/5 px-4 py-2 text-xs text-rose-300">{saveMessage}</p>:null}
+    <div className="grid min-h-[calc(100vh-7rem)] lg:grid-cols-[minmax(290px,0.75fr)_minmax(0,1.7fr)]">
+      <aside className="border-r border-[var(--border)] bg-[var(--page-bg)] p-5"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Problem description</p><h1 className="mt-4 text-base font-semibold text-white">{workspace.task.title}</h1><div className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">{workspace.task.instructions}</div>{workspace.task.constraints?<><h2 className="mt-6 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Constraints</h2><div className="mt-2 whitespace-pre-wrap text-xs leading-5 text-[var(--text-secondary)]">{workspace.task.constraints}</div></>:null}<h2 className="mt-6 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Examples</h2><div className="mt-3 space-y-3">{workspace.task.tests.map(test=><div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" key={test.id}><p className="text-[10px] font-semibold text-[var(--text-muted)]">VISIBLE TEST {test.position}</p><pre className="mt-2 whitespace-pre-wrap text-xs text-slate-200">Input: {test.input}{"\n"}Output: {test.expectedOutput}</pre></div>)}</div><p className="mt-5 text-[11px] text-[var(--text-muted)]">Deadline: {workspace.task.deadline?new Date(workspace.task.deadline).toLocaleString("en-IN"):"No deadline"}</p></aside>
+      <main className="min-w-0 bg-[#090b10]"><div className="flex h-10 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-3"><span className="font-mono text-xs text-[var(--text-secondary)]">{language==="CPP"?"main.cpp":"Main.java"}</span><select aria-label="Language" className="input w-auto py-1" value={language} disabled={Boolean(submission)} onChange={event=>setLanguage(event.target.value as AllowedLanguage)}>{workspace.task.allowedLanguages.map(allowed=><option value={allowed} key={allowed}>{allowed==="CPP"?"C++":"Java"}</option>)}</select></div><div className="h-[min(58vh,620px)] min-h-[400px]"><Editor height="100%" language={language==="CPP"?"cpp":"java"} value={source} onChange={value=>setSource(value??"")} theme="vs-dark" options={{minimap:{enabled:false},fontSize:13,lineHeight:21,readOnly:Boolean(submission),padding:{top:14},scrollBeyondLastLine:false}}/></div>
+        <section className="border-t border-[var(--border)] bg-[var(--surface)]"><div className="flex items-center gap-5 border-b border-[var(--border)] px-4 py-2"><h2 className="text-xs font-semibold text-white">Test results</h2><span className="text-[10px] text-[var(--text-muted)]">Simulated execution provider · Java/C++ are not compiled in Next.js</span></div>{runFailure||submissionFailure?<p role="alert" className="border-b border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-300">{runFailure??submissionFailure}</p>:null}{run?<div className="p-4"><div className="flex items-center gap-2">{run.passedTests===run.totalTests?<CheckCircle2 size={15} className="text-emerald-400"/>:<TriangleAlert size={15} className="text-amber-400"/>}<p className="text-xs font-semibold text-white">{resultLabel(run)}</p></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{run.testResults.map((testResult,index)=><div className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[#0b0d12] p-3 text-xs" key={testResult.testId}><span className="flex items-center gap-2">{testResult.passed?<CheckCircle2 size={13} className="text-emerald-400"/>:<CircleX size={13} className="text-rose-400"/>}Test {index+1}</span><span className={testResult.passed?"text-emerald-400":"text-rose-400"}>{testResult.passed?"Passed":`Output: ${testResult.actualOutput||"(none)"}`}</span></div>)}</div></div>:<p className="p-4 text-xs text-[var(--text-muted)]">Run your code to create a persisted simulated result snapshot.</p>}{submission?<div className="border-t border-emerald-500/20 bg-emerald-500/5 p-4" role="status"><p className="text-xs font-semibold text-emerald-300">Immutable attempt #{submission.attemptNumber} submitted successfully.</p><div className="mt-2 flex gap-4"><Link href={`/submissions/${submission.id}`} className="text-xs font-semibold text-emerald-300 underline">View submission result</Link><Link href={`/practicals/${workspace.task.id}`} className="text-xs font-semibold text-emerald-300 underline">Return to practical</Link></div></div>:null}</section>
+      </main>
+    </div>
+  </div>;
 }

@@ -24,7 +24,7 @@ export default async function TaskWorkspacePage({
   });
   const workspace = await loadWorkspace(actor.id, taskId);
   return (
-    <DemoShell>
+    <DemoShell actor={actor}>
       <PersistedWorkspace workspace={workspace} />
     </DemoShell>
   );

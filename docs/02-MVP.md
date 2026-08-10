@@ -15,6 +15,8 @@ Status reflects repository behavior as of 2026-08-09.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
+- Owner-scoped teacher dashboard, practical list, submission queue, and progress views use persisted classroom, membership, practical, attempt, result, and event data without screenshot fixtures or automated review verdicts.
+- Membership-scoped student dashboard, classroom/practical views, submission history, progress, workspace, and immutable attempt result views use the same persisted records.
 - Provider-neutral local identity persistence: `User.accountStatus` and optional `ExternalIdentity` mappings with database uniqueness by provider/subject and local user/provider.
 - Clerk SDK, Next.js 16 proxy integration, public sign-in/sign-up shell, sign-out/account control, and server-side Clerk session adapter.
 - A provider-neutral `resolveCurrentActor()` maps a server-verified Clerk subject to an explicitly linked local user and enforces local account status and role before existing resource authorization.
@@ -23,7 +25,7 @@ Status reflects repository behavior as of 2026-08-09.
 
 ## Partial
 
-- Production authentication remains incomplete until automatic student onboarding and a security acceptance pass. Newly signed-up Clerk accounts remain unlinked and cannot access Labrix product data.
+- Production authentication remains incomplete until a security acceptance pass and administrator-controlled teacher provisioning. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
 - Only the seeded practical vertical slice uses persisted workspace/submission/review behavior; remaining unmatched product paths may still use the legacy catch-all.
 - Practical authoring lacks complete editing/list management and release/version semantics.

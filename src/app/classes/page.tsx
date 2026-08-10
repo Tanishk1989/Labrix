@@ -10,7 +10,7 @@ export default async function ClassesPage() {
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   const viewModel = await getMyClassesViewModel(actor.id, actor.role);
   return (
-    <DemoShell>
+    <DemoShell actor={actor}>
       <MyClassesBridge
         viewModel={viewModel}
         teacherContent={<MyClassesPage viewModel={viewModel} />}
