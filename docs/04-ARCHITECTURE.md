@@ -43,6 +43,7 @@ Teacher classroom queries are owner-scoped. Latest-practical completion is deriv
 - `RunAttempt`: immutable source used for one server-owned provider request.
 - `ResultSnapshot`: provider outcome and per-test JSON; updates are rejected by a database trigger.
 - `SubmissionAttempt`: numbered exact source plus associated result; updates are rejected by a database trigger.
+- `SubmissionReview`: optional mutable teacher-authored marks/feedback attached one-to-one to an immutable attempt; only published reviews are returned to the owning student.
 - `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
 - `User.accountStatus`: local `ACTIVE`/`DISABLED` lifecycle policy; existing users default to `ACTIVE`.
 - `ExternalIdentity`: optional provider/subject link to an existing local user. Composite uniqueness prevents a provider subject from mapping twice and prevents duplicate same-provider identities for one local user.

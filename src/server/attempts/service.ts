@@ -569,6 +569,7 @@ export async function getSubmissionForTeacher(
         },
       },
       resultSnapshot: true,
+      review: true,
       codingSession: {
         include: {
           events: { orderBy: { sequence: "asc" } },
@@ -595,6 +596,16 @@ export async function getSubmissionForTeacher(
         submission.resultSnapshot.testResults as unknown as ServerExecutionTestResult[],
     },
     runCount: submission.codingSession._count.runs,
+    review: submission.review
+      ? {
+          feedback: submission.review.feedback,
+          marksAwarded: submission.review.marksAwarded,
+          marksOutOf: submission.review.marksOutOf,
+          status: submission.review.status,
+          publishedAt: submission.review.publishedAt?.toISOString() ?? null,
+          updatedAt: submission.review.updatedAt.toISOString(),
+        }
+      : null,
     events: submission.codingSession.events.map((event) => ({
       id: event.id,
       sequence: event.sequence,
@@ -622,6 +633,7 @@ export async function getSubmissionForStudent(
         },
       },
       resultSnapshot: true,
+      review: true,
       codingSession: {
         include: {
           events: { orderBy: { sequence: "asc" } },
@@ -647,6 +659,16 @@ export async function getSubmissionForStudent(
       testResults: submission.resultSnapshot.testResults as unknown as ServerExecutionTestResult[],
     },
     runCount: submission.codingSession._count.runs,
+    review:
+      submission.review?.status === "PUBLISHED"
+        ? {
+            feedback: submission.review.feedback,
+            marksAwarded: submission.review.marksAwarded,
+            marksOutOf: submission.review.marksOutOf,
+            status: submission.review.status,
+            publishedAt: submission.review.publishedAt?.toISOString() ?? null,
+          }
+        : null,
     events: submission.codingSession.events.map((event) => ({
       id: event.id,
       sequence: event.sequence,

@@ -38,9 +38,10 @@ flowchart LR
 2. Practical progress reads the latest persisted attempt for each enrolled student.
 3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
 4. Review shows the immutable source/result snapshots, attempt number, timestamp, run count, and ordered foundation timeline.
-5. No cheating score, AI summary, or automated academic decision is produced.
+5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
+6. No cheating score, AI summary, or automated academic decision is produced.
 
-**Status:** implemented for persisted attempts in the seeded classroom.
+**Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale.
 
 ## Identity transition
 

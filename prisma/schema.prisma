@@ -58,6 +58,11 @@ enum CodeEventType {
   SUBMISSION_CREATED
 }
 
+enum SubmissionReviewStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model User {
   id                 String              @id @default(cuid())
   name               String
@@ -72,6 +77,7 @@ model User {
   tasksAuthored      Task[]              @relation("TaskAuthor")
   codingSessions     CodingSession[]     @relation("StudentCodingSessions")
   submissionAttempts SubmissionAttempt[] @relation("StudentSubmissions")
+  submissionReviews  SubmissionReview[]  @relation("TeacherSubmissionReviews")
 }
 
 model ExternalIdentity {
@@ -209,25 +215,43 @@ model ResultSnapshot {
 }
 
 model SubmissionAttempt {
-  id                 String          @id @default(cuid())
+  id                 String            @id @default(cuid())
   taskId             String
   studentId          String
-  codingSessionId    String          @unique
-  resultSnapshotId   String          @unique
+  codingSessionId    String            @unique
+  resultSnapshotId   String            @unique
   attemptNumber      Int
   idempotencyKey     String
   language           AllowedLanguage
   sourceCodeSnapshot String
-  submittedAt        DateTime        @default(now())
-  task               Task            @relation(fields: [taskId], references: [id], onDelete: Restrict)
-  student            User            @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
-  codingSession      CodingSession   @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
-  resultSnapshot     ResultSnapshot  @relation(fields: [resultSnapshotId], references: [id], onDelete: Restrict)
+  submittedAt        DateTime          @default(now())
+  task               Task              @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  student            User              @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
+  codingSession      CodingSession     @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
+  resultSnapshot     ResultSnapshot    @relation(fields: [resultSnapshotId], references: [id], onDelete: Restrict)
   events             CodeEvent[]
+  review             SubmissionReview?
 
   @@unique([taskId, studentId, attemptNumber])
   @@unique([studentId, idempotencyKey])
   @@index([taskId, studentId, submittedAt])
+}
+
+model SubmissionReview {
+  id                  String                 @id @default(cuid())
+  submissionAttemptId String                 @unique
+  reviewerTeacherId   String
+  feedback            String
+  marksAwarded        Int
+  marksOutOf          Int                    @default(10)
+  status              SubmissionReviewStatus @default(DRAFT)
+  publishedAt         DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  submissionAttempt   SubmissionAttempt      @relation(fields: [submissionAttemptId], references: [id], onDelete: Restrict)
+  reviewerTeacher     User                   @relation("TeacherSubmissionReviews", fields: [reviewerTeacherId], references: [id], onDelete: Restrict)
+
+  @@index([reviewerTeacherId, status])
 }
 
 model CodeEvent {
