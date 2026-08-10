@@ -14,6 +14,7 @@ Status reflects repository behavior as of 2026-08-09.
 - Immutable, numbered `SubmissionAttempt` records with exact source/result snapshots and student-scoped idempotency.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
+- Teacher-owned marks and feedback are stored separately for each immutable attempt; drafts remain teacher-only and published reviews are visible only to the owning student.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
 - Owner-scoped teacher dashboard, practical list, submission queue, and progress views use persisted classroom, membership, practical, attempt, result, and event data without screenshot fixtures or automated review verdicts.
 - Membership-scoped student dashboard, classroom/practical views, submission history, progress, workspace, and immutable attempt result views use the same persisted records.

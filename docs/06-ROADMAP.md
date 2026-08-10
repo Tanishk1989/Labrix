@@ -68,6 +68,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the single-problem MVP. Multi-problem authoring and practical versioning remain out of this slice.
 
+## Phase 4A — teacher marks and feedback
+
+- Store one teacher review per immutable submission attempt.
+- Use a fixed ten-point marks scale with private draft and student-visible published states.
+- Keep review edits separate from immutable source and result snapshots.
+
+**Status:** complete for basic marks and written feedback. Rubrics, weighted grading, and AI feedback remain excluded.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.
