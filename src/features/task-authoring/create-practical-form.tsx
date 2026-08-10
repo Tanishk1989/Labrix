@@ -35,7 +35,7 @@ export function CreatePracticalForm({
       allowedLanguages: initialValues?.allowedLanguages ?? ["CPP", "JAVA"],
       deadlineLocal: initialValues?.deadlineLocal ?? "",
       testCases: initialValues?.testCases ?? [
-        { clientId: "tc-1", input: "", expectedOutput: "" },
+        { clientId: "tc-1", input: "", expectedOutput: "", visible: true },
       ],
     },
   });
@@ -53,7 +53,7 @@ export function CreatePracticalForm({
   // Publishing Checklist States
   const hasDetails = watchTitle.trim().length > 0 && watchInstructions.trim().length > 0;
   const hasProblems = watchInstructions.trim().length > 0;
-  const hasTestCases = watchTestCases.length > 0 && watchTestCases.every(tc => tc.expectedOutput.trim().length > 0);
+  const hasTestCases = watchTestCases.some(tc => tc.visible) && watchTestCases.every(tc => tc.expectedOutput.trim().length > 0);
   const hasConfig = watchLanguages.length > 0;
   const isReadyToPublish = hasDetails && hasProblems && hasTestCases && hasConfig;
 
@@ -202,24 +202,39 @@ export function CreatePracticalForm({
               <div>
                 <h2 className="text-base font-bold text-white">Test Cases & Evaluation</h2>
                 <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-                  Configure the visible test cases supported by the current practical model.
+                  Visible tests give students detailed feedback. Hidden tests run only on submission and keep their details private.
                 </p>
               </div>
 
               <div className="space-y-3">
                 {fields.map((field, index) => (
                   <div key={field.id} className="rounded-lg border border-[var(--border)] bg-[#0f1118] p-4 space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-bold text-indigo-400">Test Case #{index + 1}</span>
-                      {fields.length > 1 ? (
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-300">
+                          <span>Visibility</span>
+                          <select
+                            {...form.register(`testCases.${index}.visible`, {
+                              setValueAs: (value) => value === "true",
+                            })}
+                            className="input min-h-8 py-1 text-xs"
+                          >
+                            <option value="true">Visible</option>
+                            <option value="false">Hidden</option>
+                          </select>
+                        </label>
+                        {fields.length > 1 ? (
                         <button
                           type="button"
                           onClick={() => remove(index)}
+                          aria-label={`Remove test case ${index + 1}`}
                           className="text-xs text-rose-400 hover:text-rose-300"
                         >
                           <Trash2 size={14} />
                         </button>
-                      ) : null}
+                        ) : null}
+                      </div>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -246,7 +261,7 @@ export function CreatePracticalForm({
 
               <button
                 type="button"
-                onClick={() => append({ clientId: `tc-${fields.length + 1}`, input: "", expectedOutput: "" })}
+                onClick={() => append({ clientId: `tc-${fields.length + 1}`, input: "", expectedOutput: "", visible: true })}
                 className="button button-secondary text-xs"
               >
                 <Plus size={14} />
@@ -310,7 +325,7 @@ export function CreatePracticalForm({
                 <p><strong className="text-white">Title:</strong> {watchTitle}</p>
                 <p><strong className="text-white">Class:</strong> {classroomName}</p>
                 <p><strong className="text-white">Languages:</strong> {watchLanguages.join(", ")}</p>
-                <p><strong className="text-white">Test Cases:</strong> {watchTestCases.length} configured</p>
+                <p><strong className="text-white">Test Cases:</strong> {watchTestCases.filter(test => test.visible).length} visible · {watchTestCases.filter(test => !test.visible).length} hidden</p>
                 <p><strong className="text-white">Deadline:</strong> {watchDeadline || "No deadline"}</p>
               </div>
             </div>

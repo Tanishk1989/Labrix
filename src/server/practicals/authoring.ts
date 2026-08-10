@@ -30,7 +30,11 @@ export interface TeacherPracticalInput {
   constraints: string | null;
   allowedLanguages: AllowedLanguage[];
   deadline: Date | null;
-  testCases: Array<{ input: string; expectedOutput: string }>;
+  testCases: Array<{
+    input: string;
+    expectedOutput: string;
+    visible: boolean;
+  }>;
 }
 
 function testCasesChanged(
@@ -49,7 +53,7 @@ function testCasesChanged(
     return (
       !next ||
       testCase.position !== index + 1 ||
-      !testCase.visible ||
+      testCase.visible !== next.visible ||
       testCase.input !== next.input ||
       testCase.expectedOutput !== next.expectedOutput
     );
@@ -168,7 +172,7 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
               position: index + 1,
               input: testCase.input,
               expectedOutput: testCase.expectedOutput,
-              visible: true,
+              visible: testCase.visible,
             })),
           });
         }

@@ -1,16 +1,18 @@
 # MVP and implementation status
 
-Status reflects repository behavior as of 2026-08-09.
+Status reflects repository behavior as of 2026-08-10.
 
 ## Implemented
 
-- Next.js/Prisma persistence for users, memberships, classrooms, practicals, and visible tests.
+- Next.js/Prisma persistence for users, memberships, classrooms, practicals, and visible/hidden tests.
 - Teacher classroom creation and practical draft/publish actions.
 - Explicit database-backed routes for the seeded student workspace, practical progress, and submission review.
 - A server-resolved seeded student/teacher identity boundary that accepts no browser user ID or role.
 - Active `CodingSession` plus one mutable `Draft`; change-aware server autosave resumes after refresh, skips identical updates, and exposes Saving, Saved, and Save failed states.
 - Server-owned `ServerExecutionProvider` with a deterministic mock implementation.
 - Persisted `RunAttempt` and immutable `ResultSnapshot` records.
+- Run evaluates visible tests only; Submit evaluates visible and hidden tests. Students receive visible details plus a hidden aggregate, while the owning teacher can inspect both groups.
+- New result snapshots store visible/hidden counters and a one-decimal, equal-weight suggested test score out of ten. This never overwrites teacher-awarded marks; legacy snapshots remain readable.
 - Immutable, numbered `SubmissionAttempt` records with exact source/result snapshots and student-scoped idempotency.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.

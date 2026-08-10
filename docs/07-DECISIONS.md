@@ -60,6 +60,10 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 **Accepted 2026-08-10.** Each immutable submission attempt may have one separately mutable teacher review. Marks use a fixed ten-point scale (`marksOutOf = 10`). Draft reviews remain teacher-only; only a published review is visible to the student who owns that attempt. Students cannot create or edit reviews. Rubrics, weighted grading, multi-criteria marks, and AI-generated feedback are outside Phase 4A.
 
+### D-015 — Test visibility and assessment model
+
+**Accepted 2026-08-10.** A single-problem practical requires at least one visible test and may include hidden tests. Run evaluates visible tests only; Submit evaluates both groups. Students receive visible detail and only a hidden pass/total aggregate, while the classroom-owning teacher may inspect hidden details. Each new immutable result snapshot stores a deterministic equal-weight suggested score out of ten rounded to one decimal; provider/compile/runtime failure scores zero. Suggested scoring never replaces teacher-awarded marks. Rubrics and weighted grading remain out of scope.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy
@@ -81,7 +85,3 @@ Select build/buy/provider, compiler versions, queue/concurrency targets, resourc
 ### D-013 — AI provider and governance
 
 Select provider/model, data region/retention, training-use policy, redaction, prompt/version storage, cost limits, human review, evaluation, and prompt-injection defenses.
-
-### D-015 — Test visibility and assessment model
-
-Current authoring creates visible tests only. Decide whether hidden tests, grading, rubrics, and result disclosure remain post-MVP.

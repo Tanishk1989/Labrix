@@ -52,6 +52,7 @@ async function persist(
       testCases: data.testCases.map((testCase) => ({
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
+        visible: testCase.visible,
       })),
     });
     revalidatePath("/classes");

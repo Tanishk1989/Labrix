@@ -15,7 +15,13 @@ import type {
   ServerExecutionProvider,
   ServerExecutionResult,
   ServerExecutionTestResult,
+  TestVisibility,
 } from "@/server/execution/provider";
+import {
+  buildResultBreakdown,
+  calculateSuggestedScore,
+  type ResultBreakdown,
+} from "@/server/execution/result-grading";
 
 const workspaceSessionInclude = {
   draft: true,
@@ -64,7 +70,16 @@ export interface PersistedRun {
   passedTests: number;
   totalTests: number;
   errorText?: string;
-  testResults: ServerExecutionTestResult[];
+  testResults: Array<{
+    testId: string;
+    passed: boolean;
+    actualOutput: string;
+  }>;
+  visiblePassedTests: number;
+  visibleTotalTests: number;
+  hiddenPassedTests: number;
+  hiddenTotalTests: number;
+  suggestedScore: number;
   completedAt: string;
 }
 
@@ -198,7 +213,6 @@ async function requireActiveStudentSession(
       task: {
         include: {
           testCases: {
-            where: { visible: true },
             orderBy: { position: "asc" },
           },
         },
@@ -309,14 +323,74 @@ function fromRunResultState(state: RunResultState): ServerExecutionResult["state
   return state.toLowerCase() as ServerExecutionResult["state"];
 }
 
-export async function runStudentDraft(
+type StoredTestResult = Omit<ServerExecutionTestResult, "visibility"> & {
+  visibility?: TestVisibility;
+};
+
+type SnapshotBreakdownSource = {
+  state: RunResultState;
+  passedTests: number;
+  totalTests: number;
+  visiblePassedTests: number | null;
+  visibleTotalTests: number | null;
+  hiddenPassedTests: number | null;
+  hiddenTotalTests: number | null;
+  suggestedScore: number | null;
+};
+
+export function snapshotBreakdown(
+  snapshot: SnapshotBreakdownSource,
+): ResultBreakdown {
+  if (
+    snapshot.visiblePassedTests !== null &&
+    snapshot.visibleTotalTests !== null &&
+    snapshot.hiddenPassedTests !== null &&
+    snapshot.hiddenTotalTests !== null &&
+    snapshot.suggestedScore !== null
+  ) {
+    return {
+      visiblePassedTests: snapshot.visiblePassedTests,
+      visibleTotalTests: snapshot.visibleTotalTests,
+      hiddenPassedTests: snapshot.hiddenPassedTests,
+      hiddenTotalTests: snapshot.hiddenTotalTests,
+      suggestedScore: snapshot.suggestedScore,
+    };
+  }
+
+  return {
+    visiblePassedTests: snapshot.passedTests,
+    visibleTotalTests: snapshot.totalTests,
+    hiddenPassedTests: 0,
+    hiddenTotalTests: 0,
+    suggestedScore: calculateSuggestedScore(
+      fromRunResultState(snapshot.state),
+      snapshot.passedTests,
+      snapshot.totalTests,
+    ),
+  };
+}
+
+function publicTestResults(testResults: StoredTestResult[]) {
+  return testResults
+    .filter((test) => !test.visibility || test.visibility === "VISIBLE")
+    .map(({ testId, passed, actualOutput }) => ({
+      testId,
+      passed,
+      actualOutput,
+    }));
+}
+
+type ExecutionScope = "VISIBLE" | "ALL";
+
+async function executeStudentDraft(
   input: {
     studentId: string;
     sessionId: string;
     language: AllowedLanguage;
     sourceCode: string;
   },
-  provider: ServerExecutionProvider = getServerExecutionProvider(),
+  provider: ServerExecutionProvider,
+  scope: ExecutionScope,
 ): Promise<PersistedRun> {
   const prepared = await prisma.$transaction(async (tx) => {
     const session = await requireActiveStudentSession(
@@ -368,11 +442,16 @@ export async function runStudentDraft(
     });
     return {
       run,
-      tests: session.task.testCases.map((test) => ({
-        id: test.id,
-        input: test.input,
-        expectedOutput: test.expectedOutput,
-      })),
+      tests: session.task.testCases
+        .map((test) => ({
+          id: test.id,
+          input: test.input,
+          expectedOutput: test.expectedOutput,
+          visibility: test.visible
+            ? ("VISIBLE" as const)
+            : ("HIDDEN" as const),
+        }))
+        .filter((test) => scope === "ALL" || test.visibility === "VISIBLE"),
     };
   }, transactionOptions);
 
@@ -393,16 +472,30 @@ export async function runStudentDraft(
     };
   }
 
+  const visibilityById = new Map(
+    prepared.tests.map((test) => [test.id, test.visibility]),
+  );
+  const normalizedResult: ServerExecutionResult = {
+    ...result,
+    testResults: result.testResults.flatMap((test) => {
+      const visibility = visibilityById.get(test.testId);
+      return visibility ? [{ ...test, visibility }] : [];
+    }),
+  };
+  const breakdown = buildResultBreakdown(normalizedResult, prepared.tests);
+
   return prisma.$transaction(async (tx) => {
     const completedAt = new Date();
     const snapshot = await tx.resultSnapshot.create({
       data: {
         runAttemptId: prepared.run.id,
-        state: toRunResultState(result.state),
-        passedTests: result.passedTests,
-        totalTests: result.totalTests,
-        errorText: result.errorText,
-        testResults: result.testResults as unknown as Prisma.InputJsonValue,
+        state: toRunResultState(normalizedResult.state),
+        passedTests: normalizedResult.passedTests,
+        totalTests: normalizedResult.totalTests,
+        ...breakdown,
+        errorText: normalizedResult.errorText,
+        testResults:
+          normalizedResult.testResults as unknown as Prisma.InputJsonValue,
       },
     });
     await tx.runAttempt.update({
@@ -417,10 +510,27 @@ export async function runStudentDraft(
     return {
       id: prepared.run.id,
       resultSnapshotId: snapshot.id,
-      ...result,
+      state: normalizedResult.state,
+      passedTests: normalizedResult.passedTests,
+      totalTests: normalizedResult.totalTests,
+      errorText: normalizedResult.errorText,
+      testResults: publicTestResults(normalizedResult.testResults),
+      ...breakdown,
       completedAt: completedAt.toISOString(),
     };
   }, transactionOptions);
+}
+
+export async function runStudentDraft(
+  input: {
+    studentId: string;
+    sessionId: string;
+    language: AllowedLanguage;
+    sourceCode: string;
+  },
+  provider: ServerExecutionProvider = getServerExecutionProvider(),
+) {
+  return executeStudentDraft(input, provider, "VISIBLE");
 }
 
 function persistedSubmissionResult(
@@ -429,6 +539,7 @@ function persistedSubmissionResult(
   }>,
 ): PersistedSubmission {
   const snapshot = submission.resultSnapshot;
+  const breakdown = snapshotBreakdown(snapshot);
   return {
     id: submission.id,
     attemptNumber: submission.attemptNumber,
@@ -440,7 +551,10 @@ function persistedSubmissionResult(
       passedTests: snapshot.passedTests,
       totalTests: snapshot.totalTests,
       errorText: snapshot.errorText ?? undefined,
-      testResults: snapshot.testResults as unknown as ServerExecutionTestResult[],
+      testResults: publicTestResults(
+        snapshot.testResults as unknown as StoredTestResult[],
+      ),
+      ...breakdown,
       completedAt: snapshot.createdAt.toISOString(),
     },
   };
@@ -472,7 +586,7 @@ export async function submitStudentDraft(
   );
   if (existing) return persistedSubmissionResult(existing);
 
-  const run = await runStudentDraft(input, provider);
+  const run = await executeStudentDraft(input, provider, "ALL");
   try {
     const submission = await prisma.$transaction(
       async (tx) => {
@@ -566,6 +680,16 @@ export async function getSubmissionForTeacher(
           id: true,
           title: true,
           classroom: { select: { id: true, name: true } },
+          testCases: {
+            orderBy: { position: "asc" },
+            select: {
+              id: true,
+              position: true,
+              input: true,
+              expectedOutput: true,
+              visible: true,
+            },
+          },
         },
       },
       resultSnapshot: true,
@@ -579,6 +703,12 @@ export async function getSubmissionForTeacher(
     },
   });
   if (!submission) throw new AccessDeniedError();
+  const storedTestResults =
+    submission.resultSnapshot.testResults as unknown as StoredTestResult[];
+  const testCaseById = new Map(
+    submission.task.testCases.map((testCase) => [testCase.id, testCase]),
+  );
+  const breakdown = snapshotBreakdown(submission.resultSnapshot);
   return {
     id: submission.id,
     attemptNumber: submission.attemptNumber,
@@ -586,14 +716,31 @@ export async function getSubmissionForTeacher(
     sourceCode: submission.sourceCodeSnapshot,
     submittedAt: submission.submittedAt.toISOString(),
     student: submission.student,
-    task: submission.task,
+    task: {
+      id: submission.task.id,
+      title: submission.task.title,
+      classroom: submission.task.classroom,
+    },
     result: {
       state: fromRunResultState(submission.resultSnapshot.state),
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,
       errorText: submission.resultSnapshot.errorText,
-      testResults:
-        submission.resultSnapshot.testResults as unknown as ServerExecutionTestResult[],
+      ...breakdown,
+      testResults: storedTestResults.map((result) => {
+        const testCase = testCaseById.get(result.testId);
+        return {
+          testId: result.testId,
+          position: testCase?.position ?? null,
+          visibility:
+            result.visibility ??
+            (testCase?.visible === false ? "HIDDEN" : "VISIBLE"),
+          input: testCase?.input ?? null,
+          expectedOutput: testCase?.expectedOutput ?? null,
+          actualOutput: result.actualOutput,
+          passed: result.passed,
+        };
+      }),
     },
     runCount: submission.codingSession._count.runs,
     review: submission.review
@@ -643,6 +790,7 @@ export async function getSubmissionForStudent(
     },
   });
   if (!submission) throw new AccessDeniedError();
+  const breakdown = snapshotBreakdown(submission.resultSnapshot);
   return {
     id: submission.id,
     attemptNumber: submission.attemptNumber,
@@ -656,7 +804,10 @@ export async function getSubmissionForStudent(
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,
       errorText: submission.resultSnapshot.errorText,
-      testResults: submission.resultSnapshot.testResults as unknown as ServerExecutionTestResult[],
+      ...breakdown,
+      testResults: publicTestResults(
+        submission.resultSnapshot.testResults as unknown as StoredTestResult[],
+      ),
     },
     runCount: submission.codingSession._count.runs,
     review:

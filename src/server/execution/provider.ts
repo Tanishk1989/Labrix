@@ -7,16 +7,24 @@ export type ServerExecutionState =
   | "time_limit_exceeded"
   | "internal_error";
 
+export type TestVisibility = "VISIBLE" | "HIDDEN";
+
 export interface ServerExecutionRequest {
   language: AllowedLanguage;
   sourceCode: string;
-  tests: Array<{ id: string; input: string; expectedOutput: string }>;
+  tests: Array<{
+    id: string;
+    input: string;
+    expectedOutput: string;
+    visibility: TestVisibility;
+  }>;
 }
 
 export interface ServerExecutionTestResult {
   testId: string;
   passed: boolean;
   actualOutput: string;
+  visibility: TestVisibility;
 }
 
 export interface ServerExecutionResult {

@@ -15,5 +15,5 @@ export default async function EditPracticalPage({ params }: { params: Promise<{ 
   const localDeadline = task.deadline
     ? new Date(task.deadline.getTime() - task.deadline.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
     : "";
-  return <DemoShell actor={actor}><CreatePracticalForm classroomId={classroomId} classroomName={task.classroom.name} taskId={task.id} initialValues={{ title: task.title, instructions: task.instructions, constraints: task.constraints ?? "", allowedLanguages: task.allowedLanguages, deadlineLocal: localDeadline, testCases: task.testCases.map((test) => ({ clientId: test.id, input: test.input, expectedOutput: test.expectedOutput })) }} /></DemoShell>;
+  return <DemoShell actor={actor}><CreatePracticalForm classroomId={classroomId} classroomName={task.classroom.name} taskId={task.id} initialValues={{ title: task.title, instructions: task.instructions, constraints: task.constraints ?? "", allowedLanguages: task.allowedLanguages, deadlineLocal: localDeadline, testCases: task.testCases.map((test) => ({ clientId: test.id, input: test.input, expectedOutput: test.expectedOutput, visible: test.visible })) }} /></DemoShell>;
 }

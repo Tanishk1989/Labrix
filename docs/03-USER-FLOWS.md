@@ -16,7 +16,7 @@ flowchart LR
 ## Teacher: create and publish
 
 1. The server resolves either the seeded demo teacher or an explicitly linked Clerk user whose local role is `TEACHER`.
-2. The teacher creates a practical with instructions, languages, visible tests, and optional deadline.
+2. The teacher creates a practical with instructions, languages, at least one visible test, optional hidden tests, and an optional deadline.
 3. Labrix validates teacher ownership before saving a draft or publishing.
 
 **Status:** persisted for the demo teacher and explicitly linked active teachers. Automatic teacher provisioning and complete practical management remain planned.
@@ -26,8 +26,8 @@ flowchart LR
 1. The server resolves either the seeded demo student or an explicitly linked Clerk user whose local role is `STUDENT`, then verifies active classroom membership.
 2. Labrix loads or creates the one active coding session and draft for the practical attempt.
 3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
-4. Run saves the current draft, records request/completion events, calls the server-owned mock provider, and stores its result snapshot.
-5. Submit repeats the simulated run for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`.
+4. Run saves the current draft, records request/completion events, evaluates visible tests through the server-owned mock provider, and stores its result snapshot.
+5. Submit evaluates visible and hidden tests for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. The student sees visible details and only the hidden pass/total aggregate.
 6. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
 
 **Status:** implemented for the seeded practical in demo mode and linked active students in Clerk mode. Execution is clearly simulated.
@@ -37,7 +37,7 @@ flowchart LR
 1. The server resolves the teacher and verifies the local `TEACHER` role plus classroom ownership.
 2. Practical progress reads the latest persisted attempt for each enrolled student.
 3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
-4. Review shows the immutable source/result snapshots, attempt number, timestamp, run count, and ordered foundation timeline.
+4. Review shows the immutable source/result snapshots, separate visible/hidden test details, suggested test score, attempt number, timestamp, run count, and ordered foundation timeline.
 5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
 6. No cheating score, AI summary, or automated academic decision is produced.
 

@@ -41,7 +41,7 @@ Teacher classroom queries are owner-scoped. Latest-practical completion is deriv
 - `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.
 - `Draft`: the one mutable source buffer for a session.
 - `RunAttempt`: immutable source used for one server-owned provider request.
-- `ResultSnapshot`: provider outcome and per-test JSON; updates are rejected by a database trigger.
+- `ResultSnapshot`: provider outcome, per-test JSON, nullable visible/hidden counters, and nullable suggested score; updates are rejected by a database trigger. Nullable additions keep legacy snapshots readable without rewriting them.
 - `SubmissionAttempt`: numbered exact source plus associated result; updates are rejected by a database trigger.
 - `SubmissionReview`: optional mutable teacher-authored marks/feedback attached one-to-one to an immutable attempt; only published reviews are returned to the owning student.
 - `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
@@ -60,5 +60,7 @@ Explicit routes take precedence over `src/app/[[...slug]]/page.tsx`. New product
 ## Execution and evidence boundaries
 
 No student source runs in Next.js. The current server provider only simulates deterministic feedback. A production adapter must call an isolated runner with explicit time, memory, process, filesystem, output, and network limits.
+
+Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 
 Only five foundation events are captured. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.

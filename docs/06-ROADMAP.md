@@ -76,6 +76,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for basic marks and written feedback. Rubrics, weighted grading, and AI feedback remain excluded.
 
+## Phase 5A — hidden tests and suggested grading
+
+- Author visible and optional hidden tests within the single-problem practical.
+- Run visible tests only; Submit evaluates both groups while redacting hidden details from students.
+- Persist immutable visibility counters and a deterministic equal-weight suggested score without changing teacher-awarded marks.
+
+**Status:** complete with the deterministic simulated provider. Real compilation, weighted grading, and rubrics remain excluded.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.
