@@ -6,6 +6,10 @@ const validPractical = {
   instructions: "Read an integer and print it.",
   constraints: "1 <= n <= 100",
   allowedLanguages: ["JAVA"] as const,
+  starterCodes: {
+    CPP: "int main() { return 0; }",
+    JAVA: "public class Main {}",
+  },
   deadlineLocal: "",
   testCases: [
     { clientId: "visible-1", input: "1", expectedOutput: "1", visible: true },

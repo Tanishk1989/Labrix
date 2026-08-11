@@ -25,6 +25,7 @@ function practicalInput(
     publish: boolean;
     title: string;
     instructions: string;
+    starterCodes: { CPP: string; JAVA: string };
     testCases: Array<{
       input: string;
       expectedOutput: string;
@@ -41,6 +42,10 @@ function practicalInput(
     instructions: overrides.instructions ?? "Updated instructions",
     constraints: null,
     allowedLanguages: ["JAVA" as const],
+    starterCodes: overrides.starterCodes ?? {
+      CPP: "// C++ authoring starter",
+      JAVA: "// Java authoring starter",
+    },
     deadline: null,
     testCases: overrides.testCases ?? [
       { input: "2", expectedOutput: "2", visible: true },
@@ -220,6 +225,8 @@ describe.sequential("teacher practical authoring lifecycle", () => {
 
     expect(result).toMatchObject({ status: "DRAFT", testsChanged: true });
     expect(task.title).toBe("Updated practical");
+    expect(task.cppStarterCode).toBe("// C++ authoring starter");
+    expect(task.javaStarterCode).toBe("// Java authoring starter");
     expect(task.testCases).toHaveLength(1);
     expect(task.testCases[0]).toMatchObject({
       input: "2",

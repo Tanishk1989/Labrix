@@ -9,6 +9,10 @@ const valid = {
   instructions: "Find a pair.",
   constraints: "",
   allowedLanguages: ["CPP"] as const,
+  starterCodes: {
+    CPP: "int main() { return 0; }",
+    JAVA: "public class Main {}",
+  },
   deadlineLocal: "2099-01-01T10:00",
   testCases: [{ clientId: "one", input: "", expectedOutput: "0", visible: true }],
 };

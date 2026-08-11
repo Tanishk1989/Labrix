@@ -12,6 +12,10 @@ export const createPracticalBaseSchema = z.object({
   instructions: z.string(),
   constraints: z.string().optional(),
   allowedLanguages: z.array(z.enum(allowedLanguages)),
+  starterCodes: z.object({
+    CPP: z.string().max(200_000),
+    JAVA: z.string().max(200_000),
+  }),
   deadlineLocal: z.string().optional(),
   testCases: z.array(testCaseSchema),
 });

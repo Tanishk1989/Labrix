@@ -116,6 +116,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for membership access changes. Join-code changes, invitations, notifications, free-text reasons, and broader administrative audit events remain future work.
 
+## Phase 11A — practical starter-code templates
+
+- Let teachers persist Java and C++ starter code within the single-problem practical model.
+- Initialize each new attempt from the matching language template while preserving every resumed draft unchanged.
+- Swap an untouched pre-save template on language selection without changing immutable submission or result behavior.
+
+**Status:** complete for Java and C++ templates. Additional languages, practical versioning, and multi-file starters remain future work.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.

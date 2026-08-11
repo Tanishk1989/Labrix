@@ -16,7 +16,7 @@ flowchart LR
 ## Teacher: create and publish
 
 1. The server resolves either the seeded demo teacher or an explicitly linked Clerk user whose local role is `TEACHER`.
-2. The teacher creates a practical with instructions, languages, at least one visible test, optional hidden tests, and an optional deadline.
+2. The teacher creates a practical with instructions, allowed languages, per-language starter code, at least one visible test, optional hidden tests, and an optional deadline.
 3. Labrix validates teacher ownership before saving a draft or publishing.
 
 **Status:** persisted for the demo teacher and explicitly linked active teachers. Automatic teacher provisioning and complete practical management remain planned.
@@ -24,11 +24,12 @@ flowchart LR
 ## Student: resume, run, and submit
 
 1. The server resolves either the seeded demo student or an explicitly linked Clerk user whose local role is `STUDENT`, then verifies active classroom membership.
-2. Labrix loads or creates the one active coding session and draft for the practical attempt.
+2. Labrix loads the existing active draft unchanged, or creates the first draft from the practical's starter code for the initial allowed language.
 3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
-4. Run saves the current draft, records request/completion events, evaluates visible tests through the server-owned mock provider, and stores its result snapshot.
-5. Submit evaluates visible and hidden tests for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. The student sees visible details and only the hidden pass/total aggregate.
-6. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
+4. Before the first save, switching language replaces an untouched default template with the matching language template. Edited or previously persisted source is retained.
+5. Run saves the current draft, records request/completion events, evaluates visible tests through the server-owned mock provider, and stores its result snapshot.
+6. Submit evaluates visible and hidden tests for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. The student sees visible details and only the hidden pass/total aggregate.
+7. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
 
 **Status:** implemented for the seeded practical in demo mode and linked active students in Clerk mode. Execution is clearly simulated.
 
