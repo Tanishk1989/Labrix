@@ -93,4 +93,18 @@ The targeted suite starts the C++ HTTP worker on an ephemeral loopback port and 
 - altered safety limits rejected before Docker is contacted;
 - concurrent execution rejected rather than queued.
 
-The suite does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or replace the separate unit tests for provider selection and response validation. Workspace persistence acceptance remains a later phase.
+The suite does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or replace the separate unit tests for provider selection and response validation.
+
+## Workspace acceptance
+
+Phase 16C verifies the worker through the existing workspace service and persistence boundary. It is intentionally non-Playwright and must use a confirmed disposable PostgreSQL database that differs from development/demo data:
+
+```bash
+npm run test:db:prepare
+npm run runner:cpp:pull
+npm run test:acceptance:cpp-workspace
+```
+
+Set `LABRIX_TEST_DATABASE_URL` and `LABRIX_ALLOW_TEST_DATABASE_MUTATION=true` before running these commands. The existing verification guard rejects missing confirmation, a missing/non-PostgreSQL URL, or a test URL equal to the configured development/demo URL.
+
+The acceptance suite starts the C++ worker on an ephemeral loopback port, selects `cpp-http`, and verifies success plus compilation/runtime/timeout mappings through `runStudentDraft`. It confirms that Run persists one visible test only, while Submit persists visible and hidden results, returns only visible per-test output to the student, and retains hidden pass/total counters. It also confirms exact source/language/timestamps in `RunAttempt` and immutable `ResultSnapshot` associations and proves that an unset provider still selects mock.

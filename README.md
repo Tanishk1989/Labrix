@@ -81,6 +81,8 @@ npm run runner:cpp
 
 Then set `LABRIX_EXECUTION_PROVIDER=cpp-http` and the C++ loopback URL shown in `.env.example`. See [docs/10-CPP-RUNNER-SPIKE.md](docs/10-CPP-RUNNER-SPIKE.md) for the native-code limits and remaining local-only caveats.
 
+C++ workspace acceptance is database-mutating and requires the same disposable-database guard as integration tests. After preparing `LABRIX_TEST_DATABASE_URL`, run `npm run test:acceptance:cpp-workspace`; it starts the C++ worker itself and does not use Next.js or Playwright.
+
 Workspace-level Java acceptance is database-mutating and therefore requires the disposable-database guard. After configuring and preparing `LABRIX_TEST_DATABASE_URL`, use `npm run test:acceptance:java-workspace` for the targeted service/persistence proof or `npm run acceptance:java-workspace:dev` for a guarded manual workspace session. Neither command permits the configured development/demo database.
 
 ## Safety boundary
