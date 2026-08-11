@@ -138,6 +138,7 @@ describe.sequential("teacher roster controls", () => {
   });
 
   afterAll(async () => {
+    await prisma.membershipAuditEntry.deleteMany({ where: { classroomId } });
     await prisma.submissionReview.deleteMany({ where: { id: reviewId } });
     await prisma.submissionAttempt.deleteMany({ where: { id: submissionId } });
     await prisma.resultSnapshot.deleteMany({ where: { id: resultId } });
@@ -170,6 +171,9 @@ describe.sequential("teacher roster controls", () => {
     await expect(
       getTeacherClassroomRoster(otherTeacherId, classroomId),
     ).rejects.toBeInstanceOf(AccessDeniedError);
+    await expect(
+      getTeacherClassroomRoster(studentId, classroomId),
+    ).rejects.toBeInstanceOf(AccessDeniedError);
   });
 
   it("rejects student and non-owner teacher control attempts", async () => {
@@ -196,6 +200,9 @@ describe.sequential("teacher roster controls", () => {
     await expect(
       prisma.classMembership.findUniqueOrThrow({ where: { id: membershipId } }),
     ).resolves.toMatchObject({ active: true });
+    await expect(
+      prisma.membershipAuditEntry.count({ where: { classroomId } }),
+    ).resolves.toBe(0);
   });
 
   it("regenerates the unique join code without changing membership or history", async () => {
@@ -230,6 +237,20 @@ describe.sequential("teacher roster controls", () => {
     });
 
     await expect(
+      prisma.membershipAuditEntry.findFirstOrThrow({
+        where: { classroomId },
+        orderBy: { createdAt: "desc" },
+      }),
+    ).resolves.toMatchObject({
+      classroomId,
+      membershipId,
+      studentId,
+      actorTeacherId: teacherId,
+      action: "DEACTIVATED",
+      reason: null,
+    });
+
+    await expect(
       getClassroomForStudentById(studentId, classroomId),
     ).resolves.toBeNull();
     await expect(
@@ -247,6 +268,13 @@ describe.sequential("teacher roster controls", () => {
           submissionCount: 1,
           publishedReviewCount: 1,
           latestSubmission: expect.objectContaining({ id: submissionId }),
+        }),
+      ],
+      auditEntries: [
+        expect.objectContaining({
+          action: "DEACTIVATED",
+          student: expect.objectContaining({ id: studentId }),
+          actorTeacher: expect.objectContaining({ id: teacherId }),
         }),
       ],
     });
@@ -293,6 +321,9 @@ describe.sequential("teacher roster controls", () => {
     await expect(
       prisma.classMembership.findUniqueOrThrow({ where: { id: membershipId } }),
     ).resolves.toMatchObject({ active: false });
+    await expect(
+      prisma.membershipAuditEntry.count({ where: { classroomId } }),
+    ).resolves.toBe(1);
   });
 
   it("reactivates the same membership and restores access without changing history", async () => {
@@ -302,6 +333,20 @@ describe.sequential("teacher roster controls", () => {
       membershipId,
     });
     expect(reactivated).toEqual({ membershipId, studentId });
+
+    await expect(
+      prisma.membershipAuditEntry.findFirstOrThrow({
+        where: { classroomId },
+        orderBy: { createdAt: "desc" },
+      }),
+    ).resolves.toMatchObject({
+      classroomId,
+      membershipId,
+      studentId,
+      actorTeacherId: teacherId,
+      action: "REACTIVATED",
+      reason: null,
+    });
 
     await expect(
       getClassroomForStudentById(studentId, classroomId),
@@ -324,6 +369,10 @@ describe.sequential("teacher roster controls", () => {
         }),
       ],
       inactiveStudents: [],
+      auditEntries: [
+        expect.objectContaining({ action: "REACTIVATED" }),
+        expect.objectContaining({ action: "DEACTIVATED" }),
+      ],
     });
 
     const preservedCounts = await Promise.all([
@@ -335,5 +384,8 @@ describe.sequential("teacher roster controls", () => {
       prisma.submissionReview.count({ where: { id: reviewId } }),
     ]);
     expect(preservedCounts).toEqual([1, 1, 1, 1, 1, 1]);
+    await expect(
+      prisma.membershipAuditEntry.count({ where: { classroomId, membershipId } }),
+    ).resolves.toBe(2);
   });
 });

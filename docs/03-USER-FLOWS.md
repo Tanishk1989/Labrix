@@ -52,7 +52,8 @@ flowchart LR
 4. Student classroom and published-practical access immediately fails because every student read/action requires an active membership.
 5. `Reactivate access` is owner-only and changes the same membership row back to active, restoring classroom and practical access without duplicating or rewriting history.
 6. An inactive existing member cannot self-reactivate with a join code; Labrix directs the student to ask the classroom teacher.
-7. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
+7. Each successful deactivation or reactivation atomically records the classroom, membership, student, acting teacher, action, and server timestamp in a teacher-only audit trail.
+8. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
 
 **Status:** implemented for owner teachers on the classroom students/progress route.
 

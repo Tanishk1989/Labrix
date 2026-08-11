@@ -66,6 +66,17 @@ export async function getTeacherClassroomRoster(
           },
         },
       },
+      membershipAuditEntries: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          action: true,
+          createdAt: true,
+          student: { select: { id: true, name: true, email: true } },
+          actorTeacher: { select: { id: true, name: true } },
+        },
+      },
     },
   });
   if (!classroom) throw new AccessDeniedError();
@@ -106,6 +117,13 @@ export async function getTeacherClassroomRoster(
     inactiveStudents: students.filter(
       (student) => student.status === "INACTIVE",
     ),
+    auditEntries: classroom.membershipAuditEntries.map((entry) => ({
+      id: entry.id,
+      action: entry.action,
+      createdAt: entry.createdAt.toISOString(),
+      student: entry.student,
+      actorTeacher: entry.actorTeacher,
+    })),
   };
 }
 
@@ -137,6 +155,15 @@ export async function deactivateStudentMembership(
     await tx.classMembership.update({
       where: { id: membership.id },
       data: { active: false },
+    });
+    await tx.membershipAuditEntry.create({
+      data: {
+        classroomId: parsed.data.classroomId,
+        membershipId: membership.id,
+        studentId: membership.userId,
+        actorTeacherId: actor.id,
+        action: "DEACTIVATED",
+      },
     });
     return { membershipId: membership.id, studentId: membership.userId };
   });
@@ -170,6 +197,15 @@ export async function reactivateStudentMembership(
     await tx.classMembership.update({
       where: { id: membership.id },
       data: { active: true },
+    });
+    await tx.membershipAuditEntry.create({
+      data: {
+        classroomId: parsed.data.classroomId,
+        membershipId: membership.id,
+        studentId: membership.userId,
+        actorTeacherId: actor.id,
+        action: "REACTIVATED",
+      },
     });
     return { membershipId: membership.id, studentId: membership.userId };
   });
