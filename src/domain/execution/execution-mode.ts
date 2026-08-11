@@ -16,7 +16,9 @@ export function executionModeLabel(mode: ExecutionModeDisclosure) {
   return executionModeLabels[mode];
 }
 
-/** ResultSnapshot does not persist provider identity, so reloads cannot infer it. */
-export function executionModeFromPersistedSnapshot() {
-  return "unavailable" as const;
+/** Null remains the honest disclosure for snapshots created before mode storage. */
+export function executionModeFromPersistedSnapshot(
+  mode: ExecutionMode | null | undefined,
+): ExecutionModeDisclosure {
+  return mode ?? "unavailable";
 }

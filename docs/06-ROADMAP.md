@@ -203,6 +203,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for guarded service/persistence acceptance. Manual browser acceptance, production execution operations, and broader native-code abuse testing remain outside this slice.
 
+## Phase 17A — persist execution mode
+
+- Add nullable enum storage to immutable result snapshots for simulated, Java Docker, and C++ Docker execution.
+- Persist the active provider mode for every new snapshot and reuse it in fresh and reloaded Run/Submit detail DTOs.
+- Leave all historical rows null without backfill or language/environment inference, preserving **Execution mode unavailable** as the honest fallback.
+- Verify mock/Java/C++ storage, student/teacher disclosure, legacy fallback, and unchanged hidden-detail redaction.
+
+**Status:** complete with additive nullable storage. No runner, grading, submission, review, authorization, analytics, membership, or hidden-test behavior changes.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

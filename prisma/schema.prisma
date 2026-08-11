@@ -55,6 +55,12 @@ enum RunResultState {
   INTERNAL_ERROR
 }
 
+enum ExecutionMode {
+  SIMULATED
+  JAVA_DOCKER_LOCAL
+  CPP_DOCKER_LOCAL
+}
+
 enum CodeEventType {
   SESSION_STARTED
   DRAFT_SAVED
@@ -234,6 +240,7 @@ model ResultSnapshot {
   id                 String             @id @default(cuid())
   runAttemptId       String             @unique
   state              RunResultState
+  executionMode      ExecutionMode?
   passedTests        Int
   totalTests         Int
   visiblePassedTests Int?

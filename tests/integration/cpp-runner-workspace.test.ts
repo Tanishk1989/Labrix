@@ -155,6 +155,7 @@ async function expectPersistedRun(
     id: resultSnapshotId,
     runAttemptId: runId,
     state,
+    executionMode: "CPP_DOCKER_LOCAL",
     passedTests: state === "COMPLETED" ? 1 : 0,
     totalTests: 1,
     visibleTotalTests: 1,
@@ -295,6 +296,7 @@ describe.sequential("C++ runner through the Labrix workspace service boundary", 
     expect(stored.sourceCodeSnapshot).toBe(successSource);
     expect(stored.resultSnapshot).toMatchObject({
       state: "COMPLETED",
+      executionMode: "CPP_DOCKER_LOCAL",
       passedTests: 2,
       totalTests: 2,
       visiblePassedTests: 1,
