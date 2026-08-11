@@ -116,11 +116,11 @@ async function readBoundedResponse(response: Response) {
 }
 
 /**
- * Planning scaffold for a separate loopback C++ runner service.
- * No C++ worker or Docker executor is implemented in Phase 16A.
+ * Opt-in adapter for a separate local C++ runner service.
+ * It never invokes C++, Docker, or a child process inside Next.js.
  */
 export class CppHttpExecutionProvider implements ServerExecutionProvider {
-  readonly executionMode = "cpp-runner-scaffold" as const;
+  readonly executionMode = "cpp-docker-local" as const;
 
   private readonly endpoint: string;
   private readonly fetchImplementation: FetchImplementation;
@@ -139,7 +139,7 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
     if (request.language !== "CPP") {
       return internalError(
         request.tests.length,
-        "The C++ runner scaffold supports C++ requests only.",
+        "The local C++ runner supports C++ requests only.",
       );
     }
     if (!requestFitsRunnerLimits(request)) {
@@ -173,7 +173,7 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
       if (!response.ok) {
         return internalError(
           request.tests.length,
-          "The configured C++ runner scaffold was unavailable.",
+          "The local C++ runner was unavailable.",
         );
       }
 
@@ -182,20 +182,20 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
       if (!parsed.success) {
         return internalError(
           request.tests.length,
-          "The C++ runner scaffold returned an invalid response.",
+          "The local C++ runner returned an invalid response.",
         );
       }
       if (!responseMatchesRequest(parsed.data, request)) {
         return internalError(
           request.tests.length,
-          "The C++ runner scaffold returned inconsistent test results.",
+          "The local C++ runner returned inconsistent test results.",
         );
       }
       return parsed.data;
     } catch {
       return internalError(
         request.tests.length,
-        "The C++ runner scaffold did not return a safe response in time.",
+        "The local C++ runner did not return a safe response in time.",
       );
     } finally {
       clearTimeout(timeout);

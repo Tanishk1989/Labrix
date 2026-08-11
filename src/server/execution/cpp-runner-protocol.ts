@@ -1,9 +1,12 @@
 import { z } from "zod";
 
 export const CPP_RUNNER_WALL_TIME_MS = 2_000;
+export const CPP_RUNNER_COMPILE_TIME_MS = 10_000;
 export const CPP_RUNNER_HTTP_TIMEOUT_MS = 22_000;
 export const CPP_RUNNER_OUTPUT_BYTES = 16_384;
+export const CPP_RUNNER_TOTAL_OUTPUT_BYTES = 65_536;
 export const CPP_RUNNER_RESPONSE_BYTES = 131_072;
+export const CPP_RUNNER_REQUEST_BYTES = 14 * 1_024 * 1_024;
 export const CPP_RUNNER_SOURCE_BYTES = 262_144;
 export const CPP_RUNNER_TEST_VALUE_BYTES = 65_536;
 export const CPP_RUNNER_MAX_TESTS = 100;

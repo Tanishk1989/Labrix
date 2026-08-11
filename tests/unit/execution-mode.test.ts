@@ -13,8 +13,8 @@ describe("execution mode disclosure", () => {
     expect(executionModeLabel("java-docker-local")).toBe(
       "Java Docker runner",
     );
-    expect(executionModeLabel("cpp-runner-scaffold")).toBe(
-      "C++ runner scaffold",
+    expect(executionModeLabel("cpp-docker-local")).toBe(
+      "C++ Docker runner",
     );
   });
 
