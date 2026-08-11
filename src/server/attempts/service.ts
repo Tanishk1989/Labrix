@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { resolveStarterCodes } from "@/domain/tasks/starter-code";
+import { evaluateSubmissionDeadline } from "@/domain/submissions/deadline-policy";
 import {
   executionModeFromPersistedSnapshot,
   type ExecutionMode,
@@ -98,6 +99,7 @@ export interface PersistedSubmission {
   id: string;
   attemptNumber: number;
   submittedAt: string;
+  timingStatus: "ON_TIME" | "LATE" | null;
   result: PersistedRun;
 }
 
@@ -589,6 +591,7 @@ function persistedSubmissionResult(
     id: submission.id,
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
+    timingStatus: submission.timingStatus,
     result: {
       executionMode: disclosedSnapshotExecutionMode(snapshot.executionMode),
       id: snapshot.runAttemptId,
@@ -661,6 +664,13 @@ async function submitStudentDraftWithoutGuard(
         if (!snapshot) throw new AccessDeniedError();
 
         const submittedAt = new Date();
+        const deadlineDecision = evaluateSubmissionDeadline({
+          deadline: session.task.deadline,
+          submittedAt,
+        });
+        if (!deadlineDecision.allowed) {
+          throw new AccessDeniedError("The submission deadline has passed.");
+        }
         const created = await tx.submissionAttempt.create({
           data: {
             taskId: session.taskId,
@@ -672,6 +682,7 @@ async function submitStudentDraftWithoutGuard(
             language: input.language,
             sourceCodeSnapshot: input.sourceCode,
             submittedAt,
+            timingStatus: deadlineDecision.timingStatus,
           },
           include: { resultSnapshot: true },
         });
@@ -781,6 +792,7 @@ export async function getSubmissionForTeacher(
     language: submission.language,
     sourceCode: submission.sourceCodeSnapshot,
     submittedAt: submission.submittedAt.toISOString(),
+    timingStatus: submission.timingStatus,
     student: submission.student,
     task: {
       id: submission.task.id,
@@ -866,6 +878,7 @@ export async function getSubmissionForStudent(
     language: submission.language,
     sourceCode: submission.sourceCodeSnapshot,
     submittedAt: submission.submittedAt.toISOString(),
+    timingStatus: submission.timingStatus,
     student: submission.student,
     task: submission.task,
     result: {

@@ -64,6 +64,10 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 **Accepted 2026-08-10.** A single-problem practical requires at least one visible test and may include hidden tests. Run evaluates visible tests only; Submit evaluates both groups. Students receive visible detail and only a hidden pass/total aggregate, while the classroom-owning teacher may inspect hidden details. Each new immutable result snapshot stores a deterministic equal-weight suggested score out of ten rounded to one decimal; provider/compile/runtime failure scores zero. Suggested scoring never replaces teacher-awarded marks. Rubrics and weighted grading remain out of scope.
 
+### D-020 — Submission deadline classification
+
+**Accepted 2026-08-11.** New immutable submission attempts store a nullable timing status determined from server time and the practical deadline. Submissions at or before the deadline, and submissions for practicals without a deadline, are `ON_TIME`; later submissions are `LATE`. The default policy allows late submissions while preserving their classification. Legacy attempts remain null and display **Timing unavailable**; they are not backfilled.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy
@@ -74,9 +78,9 @@ Approve event fields beyond the five foundation events, student notice/consent, 
 
 The slice uses one draft per coding session with debounced server saves. Decide multi-tab/device conflict behavior, offline support, save history, and recovery guarantees.
 
-### D-011 — Submission and deadline policy
+### D-011 — Remaining submission policy
 
-The slice permits numbered resubmissions and deduplicates retried requests. Define allowed-attempt limits, late/grace rules, timezone source, practical versioning, and result-disclosure policy.
+The slice permits numbered resubmissions, deduplicates retried requests, and classifies late attempts under D-020. Define allowed-attempt limits, grace rules, timezone presentation, practical versioning, and result-disclosure policy.
 
 ### D-012 — Execution provider and limits
 
