@@ -212,6 +212,16 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete with additive nullable storage. No runner, grading, submission, review, authorization, analytics, membership, or hidden-test behavior changes.
 
+## Phase 18A — production runner safety
+
+- Keep mock as the default in every environment.
+- Reject the local Java and C++ HTTP adapters in production unless an explicit, exact operator-acknowledgment flag is present.
+- Preserve the unauthenticated HTTP loopback restriction even when that production exception is acknowledged.
+- Return actionable configuration errors for missing, malformed, remote, authenticated, or production-disallowed local runner settings.
+- Document that no production execution provider exists yet.
+
+**Status:** complete at the provider-configuration boundary. The override is an exceptional acknowledgment, not production certification; a future production provider still requires a separate decision and implementation.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

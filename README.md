@@ -91,6 +91,8 @@ Untrusted student code must never execute inside Next.js. `ServerMockExecutionPr
 
 The optional `java-http` and `cpp-http` adapters talk only to their separate loopback Docker workers; Next.js never starts a compiler, runtime, Docker, a shell, or a child process. These local single-flight workers are not production execution. See [docs/09-JAVA-RUNNER-SPIKE.md](docs/09-JAVA-RUNNER-SPIKE.md) and [docs/10-CPP-RUNNER-SPIKE.md](docs/10-CPP-RUNNER-SPIKE.md); leaving `LABRIX_EXECUTION_PROVIDER` unset or set to `mock` preserves current behavior.
 
+Production rejects both local adapters unless `LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=true` is set exactly. That exceptional acknowledgment does not make them production-ready and never relaxes the HTTP loopback restriction. See [docs/11-EXECUTION-PROVIDER-SAFETY.md](docs/11-EXECUTION-PROVIDER-SAFETY.md).
+
 Submission attempts and result snapshots are protected from updates by database triggers. Repeated submission requests are deduplicated by a student-scoped idempotency key; a later resubmission creates a new numbered attempt.
 
 ## Documentation
