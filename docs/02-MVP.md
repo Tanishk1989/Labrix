@@ -18,7 +18,7 @@ Status reflects repository behavior as of 2026-08-10.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned marks and feedback are stored separately for each immutable attempt; drafts remain teacher-only and published reviews are visible only to the owning student.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
-- Teacher-owned classroom roster controls show active memberships, join dates, immutable-attempt/review summaries, and the current copyable join code. Teachers may deactivate access without deleting historical records and may regenerate the unique join code, invalidating the previous code.
+- Teacher-owned classroom roster controls show active and inactive memberships, join dates, immutable-attempt/review summaries, and the current copyable join code. Teachers may deactivate or reactivate the same membership row without deleting historical records, and may regenerate the unique join code, invalidating the previous code.
 - Owner-scoped teacher dashboard, practical list, submission queue, and progress views use persisted classroom, membership, practical, attempt, result, and event data without screenshot fixtures or automated review verdicts.
 - Membership-scoped student dashboard, classroom/practical views, submission history, progress, workspace, and immutable attempt result views use the same persisted records.
 - Provider-neutral local identity persistence: `User.accountStatus` and optional `ExternalIdentity` mappings with database uniqueness by provider/subject and local user/provider.

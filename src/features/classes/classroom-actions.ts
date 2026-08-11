@@ -60,10 +60,29 @@ export async function joinClassroom(code: string): Promise<Result> {
       "STUDENT",
     );
     if (!classroom) return { ok: false, message: "We could not find that classroom code." };
+    const membership = await prisma.classMembership.findUnique({
+      where: {
+        classroomId_userId: { classroomId: classroom.id, userId: student.id },
+      },
+      select: { active: true },
+    });
+    if (membership && !membership.active) {
+      return {
+        ok: false,
+        message:
+          "Your classroom access is inactive. Ask the classroom teacher to reactivate it.",
+      };
+    }
     await prisma.classMembership.upsert({
-      where: { classroomId_userId: { classroomId: classroom.id, userId: student.id } },
-      update: { active: true, role: MembershipRole.STUDENT },
-      create: { classroomId: classroom.id, userId: student.id, role: MembershipRole.STUDENT },
+      where: {
+        classroomId_userId: { classroomId: classroom.id, userId: student.id },
+      },
+      update: {},
+      create: {
+        classroomId: classroom.id,
+        userId: student.id,
+        role: MembershipRole.STUDENT,
+      },
     });
     revalidatePath("/classes");
     revalidatePath(`/classes/${classroom.id}`);

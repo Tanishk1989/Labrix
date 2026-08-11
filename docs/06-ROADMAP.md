@@ -98,7 +98,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Allow only the classroom-owning teacher to deactivate membership access without deleting history.
 - Display and regenerate the unique classroom join code with clear invalidation wording.
 
-**Status:** complete for the classroom students/progress route. Reactivation workflows, invitations, notifications, and membership audit history remain future work.
+**Status:** complete for the classroom students/progress route. Reactivation is tracked in Phase 9B; invitations, notifications, and membership audit history remain future work.
+
+## Phase 9B â€” teacher membership reactivation
+
+- Keep inactive students visible to the classroom owner with preserved submission/review summaries.
+- Restore access by reactivating the existing unique membership row; do not recreate membership or rewrite historical work.
+- Keep reactivation teacher-only and prevent join-code self-reactivation for inactive members.
+
+**Status:** complete for owner-controlled reactivation. Invitations, notifications, and membership audit history remain future work.
 
 ## Later slices
 

@@ -8,6 +8,7 @@ import {
 } from "@/server/actors/current-actor";
 import {
   deactivateStudentMembership,
+  reactivateStudentMembership,
   regenerateClassroomJoinCode,
 } from "@/server/classrooms/roster";
 
@@ -46,6 +47,34 @@ export async function deactivateStudentMembershipAction(
     return {
       ok: false,
       message: "Labrix could not deactivate this membership.",
+    };
+  }
+}
+
+export async function reactivateStudentMembershipAction(
+  classroomId: string,
+  membershipId: string,
+  _previousState: RosterActionState,
+  _formData: FormData,
+): Promise<RosterActionState> {
+  void _previousState;
+  void _formData;
+  try {
+    const actor = requireActorRole(
+      await resolveCurrentActor({ demoActor: "teacher" }),
+      "TEACHER",
+    );
+    await reactivateStudentMembership(prisma, {
+      actor,
+      classroomId,
+      membershipId,
+    });
+    refreshClassroom(classroomId);
+    return { ok: true, message: "Student access reactivated." };
+  } catch {
+    return {
+      ok: false,
+      message: "Labrix could not reactivate this membership.",
     };
   }
 }
