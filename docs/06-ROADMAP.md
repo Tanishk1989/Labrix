@@ -194,6 +194,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the local single-flight Docker proof. C++ workspace persistence acceptance, production isolation review, stricter runtime seccomp, queues/concurrency, observability, and broader native-code abuse testing remain future work.
 
+## Phase 16C — C++ runner workspace acceptance
+
+- Exercise the existing Run and Submit services with explicit `cpp-http` provider selection against the local Docker worker.
+- Persist and verify C++ success, compilation error, runtime error, and timeout through `RunAttempt` and immutable `ResultSnapshot` records.
+- Confirm Run remains visible-only, Submit evaluates visible and hidden tests, student output redacts hidden detail, and unset provider selection remains mock.
+- Require the existing explicit disposable-database guard and avoid Playwright/shared data.
+
+**Status:** complete for guarded service/persistence acceptance. Manual browser acceptance, production execution operations, and broader native-code abuse testing remain outside this slice.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

@@ -10,6 +10,7 @@ Labrix separates fast checks from database-mutating verification. Unit tests and
 | Typecheck | `npm run typecheck` | None | Every change |
 | Unit | `npm test` or `npm run test:unit` | None | Every change |
 | C++ runner smoke | `npm run test:runner:cpp` | None; starts disposable Docker containers | Local C++ worker implementation or safety changes |
+| C++ workspace acceptance | `npm run test:acceptance:cpp-workspace` | Creates and removes isolated C++ workspace/run/result/submission fixtures | Local C++ runner through the existing service/persistence boundary |
 | Integration | `npm run test:integration` | Creates and removes isolated fixture rows; files run serially | Persistence, authorization, transaction, or service changes |
 | Java workspace acceptance | `npm run test:acceptance:java-workspace` | Creates and removes isolated workspace/run/result/submission fixtures | Local Docker Java runner through the existing service/persistence boundary |
 | Build | `npm run build` | No intended writes | Route, server, dependency, or deployment-sensitive changes |
@@ -70,6 +71,20 @@ npm run test:runner:cpp
 ```
 
 The suite starts the C++ worker on an ephemeral loopback port and verifies compile-once success across ordered visible/hidden inputs, compiler failure, non-zero native exit, timeout, fixed-limit validation, and single-flight rejection. It does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or run Playwright. Workspace/persistence acceptance is not part of Phase 16B.
+
+## Local C++ workspace acceptance
+
+This acceptance is database-mutating and uses the same guard as integration tests. Configure `LABRIX_TEST_DATABASE_URL` for a disposable PostgreSQL database distinct from development/demo data and set `LABRIX_ALLOW_TEST_DATABASE_MUTATION=true`. Then run:
+
+```bash
+npm run test:db:prepare
+npm run runner:cpp:pull
+npm run test:acceptance:cpp-workspace
+```
+
+The targeted non-Playwright test starts the Phase 16B worker on an ephemeral loopback port, selects `cpp-http` through normal environment-based provider resolution, and calls `runStudentDraft` and `submitStudentDraft`. It verifies C++ success, compilation error, runtime error, timeout, persisted `RunAttempt`/`ResultSnapshot` mapping, visible-only Run, visible-plus-hidden Submit, hidden-detail redaction from the student result, and mock selection when the provider variable is unset. The fixture task and all related rows are uniquely named and removed after the suite.
+
+Do not point the acceptance command at a shared development/demo database, bypass its guard, or run full Playwright for this proof.
 
 ## Local Java workspace acceptance
 
