@@ -230,7 +230,12 @@ describe.sequential("persisted student-attempt service", () => {
         tests: [expect.objectContaining({ visibility: "VISIBLE" })],
       }),
     );
-    expect(await prisma.resultSnapshot.count({ where: { id: run.resultSnapshotId } })).toBe(1);
+    expect(
+      await prisma.resultSnapshot.findUniqueOrThrow({
+        where: { id: run.resultSnapshotId },
+        select: { executionMode: true },
+      }),
+    ).toEqual({ executionMode: "SIMULATED" });
   });
 
   it("creates an immutable submission with an exact result snapshot", async () => {
@@ -251,6 +256,7 @@ describe.sequential("persisted student-attempt service", () => {
     });
     expect(stored.sourceCodeSnapshot).toBe("// exact source\nint main() { return 0; }");
     expect(stored.resultSnapshot.passedTests).toBe(2);
+    expect(stored.resultSnapshot.executionMode).toBe("SIMULATED");
     expect(stored.resultSnapshot.visiblePassedTests).toBe(1);
     expect(stored.resultSnapshot.hiddenPassedTests).toBe(1);
     expect(stored.resultSnapshot.hiddenTotalTests).toBe(1);
@@ -270,6 +276,7 @@ describe.sequential("persisted student-attempt service", () => {
       select: { id: true },
     });
     expect(studentView.result.testResults).toHaveLength(1);
+    expect(studentView.result.executionMode).toBe("simulated");
     expect(studentView.result.hiddenPassedTests).toBe(1);
     expect(studentView.result.hiddenTotalTests).toBe(1);
     expect(JSON.stringify(studentView)).not.toContain("hidden-input");
@@ -415,6 +422,7 @@ describe.sequential("persisted student-attempt service", () => {
         }),
       ]),
     );
+    expect(review.result.executionMode).toBe("simulated");
   });
 
 });

@@ -1,5 +1,6 @@
 import {
   AllowedLanguage,
+  ExecutionMode as StoredExecutionMode,
   Prisma,
   RunResultState,
   type CodeEventType,
@@ -8,6 +9,7 @@ import { prisma } from "@/lib/db/prisma";
 import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import {
   executionModeFromPersistedSnapshot,
+  type ExecutionMode,
   type ExecutionModeDisclosure,
 } from "@/domain/execution/execution-mode";
 import {
@@ -334,6 +336,28 @@ function fromRunResultState(state: RunResultState): ServerExecutionResult["state
   return state.toLowerCase() as ServerExecutionResult["state"];
 }
 
+const storedExecutionModeByRuntime: Record<ExecutionMode, StoredExecutionMode> = {
+  simulated: StoredExecutionMode.SIMULATED,
+  "java-docker-local": StoredExecutionMode.JAVA_DOCKER_LOCAL,
+  "cpp-docker-local": StoredExecutionMode.CPP_DOCKER_LOCAL,
+};
+
+const runtimeExecutionModeByStored: Record<StoredExecutionMode, ExecutionMode> = {
+  SIMULATED: "simulated",
+  JAVA_DOCKER_LOCAL: "java-docker-local",
+  CPP_DOCKER_LOCAL: "cpp-docker-local",
+};
+
+function storedExecutionMode(mode: ExecutionMode) {
+  return storedExecutionModeByRuntime[mode];
+}
+
+function disclosedSnapshotExecutionMode(mode: StoredExecutionMode | null) {
+  return executionModeFromPersistedSnapshot(
+    mode === null ? null : runtimeExecutionModeByStored[mode],
+  );
+}
+
 type StoredTestResult = Omit<ServerExecutionTestResult, "visibility"> & {
   visibility?: TestVisibility;
 };
@@ -501,6 +525,7 @@ async function executeStudentDraft(
       data: {
         runAttemptId: prepared.run.id,
         state: toRunResultState(normalizedResult.state),
+        executionMode: storedExecutionMode(provider.executionMode),
         passedTests: normalizedResult.passedTests,
         totalTests: normalizedResult.totalTests,
         ...breakdown,
@@ -549,7 +574,6 @@ function persistedSubmissionResult(
   submission: Prisma.SubmissionAttemptGetPayload<{
     include: { resultSnapshot: true };
   }>,
-  executionMode: ExecutionModeDisclosure = executionModeFromPersistedSnapshot(),
 ): PersistedSubmission {
   const snapshot = submission.resultSnapshot;
   const breakdown = snapshotBreakdown(snapshot);
@@ -558,7 +582,7 @@ function persistedSubmissionResult(
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
     result: {
-      executionMode,
+      executionMode: disclosedSnapshotExecutionMode(snapshot.executionMode),
       id: snapshot.runAttemptId,
       resultSnapshotId: snapshot.id,
       state: fromRunResultState(snapshot.state),
@@ -659,12 +683,7 @@ export async function submitStudentDraft(
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
-    return persistedSubmissionResult(
-      outcome.submission,
-      outcome.created
-        ? run.executionMode
-        : executionModeFromPersistedSnapshot(),
-    );
+    return persistedSubmissionResult(outcome.submission);
   } catch (error) {
     const repeated = await findIdempotentSubmission(
       input.studentId,
@@ -741,7 +760,9 @@ export async function getSubmissionForTeacher(
       classroom: submission.task.classroom,
     },
     result: {
-      executionMode: executionModeFromPersistedSnapshot(),
+      executionMode: disclosedSnapshotExecutionMode(
+        submission.resultSnapshot.executionMode,
+      ),
       state: fromRunResultState(submission.resultSnapshot.state),
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,
@@ -820,7 +841,9 @@ export async function getSubmissionForStudent(
     student: submission.student,
     task: submission.task,
     result: {
-      executionMode: executionModeFromPersistedSnapshot(),
+      executionMode: disclosedSnapshotExecutionMode(
+        submission.resultSnapshot.executionMode,
+      ),
       state: fromRunResultState(submission.resultSnapshot.state),
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,
