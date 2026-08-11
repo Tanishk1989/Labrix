@@ -7,6 +7,10 @@ import {
 import { prisma } from "@/lib/db/prisma";
 import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import {
+  executionModeFromPersistedSnapshot,
+  type ExecutionModeDisclosure,
+} from "@/domain/execution/execution-mode";
+import {
   AccessDeniedError,
   requireOwnedClassroom,
   requirePublishedTaskForStudent,
@@ -36,6 +40,7 @@ type WorkspaceSession = Prisma.CodingSessionGetPayload<{
 }>;
 
 export interface StudentWorkspace {
+  executionMode: ExecutionModeDisclosure;
   classroom: { id: string; name: string };
   task: {
     id: string;
@@ -66,6 +71,7 @@ export interface StudentWorkspace {
 }
 
 export interface PersistedRun {
+  executionMode: ExecutionModeDisclosure;
   id: string;
   resultSnapshotId: string;
   state: ServerExecutionResult["state"];
@@ -95,9 +101,11 @@ export interface PersistedSubmission {
 function toWorkspace(
   task: Awaited<ReturnType<typeof requirePublishedTaskForStudent>>,
   session: WorkspaceSession,
+  executionMode: ExecutionModeDisclosure,
 ): StudentWorkspace {
   if (!session.draft) throw new Error("Active coding session has no draft.");
   return {
+    executionMode,
     classroom: task.classroom,
     task: {
       id: task.id,
@@ -140,8 +148,9 @@ export async function getOrCreateStudentWorkspace(
   taskId: string,
 ): Promise<StudentWorkspace> {
   const task = await requirePublishedTaskForStudent(prisma, studentId, taskId);
+  const executionMode = getServerExecutionProvider().executionMode;
   const existing = await findActiveSession(studentId, taskId);
-  if (existing) return toWorkspace(task, existing);
+  if (existing) return toWorkspace(task, existing, executionMode);
 
   try {
     const created = await prisma.$transaction(
@@ -181,11 +190,11 @@ export async function getOrCreateStudentWorkspace(
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
-    return toWorkspace(task, created);
+    return toWorkspace(task, created, executionMode);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrent = await findActiveSession(studentId, taskId);
-      if (concurrent) return toWorkspace(task, concurrent);
+      if (concurrent) return toWorkspace(task, concurrent, executionMode);
     }
     throw error;
   }
@@ -510,6 +519,7 @@ async function executeStudentDraft(
       type: "RUN_COMPLETED",
     });
     return {
+      executionMode: provider.executionMode,
       id: prepared.run.id,
       resultSnapshotId: snapshot.id,
       state: normalizedResult.state,
@@ -539,6 +549,7 @@ function persistedSubmissionResult(
   submission: Prisma.SubmissionAttemptGetPayload<{
     include: { resultSnapshot: true };
   }>,
+  executionMode: ExecutionModeDisclosure = executionModeFromPersistedSnapshot(),
 ): PersistedSubmission {
   const snapshot = submission.resultSnapshot;
   const breakdown = snapshotBreakdown(snapshot);
@@ -547,6 +558,7 @@ function persistedSubmissionResult(
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
     result: {
+      executionMode,
       id: snapshot.runAttemptId,
       resultSnapshotId: snapshot.id,
       state: fromRunResultState(snapshot.state),
@@ -590,7 +602,7 @@ export async function submitStudentDraft(
 
   const run = await executeStudentDraft(input, provider, "ALL");
   try {
-    const submission = await prisma.$transaction(
+    const outcome = await prisma.$transaction(
       async (tx) => {
         const repeated = await tx.submissionAttempt.findUnique({
           where: {
@@ -601,7 +613,7 @@ export async function submitStudentDraft(
           },
           include: { resultSnapshot: true },
         });
-        if (repeated) return repeated;
+        if (repeated) return { submission: repeated, created: false };
 
         const session = await requireActiveStudentSession(
           tx,
@@ -640,14 +652,19 @@ export async function submitStudentDraft(
           submissionAttemptId: created.id,
           type: "SUBMISSION_CREATED",
         });
-        return created;
+        return { submission: created, created: true };
       },
       {
         ...transactionOptions,
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
-    return persistedSubmissionResult(submission);
+    return persistedSubmissionResult(
+      outcome.submission,
+      outcome.created
+        ? run.executionMode
+        : executionModeFromPersistedSnapshot(),
+    );
   } catch (error) {
     const repeated = await findIdempotentSubmission(
       input.studentId,
@@ -724,6 +741,7 @@ export async function getSubmissionForTeacher(
       classroom: submission.task.classroom,
     },
     result: {
+      executionMode: executionModeFromPersistedSnapshot(),
       state: fromRunResultState(submission.resultSnapshot.state),
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,
@@ -802,6 +820,7 @@ export async function getSubmissionForStudent(
     student: submission.student,
     task: submission.task,
     result: {
+      executionMode: executionModeFromPersistedSnapshot(),
       state: fromRunResultState(submission.resultSnapshot.state),
       passedTests: submission.resultSnapshot.passedTests,
       totalTests: submission.resultSnapshot.totalTests,

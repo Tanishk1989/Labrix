@@ -25,6 +25,7 @@ const secondStudentId = "demo-student-2";
 const teacherId = "demo-teacher";
 
 const passingProvider: ServerExecutionProvider = {
+  executionMode: "simulated",
   execute: vi.fn(async (request: ServerExecutionRequest) => ({
     state: "completed" as const,
     passedTests: request.tests.length,

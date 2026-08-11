@@ -121,6 +121,8 @@ async function readBoundedResponse(response: Response) {
  * It never invokes Java, Docker, or a child process inside Next.js.
  */
 export class JavaHttpExecutionProvider implements ServerExecutionProvider {
+  readonly executionMode = "java-docker-local" as const;
+
   private readonly endpoint: string;
   private readonly fetchImplementation: FetchImplementation;
   private readonly requestTimeoutMs: number;

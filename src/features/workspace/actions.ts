@@ -34,7 +34,7 @@ export async function saveDraftAction(input: unknown) {
 export async function runDraftAction(input: unknown) {
   const parsed = draftInputSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, message: "The simulated run could not start." };
+    return { ok: false as const, message: "The run could not start." };
   }
   try {
     const actor = requireActorRole(
@@ -46,7 +46,7 @@ export async function runDraftAction(input: unknown) {
   } catch {
     return {
       ok: false as const,
-      message: "The simulated execution provider was unavailable. Try again.",
+      message: "The execution provider was unavailable. Try again.",
     };
   }
 }

@@ -6,6 +6,8 @@ import type {
 
 /** Deterministic simulation. It never compiles or executes student source. */
 export class ServerMockExecutionProvider implements ServerExecutionProvider {
+  readonly executionMode = "simulated" as const;
+
   constructor(private readonly delayMs = 75) {}
 
   async execute(

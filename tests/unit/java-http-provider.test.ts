@@ -61,6 +61,7 @@ describe("Java HTTP execution provider scaffold", () => {
       fetchImplementation: async () => runnerResponse(state),
     });
 
+    expect(provider.executionMode).toBe("java-docker-local");
     await expect(provider.execute(request)).resolves.toMatchObject({ state });
   });
 
@@ -139,9 +140,9 @@ describe("Java HTTP execution provider scaffold", () => {
   });
 
   it("keeps mock as the default and requires an explicit loopback Java endpoint", () => {
-    expect(getServerExecutionProvider({})).toBeInstanceOf(
-      ServerMockExecutionProvider,
-    );
+    const defaultProvider = getServerExecutionProvider({});
+    expect(defaultProvider).toBeInstanceOf(ServerMockExecutionProvider);
+    expect(defaultProvider.executionMode).toBe("simulated");
     expect(() =>
       getServerExecutionProvider({ LABRIX_EXECUTION_PROVIDER: "java-http" }),
     ).toThrow(/LABRIX_JAVA_RUNNER_URL/);
@@ -151,12 +152,11 @@ describe("Java HTTP execution provider scaffold", () => {
         LABRIX_JAVA_RUNNER_URL: "https://runner.example.com/execute",
       }),
     ).toThrow(/loopback/);
-    expect(
-      getServerExecutionProvider({
-        LABRIX_EXECUTION_PROVIDER: "java-http",
-        LABRIX_JAVA_RUNNER_URL:
-          "http://127.0.0.1:4010/v1/execute/java",
-      }),
-    ).toBeInstanceOf(JavaHttpExecutionProvider);
+    const javaProvider = getServerExecutionProvider({
+      LABRIX_EXECUTION_PROVIDER: "java-http",
+      LABRIX_JAVA_RUNNER_URL: "http://127.0.0.1:4010/v1/execute/java",
+    });
+    expect(javaProvider).toBeInstanceOf(JavaHttpExecutionProvider);
+    expect(javaProvider.executionMode).toBe("java-docker-local");
   });
 });
