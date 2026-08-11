@@ -36,6 +36,8 @@ Clerk establishes identity and session validity only. PostgreSQL remains authori
 
 Teacher classroom queries are owner-scoped. Latest-practical completion is derived from active student memberships and distinct submission student IDs. Client autosave compares source/language with the last successfully persisted version; the server repeats that comparison transactionally before changing a draft, timestamp, revision, or event timeline.
 
+The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, and a derived review status without returning draft feedback text. Student DTOs remain separate and expose only published reviews belonging to that student.
+
 ## Persisted model
 
 - `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.

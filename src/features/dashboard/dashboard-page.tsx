@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock3, Plus } from "lucide-react";
 import { EmptyState, MetricCard, ProgressBar, StatusBadge } from "@/components/design-system";
+import { teacherReviewStatusMeta } from "@/features/submission-review/review-queue";
 import type { TeacherOverview } from "@/server/teacher/overview";
 
 function dateLabel(value: string | null) {
@@ -35,7 +36,7 @@ export function TeacherDashboardPage({ overview }: { overview: TeacherOverview }
         <MetricCard label="Classes" value={overview.summary.classroomCount} />
         <MetricCard label="Students" value={overview.summary.distinctStudentCount} detail="Distinct active memberships" />
         <MetricCard label="Published practicals" value={overview.summary.publishedPracticalCount} />
-        <MetricCard label="Submission attempts" value={overview.summary.submissionAttemptCount} detail="Immutable attempts" />
+        <MetricCard label="Needs review" value={overview.summary.needsReviewCount} detail={`${overview.summary.submissionAttemptCount} immutable attempts`} />
       </section>
 
       <section>
@@ -125,11 +126,12 @@ export function TeacherDashboardPage({ overview }: { overview: TeacherOverview }
             <div className="divide-y divide-[var(--border-subtle)]">
               {overview.submissions.slice(0, 6).map((submission) => {
                 const passed = submission.state === "COMPLETED" && submission.passedTests === submission.totalTests;
+                const review = teacherReviewStatusMeta(submission.reviewStatus);
                 return (
                   <Link key={submission.id} href={`/submissions/${submission.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-hover)]">
                     <span className={`signal-dot ${passed ? "signal-success" : submission.state === "COMPILATION_ERROR" ? "signal-danger" : "signal-warning"}`} />
                     <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-white">{submission.studentName}</p><p className="truncate text-[11px] text-[var(--text-muted)]">{submission.taskTitle} · Attempt {submission.attemptNumber}</p></div>
-                    <div className="text-right"><p className="text-[11px] font-medium text-[var(--text-secondary)]">{submission.passedTests}/{submission.totalTests} tests</p><p className="text-[10px] text-[var(--text-muted)]">{relativeTime(submission.submittedAt)}</p></div>
+                    <div className="text-right"><p className="text-[11px] font-medium text-[var(--text-secondary)]">{review.label}</p><p className="text-[10px] text-[var(--text-muted)]">{submission.passedTests}/{submission.totalTests} tests · {relativeTime(submission.submittedAt)}</p></div>
                   </Link>
                 );
               })}
