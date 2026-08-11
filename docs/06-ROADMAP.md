@@ -92,6 +92,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the existing teacher submissions route. Notifications, rubrics, weighted grading, AI, and real execution remain excluded.
 
+## Phase 8A — teacher roster and join-code controls
+
+- Show active student memberships, join dates, and persisted submission/review summaries.
+- Allow only the classroom-owning teacher to deactivate membership access without deleting history.
+- Display and regenerate the unique classroom join code with clear invalidation wording.
+
+**Status:** complete for the classroom students/progress route. Reactivation workflows, invitations, notifications, and membership audit history remain future work.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.

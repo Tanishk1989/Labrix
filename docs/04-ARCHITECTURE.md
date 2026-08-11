@@ -38,6 +38,8 @@ Teacher classroom queries are owner-scoped. Latest-practical completion is deriv
 
 The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, and a derived review status without returning draft feedback text. Student DTOs remain separate and expose only published reviews belonging to that student.
 
+Roster reads and mutations use a server-only classroom service. Deactivation updates only the existing membership `active` flag after role and classroom-owner checks; historical coding and review relations remain untouched. Join-code regeneration updates the existing unique classroom code, so no schema change or invitation record is required for this MVP control.
+
 ## Persisted model
 
 - `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.
