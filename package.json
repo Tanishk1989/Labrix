@@ -27,6 +27,7 @@
     "demo:reset": "tsx scripts/demo-reset.ts",
     "demo": "npm.cmd run demo:check && next dev",
     "auth:link-clerk": "tsx scripts/link-clerk-identity.ts",
+    "auth:provision-teacher": "tsx scripts/provision-teacher.ts",
     "runner:java:pull": "docker pull eclipse-temurin@sha256:55fb9bf738f5d9b4a6c01b39337e3070d3e27370dd3c478fd1d5d3cd2233c6d8",
     "runner:java": "tsx runner/java/server.ts",
     "runner:cpp:pull": "docker pull gcc@sha256:b99b86a28812b1e6453a231a947dc43d76fe192788a12f344a9b568bf9f5d24c",

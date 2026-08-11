@@ -25,12 +25,13 @@ Status reflects repository behavior as of 2026-08-11.
 - Clerk SDK, Next.js 16 proxy integration, public sign-in/sign-up shell, sign-out/account control, and server-side Clerk session adapter.
 - A provider-neutral `resolveCurrentActor()` maps a server-verified Clerk subject to an explicitly linked local user and enforces local account status and role before existing resource authorization.
 - Controlled local/admin identity linking by explicit Labrix user ID and verified Clerk subject; no email matching or public linking endpoint.
+- Guarded administrator teacher provisioning creates a new active teacher or links an explicitly selected active teacher to a Clerk subject without email matching or student promotion.
 - Unit, database integration, and critical browser tests.
 - Canonical persisted navigation for dashboard, classrooms, practicals, progress, submissions, workspace, and teacher review. Known legacy list/history URLs redirect to persisted equivalents; arbitrary unmatched URLs no longer render hard-coded product data.
 
 ## Partial
 
-- Production authentication remains incomplete until a security acceptance pass and administrator-controlled teacher provisioning. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
+- Production authentication still requires a security acceptance pass and operational secret-management procedure. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
