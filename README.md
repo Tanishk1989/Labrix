@@ -67,6 +67,8 @@ npm test
 npm run build
 ```
 
+For production configuration, migration order, health checks, forbidden demo commands, and backup/rollback guidance, follow [docs/12-DEPLOYMENT.md](docs/12-DEPLOYMENT.md).
+
 `npm test` is unit-only and does not use PostgreSQL. Database integration and full Playwright tests are mutating and require an explicitly confirmed disposable database; `npm run test:acceptance:read-only` provides a non-mutating seeded-route smoke check. See [docs/08-VERIFICATION.md](docs/08-VERIFICATION.md) before running `npm run test:integration` or `npm run test:e2e`.
 
 For the opt-in local Java runner, pull the pinned JDK image and start the worker in a separate terminal:
