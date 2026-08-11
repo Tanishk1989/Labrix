@@ -62,9 +62,9 @@ Submission creation uses a serializable transaction to create the attempt, close
 ## Route boundary
 
 - **Database-backed:** `/dashboard`, `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`, `/classes/[classroomId]/tasks/[taskId]/edit`, `/practicals`, `/practicals/[taskId]`, `/progress`, `/tasks/[taskId]`, `/classes/[classroomId]/students`, `/submissions`, and `/submissions/[submissionId]`. Teacher queries are ownership-scoped; student queries are active-membership and resource-ownership scoped.
-- **Legacy catch-all remains:** unmatched routes such as `/tasks/[taskId]/my-submissions` and `/classes/[classroomId]/tasks`.
+- **Retired legacy aliases:** `/` redirects to `/dashboard`, `/classes/[classroomId]/tasks` redirects to the filtered persisted `/practicals` route, and `/tasks/[taskId]/my-submissions` redirects to filtered persisted `/submissions`.
 
-Explicit routes take precedence over `src/app/[[...slug]]/page.tsx`. New product behavior should use explicit routes and server services rather than expanding the catch-all.
+`src/app/[[...slug]]/page.tsx` is now a redirect/404 quarantine only. It contains no product UI or mock data: known aliases redirect, while all other unmatched paths call `notFound()`. New product behavior must use explicit routes and server services.
 
 ## Execution and evidence boundaries
 
