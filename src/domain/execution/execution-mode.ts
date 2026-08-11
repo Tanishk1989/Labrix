@@ -1,14 +1,14 @@
 export type ExecutionMode =
   | "simulated"
   | "java-docker-local"
-  | "cpp-runner-scaffold";
+  | "cpp-docker-local";
 
 export type ExecutionModeDisclosure = ExecutionMode | "unavailable";
 
 const executionModeLabels: Record<ExecutionModeDisclosure, string> = {
   simulated: "Simulated execution",
   "java-docker-local": "Java Docker runner",
-  "cpp-runner-scaffold": "C++ runner scaffold",
+  "cpp-docker-local": "C++ Docker runner",
   unavailable: "Execution mode unavailable",
 };
 

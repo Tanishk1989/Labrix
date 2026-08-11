@@ -55,7 +55,7 @@ describe("C++ HTTP execution provider scaffold", () => {
     await expect(provider.execute(request)).resolves.toMatchObject({
       state: "completed",
     });
-    expect(provider.executionMode).toBe("cpp-runner-scaffold");
+    expect(provider.executionMode).toBe("cpp-docker-local");
     expect(JSON.parse(String(capturedOptions?.body))).toMatchObject({
       language: "CPP",
       limits: {
@@ -152,6 +152,6 @@ describe("C++ HTTP execution provider scaffold", () => {
       LABRIX_CPP_RUNNER_URL: "http://127.0.0.1:4020/v1/execute/cpp",
     });
     expect(provider).toBeInstanceOf(CppHttpExecutionProvider);
-    expect(provider.executionMode).toBe("cpp-runner-scaffold");
+    expect(provider.executionMode).toBe("cpp-docker-local");
   });
 });

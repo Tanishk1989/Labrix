@@ -11,6 +11,7 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:runner:java": "vitest run --config vitest.runner.config.ts",
+    "test:runner:cpp": "vitest run --config vitest.cpp-runner.config.ts",
     "test:acceptance:java-workspace": "tsx scripts/run-isolated-verification.ts integration tests/integration/java-runner-workspace.test.ts",
     "test:db:prepare": "tsx scripts/run-isolated-verification.ts prepare",
     "test:integration": "tsx scripts/run-isolated-verification.ts integration",
@@ -27,6 +28,8 @@
     "auth:link-clerk": "tsx scripts/link-clerk-identity.ts",
     "runner:java:pull": "docker pull eclipse-temurin@sha256:55fb9bf738f5d9b4a6c01b39337e3070d3e27370dd3c478fd1d5d3cd2233c6d8",
     "runner:java": "tsx runner/java/server.ts",
+    "runner:cpp:pull": "docker pull gcc@sha256:b99b86a28812b1e6453a231a947dc43d76fe192788a12f344a9b568bf9f5d24c",
+    "runner:cpp": "tsx runner/cpp/server.ts",
     "acceptance:java-workspace:dev": "tsx scripts/start-java-workspace-acceptance.ts"
   },
   "dependencies": {

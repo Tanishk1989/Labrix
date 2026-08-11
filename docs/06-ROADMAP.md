@@ -184,6 +184,16 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete as planning and fail-closed scaffolding only. No C++ worker, compiler image, Docker execution, start script, or end-to-end acceptance exists.
 
+## Phase 16B — local Docker C++ runner worker
+
+- Add a separate loopback-only C++ worker without invoking `g++`, native binaries, Docker, a shell, or child processes from Next.js.
+- Compile once and run ordered inputs inside one fresh, non-root, resource-bounded, network-disabled container per request.
+- Keep source storage non-executable, place only the compiled binary on a small executable tmpfs, and force cleanup on every result path.
+- Prove success, compilation error, runtime error, timeout, fixed-limit validation, and single-flight rejection without PostgreSQL.
+- Keep mock as default, `cpp-http` explicitly opt-in, and the Java runner unchanged.
+
+**Status:** complete for the local single-flight Docker proof. C++ workspace persistence acceptance, production isolation review, stricter runtime seccomp, queues/concurrency, observability, and broader native-code abuse testing remain future work.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

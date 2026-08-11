@@ -9,6 +9,7 @@ Labrix separates fast checks from database-mutating verification. Unit tests and
 | Lint | `npm run lint` | None | Every change |
 | Typecheck | `npm run typecheck` | None | Every change |
 | Unit | `npm test` or `npm run test:unit` | None | Every change |
+| C++ runner smoke | `npm run test:runner:cpp` | None; starts disposable Docker containers | Local C++ worker implementation or safety changes |
 | Integration | `npm run test:integration` | Creates and removes isolated fixture rows; files run serially | Persistence, authorization, transaction, or service changes |
 | Java workspace acceptance | `npm run test:acceptance:java-workspace` | Creates and removes isolated workspace/run/result/submission fixtures | Local Docker Java runner through the existing service/persistence boundary |
 | Build | `npm run build` | No intended writes | Route, server, dependency, or deployment-sensitive changes |
@@ -58,6 +59,17 @@ npm run test:integration -- tests/integration/submission-review.test.ts
 The read-only acceptance command checks dashboard, classes, classroom progress, and review-queue routes. It intentionally excludes the coding workspace because opening or interacting with that page can create or change persisted attempt state.
 
 Full Playwright refuses to reuse an already-running server. This prevents an isolated test command from silently connecting to a server that was started with the shared demo database.
+
+## Local C++ runner smoke
+
+Pull the digest-pinned compiler image and run the targeted Docker-backed suite:
+
+```bash
+npm run runner:cpp:pull
+npm run test:runner:cpp
+```
+
+The suite starts the C++ worker on an ephemeral loopback port and verifies compile-once success across ordered visible/hidden inputs, compiler failure, non-zero native exit, timeout, fixed-limit validation, and single-flight rejection. It does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or run Playwright. Workspace/persistence acceptance is not part of Phase 16B.
 
 ## Local Java workspace acceptance
 

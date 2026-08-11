@@ -11,8 +11,8 @@ Labrix presents evidence for teacher judgment. It does not declare cheating or a
 ## Current repository state
 
 - **Implemented:** Next.js classroom/practical persistence; visible/hidden test authoring for the single-problem model; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary with honest runtime mode disclosure; immutable submission attempts and result snapshots with visibility counters and a suggested equal-weight test score; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; teacher-authored draft/published marks and feedback per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; and controlled identity linking.
-- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model. A loopback-only local Java worker can compile and execute Java in disposable locked-down Docker containers, but it is an opt-in development proof rather than a production execution system.
-- **Mock:** execution results still use the default deterministic provider and simulated source markers. The UI identifies it as **Simulated execution**. C++ is not compiled, and Java is compiled only after explicitly selecting the local `java-http` provider, shown as **Java Docker runner**. The visible role selector changes demo presentation and is not authentication.
+- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model. Separate loopback-only local Java and C++ workers can compile and execute code in disposable locked-down Docker containers, but both are opt-in development proofs rather than a production execution system.
+- **Mock:** execution results still use the default deterministic provider and simulated source markers. The UI identifies it as **Simulated execution**. Real Java and C++ execution require explicit local `java-http` or `cpp-http` selection and a separately started worker. The visible role selector changes demo presentation and is not authentication.
 - **Planned:** administrator-controlled teacher provisioning, authentication security hardening, isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
@@ -72,13 +72,22 @@ npm run runner:java
 
 Then set `LABRIX_EXECUTION_PROVIDER=java-http` and the loopback URL shown in `.env.example` for the Next.js process. The mock provider remains the default. See [docs/09-JAVA-RUNNER-SPIKE.md](docs/09-JAVA-RUNNER-SPIKE.md) for limits, smoke verification, and local-only caveats.
 
+For the opt-in local C++ runner, pull the pinned GCC image and start its separate worker:
+
+```bash
+npm run runner:cpp:pull
+npm run runner:cpp
+```
+
+Then set `LABRIX_EXECUTION_PROVIDER=cpp-http` and the C++ loopback URL shown in `.env.example`. See [docs/10-CPP-RUNNER-SPIKE.md](docs/10-CPP-RUNNER-SPIKE.md) for the native-code limits and remaining local-only caveats.
+
 Workspace-level Java acceptance is database-mutating and therefore requires the disposable-database guard. After configuring and preparing `LABRIX_TEST_DATABASE_URL`, use `npm run test:acceptance:java-workspace` for the targeted service/persistence proof or `npm run acceptance:java-workspace:dev` for a guarded manual workspace session. Neither command permits the configured development/demo database.
 
 ## Safety boundary
 
 Untrusted student code must never execute inside Next.js. `ServerMockExecutionProvider` only simulates outcomes. Production execution requires a separate isolated provider or sandbox with explicit resource and network controls.
 
-The optional `java-http` adapter talks only to the separate loopback Docker worker; Next.js never starts Java, Docker, a shell, or a child process. This local single-flight worker is not production execution. See [docs/09-JAVA-RUNNER-SPIKE.md](docs/09-JAVA-RUNNER-SPIKE.md); leaving `LABRIX_EXECUTION_PROVIDER` unset or set to `mock` preserves current behavior.
+The optional `java-http` and `cpp-http` adapters talk only to their separate loopback Docker workers; Next.js never starts a compiler, runtime, Docker, a shell, or a child process. These local single-flight workers are not production execution. See [docs/09-JAVA-RUNNER-SPIKE.md](docs/09-JAVA-RUNNER-SPIKE.md) and [docs/10-CPP-RUNNER-SPIKE.md](docs/10-CPP-RUNNER-SPIKE.md); leaving `LABRIX_EXECUTION_PROVIDER` unset or set to `mock` preserves current behavior.
 
 Submission attempts and result snapshots are protected from updates by database triggers. Repeated submission requests are deduplicated by a student-scoped idempotency key; a later resubmission creates a new numbered attempt.
 
