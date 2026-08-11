@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import { snapshotBreakdown } from "@/server/execution/result-grading";
 
 export type StudentOverview = Awaited<ReturnType<typeof getStudentOverview>>;
 
@@ -23,7 +24,21 @@ export async function getStudentOverview(studentId: string) {
               submissionAttempts: {
                 where: { studentId },
                 orderBy: { attemptNumber: "desc" },
-                include: { resultSnapshot: { select: { state: true, passedTests: true, totalTests: true } } },
+                include: {
+                  resultSnapshot: {
+                    select: {
+                      state: true,
+                      passedTests: true,
+                      totalTests: true,
+                      visiblePassedTests: true,
+                      visibleTotalTests: true,
+                      hiddenPassedTests: true,
+                      hiddenTotalTests: true,
+                      suggestedScore: true,
+                    },
+                  },
+                  review: { select: { status: true } },
+                },
               },
               codingSessions: {
                 where: { studentId },
@@ -40,7 +55,18 @@ export async function getStudentOverview(studentId: string) {
 
   const practicals = memberships.flatMap(({ classroom }) =>
     classroom.tasks.map((task) => {
-      const latestSubmission = task.submissionAttempts[0] ?? null;
+      const attempts = task.submissionAttempts.map((attempt) => ({
+        id: attempt.id,
+        attemptNumber: attempt.attemptNumber,
+        language: attempt.language,
+        submittedAt: attempt.submittedAt.toISOString(),
+        state: attempt.resultSnapshot.state,
+        passedTests: attempt.resultSnapshot.passedTests,
+        totalTests: attempt.resultSnapshot.totalTests,
+        ...snapshotBreakdown(attempt.resultSnapshot),
+        publishedReviewExists: attempt.review?.status === "PUBLISHED",
+      }));
+      const latestSubmission = attempts[0] ?? null;
       const latestSession = task.codingSessions[0] ?? null;
       return {
         id: task.id,
@@ -52,24 +78,8 @@ export async function getStudentOverview(studentId: string) {
         classroom: { id: classroom.id, name: classroom.name, subject: classroom.subject, section: classroom.section },
         visibleTestCount: task.testCases.length,
         latestSession: latestSession ? { ...latestSession, updatedAt: latestSession.updatedAt.toISOString() } : null,
-        latestSubmission: latestSubmission ? {
-          id: latestSubmission.id,
-          attemptNumber: latestSubmission.attemptNumber,
-          language: latestSubmission.language,
-          submittedAt: latestSubmission.submittedAt.toISOString(),
-          state: latestSubmission.resultSnapshot.state,
-          passedTests: latestSubmission.resultSnapshot.passedTests,
-          totalTests: latestSubmission.resultSnapshot.totalTests,
-        } : null,
-        attempts: task.submissionAttempts.map((attempt) => ({
-          id: attempt.id,
-          attemptNumber: attempt.attemptNumber,
-          language: attempt.language,
-          submittedAt: attempt.submittedAt.toISOString(),
-          state: attempt.resultSnapshot.state,
-          passedTests: attempt.resultSnapshot.passedTests,
-          totalTests: attempt.resultSnapshot.totalTests,
-        })),
+        latestSubmission,
+        attempts,
       };
     }),
   );

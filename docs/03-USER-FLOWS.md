@@ -29,6 +29,7 @@ flowchart LR
 4. Run saves the current draft, records request/completion events, evaluates visible tests through the server-owned mock provider, and stores its result snapshot.
 5. Submit evaluates visible and hidden tests for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. The student sees visible details and only the hidden pass/total aggregate.
 6. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
+7. Submission history labels every attempt as read-only, separates the suggested test score from teacher-awarded marks, and shows only whether teacher feedback has been published. Private review drafts remain teacher-only.
 
 **Status:** implemented for the seeded practical in demo mode and linked active students in Clerk mode. Execution is clearly simulated.
 

@@ -84,6 +84,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete with the deterministic simulated provider. Real compilation, weighted grading, and rubrics remain excluded.
 
+## Phase 6A — student attempt and feedback clarity
+
+- Present immutable attempts with visible/hidden aggregates and legacy-safe suggested scores.
+- Distinguish automatic suggested scores from published teacher marks and feedback.
+- Label resubmission actions as a new attempt and expose only published-review status in student history.
+
+**Status:** complete for the persisted student routes. Search/filtering and richer feedback notifications remain future polish.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.

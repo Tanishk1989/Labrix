@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildResultBreakdown,
   calculateSuggestedScore,
+  snapshotBreakdown,
 } from "@/server/execution/result-grading";
-import { snapshotBreakdown } from "@/server/attempts/service";
 
 describe("suggested test grading", () => {
   it("uses equal test weight and rounds to one decimal out of ten", () => {
