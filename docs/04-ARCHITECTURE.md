@@ -15,8 +15,9 @@ flowchart TB
   SVC --> DB[("PostgreSQL via Prisma")]
   SVC --> EP["ServerExecutionProvider"]
   EP --> MOCK["Deterministic mock; no code execution"]
-  EP -. "opt-in scaffold" .-> JHTTP["Loopback Java HTTP adapter"]
-  JHTTP -. "not implemented in this spike" .-> WORKER["Separate Docker worker"]
+  EP -. "explicit local opt-in" .-> JHTTP["Loopback Java HTTP adapter"]
+  JHTTP --> WORKER["Separate single-flight Java worker"]
+  WORKER --> DOCKER["Fresh locked-down Docker container per request"]
   DB --> REVIEW["Persisted teacher progress and review"]
 ```
 
@@ -70,7 +71,9 @@ Submission creation uses a serializable transaction to create the attempt, close
 
 ## Execution and evidence boundaries
 
-No student source runs in Next.js. The default server provider only simulates deterministic feedback. An opt-in `java-http` adapter now defines a bounded, loopback-only contract for a separate Java runner, but the Docker worker is not implemented or runtime-verified while the local daemon is unavailable. The adapter has an HTTP deadline, bounded response parsing, Java-only enforcement, and fail-closed response validation; it never invokes Java, Docker, or child processes. A production adapter still requires an isolated runner with explicit time, memory, process, filesystem, output, network, queue, retry, and observability controls.
+No student source runs in Next.js. The default server provider only simulates deterministic feedback. The opt-in `java-http` adapter has an HTTP deadline, bounded response parsing, Java-only enforcement, and fail-closed response validation; it never invokes Java, Docker, a shell, or child processes. Its separate loopback worker creates one disposable Java container per request, compiles once, executes ordered test inputs, and enforces CPU, memory, process, filesystem, output, network, and wall-clock limits. The worker is a local single-flight proof only; a production adapter still requires an accepted provider decision, durable queueing, retry/outage policy, image lifecycle, observability, concurrency targets, and abuse testing.
+
+The local worker supplies source and one test input at a time over `docker exec` standard input. It does not mount the repository, Docker socket, application environment, or database credentials into the sandbox. The container uses a pinned Java 21 image, a non-root user, a read-only root filesystem, bounded temporary filesystems, no network, no Linux capabilities, and forced cleanup. Hidden expected outputs stay in the worker process and are never written into the container.
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 
