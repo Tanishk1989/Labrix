@@ -124,6 +124,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for Java and C++ templates. Additional languages, practical versioning, and multi-file starters remain future work.
 
+## Phase 12A — teacher practical analytics
+
+- Summarize the latest published practical from active memberships and each student's latest immutable submission.
+- Show deterministic completion, suggested-score, visible/hidden pass-rate, and published-review aggregates.
+- Surface neutral attention reasons without exposing hidden test details or private draft feedback.
+
+**Status:** complete on the classroom students/progress route. Historical trend charts, exports, configurable thresholds, and cross-practical comparison remain future work.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.

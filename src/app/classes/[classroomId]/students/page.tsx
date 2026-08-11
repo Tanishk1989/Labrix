@@ -11,6 +11,21 @@ import {
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getTeacherClassroomProgress } from "@/server/attempts/service";
 import { getTeacherClassroomRoster } from "@/server/classrooms/roster";
+import {
+  getTeacherPracticalAnalytics,
+  type PracticalAnalyticsAttentionReason,
+} from "@/server/teacher/practical-analytics";
+
+const attentionLabels: Record<PracticalAnalyticsAttentionReason, string> = {
+  NO_SUBMISSION: "No submission",
+  LOW_SUGGESTED_SCORE: "Suggested score below 5/10",
+  FAILED_HIDDEN_TESTS: "Hidden tests not all passed",
+  NEEDS_REVIEW: "Needs teacher review",
+};
+
+function rateLabel(value: number | null) {
+  return value === null ? "Not available" : `${value.toFixed(1)}%`;
+}
 
 async function loadClassroomManagement(
   teacherId: string,
@@ -21,7 +36,14 @@ async function loadClassroomManagement(
       getTeacherClassroomProgress(teacherId, classroomId),
       getTeacherClassroomRoster(teacherId, classroomId),
     ]);
-    return { progress, roster };
+    const analytics = progress.task
+      ? await getTeacherPracticalAnalytics(
+          teacherId,
+          classroomId,
+          progress.task.id,
+        )
+      : null;
+    return { progress, roster, analytics };
   } catch {
     notFound();
   }
@@ -37,7 +59,7 @@ export default async function StudentProgressPage({
     demoActor: "teacher",
     requiredRole: "TEACHER",
   });
-  const { progress, roster } = await loadClassroomManagement(
+  const { progress, roster, analytics } = await loadClassroomManagement(
     actor.id,
     classroomId,
   );
@@ -79,6 +101,36 @@ export default async function StudentProgressPage({
         <td className="min-w-52">{student.latestSubmission ? <Link href={`/submissions/${student.latestSubmission.id}`} className="text-link"><span>{student.latestSubmission.taskTitle} · #{student.latestSubmission.attemptNumber}</span><ArrowRight size={12} /></Link> : <span className="text-xs text-[var(--text-muted)]">No submission yet</span>}</td>
         <td><DeactivateMembershipButton classroomId={classroomId} membershipId={student.membershipId} studentName={student.name} /></td>
       </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No active students" description="Students appear here after joining with the current classroom code." /></div>}
+    </section>
+
+    <section className="space-y-3">
+      <div>
+        <p className="eyebrow">Deterministic practical analytics</p>
+        <h2 className="section-heading mt-1">{analytics?.task.title ?? "No published practical"}</h2>
+        <p className="section-description">Latest immutable submission per active student; resubmissions never inflate completion.</p>
+      </div>
+      {analytics ? <>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Active students" value={analytics.activeStudentCount} />
+          <MetricCard label="Submitted students" value={analytics.submittedStudentCount} detail={`${analytics.pendingStudentCount} pending`} />
+          <MetricCard label="Average suggested score" value={analytics.averageSuggestedScore === null ? "Not available" : `${analytics.averageSuggestedScore.toFixed(1)}/10`} detail="Latest submitted attempts" />
+          <MetricCard label="Review status" value={`${analytics.reviewedCount}/${analytics.submittedStudentCount}`} detail={`${analytics.needsReviewCount} need review`} />
+          <MetricCard label="Visible-test pass rate" value={rateLabel(analytics.visibleTests.passRate)} detail={`${analytics.visibleTests.passed}/${analytics.visibleTests.total} tests`} />
+          <MetricCard label="Hidden-test pass rate" value={rateLabel(analytics.hiddenTests.passRate)} detail={analytics.hiddenTests.total ? `${analytics.hiddenTests.passed}/${analytics.hiddenTests.total} tests` : "No hidden counters available"} />
+          <MetricCard label="Pending students" value={analytics.pendingStudentCount} detail="No immutable submission" />
+          <MetricCard label="Needs teacher review" value={analytics.needsReviewCount} detail="Includes private drafts" />
+        </div>
+
+        <div className="panel overflow-hidden">
+          <div className="panel-header"><div><h3 className="section-heading">Students needing attention</h3><p className="section-description">Deterministic signals only. They guide review and do not make academic-integrity judgments.</p></div><span className="count-chip">{analytics.attention.length}</span></div>
+          {analytics.attention.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Reasons</th><th>Latest score</th><th><span className="sr-only">Action</span></th></tr></thead><tbody>{analytics.attention.map((item) => <tr key={item.student.id}>
+            <td className="min-w-52"><p className="font-semibold text-white">{item.student.name}</p><p className="text-[11px] text-[var(--text-muted)]">{item.student.email}</p></td>
+            <td className="min-w-72"><div className="flex flex-wrap gap-1.5">{item.reasons.map((reason) => <StatusBadge key={reason} tone={reason === "NO_SUBMISSION" || reason === "FAILED_HIDDEN_TESTS" ? "warning" : "neutral"}>{attentionLabels[reason]}</StatusBadge>)}</div></td>
+            <td>{item.suggestedScore === null ? <span className="text-[var(--text-muted)]">Not available</span> : <span className="font-semibold text-white">{item.suggestedScore.toFixed(1)}/10</span>}</td>
+            <td>{item.submissionId ? <Link className="button-secondary min-h-8 px-2.5 py-1" href={`/submissions/${item.submissionId}`}>Review <ArrowRight size={12} /></Link> : <span className="text-xs text-[var(--text-muted)]">Await submission</span>}</td>
+          </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No attention signals" description="Every active student has submitted, passed the configured thresholds, and received published feedback." /></div>}
+        </div>
+      </> : <EmptyState title="No published practical" description="Publish a practical to start owner-scoped analytics." />}
     </section>
 
     <section className="panel overflow-hidden">

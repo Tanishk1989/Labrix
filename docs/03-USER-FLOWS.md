@@ -41,9 +41,11 @@ flowchart LR
 4. Review shows the immutable source/result snapshots, separate visible/hidden test details, suggested test score, attempt number, timestamp, run count, and ordered foundation timeline.
 5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
 6. The owner-scoped review queue distinguishes `Needs review`, `Draft saved`, and `Published feedback`; its Needs review filter keeps unfinished private drafts visible, while Reviewed means feedback has been published.
+7. The classroom progress route summarizes the latest published practical using one latest immutable attempt per active student: completion, deterministic suggested-score and visible/hidden pass-rate aggregates, published-review status, and neutral attention reasons.
+8. Legacy result snapshots remain readable; their undivided passed/total counters contribute as visible-only and do not invent hidden-test data.
 7. No cheating score, AI summary, or automated academic decision is produced.
 
-**Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale.
+**Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale and owner-scoped latest-practical analytics.
 
 ## Teacher: manage roster access
 
