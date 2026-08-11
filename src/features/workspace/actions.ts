@@ -9,6 +9,7 @@ import {
   saveStudentDraft,
   submitStudentDraft,
 } from "@/server/attempts/service";
+import { ExecutionRequestGuardError } from "@/server/execution/request-guard";
 import { draftInputSchema, submissionInputSchema } from "./input-schema";
 
 export async function saveDraftAction(input: unknown) {
@@ -43,7 +44,10 @@ export async function runDraftAction(input: unknown) {
     );
     const run = await runStudentDraft({ studentId: actor.id, ...parsed.data });
     return { ok: true as const, run };
-  } catch {
+  } catch (error) {
+    if (error instanceof ExecutionRequestGuardError) {
+      return { ok: false as const, message: error.message };
+    }
     return {
       ok: false as const,
       message: "The execution provider was unavailable. Try again.",
@@ -66,7 +70,10 @@ export async function submitDraftAction(input: unknown) {
       ...parsed.data,
     });
     return { ok: true as const, submission };
-  } catch {
+  } catch (error) {
+    if (error instanceof ExecutionRequestGuardError) {
+      return { ok: false as const, message: error.message };
+    }
     return {
       ok: false as const,
       message: "The submission was not created. Your saved draft is unchanged.",

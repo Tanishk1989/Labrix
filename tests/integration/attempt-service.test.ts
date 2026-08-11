@@ -212,20 +212,54 @@ describe.sequential("persisted student-attempt service", () => {
 
   it("persists a mock run through the provider boundary", async () => {
     const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
-    const run = await runStudentDraft(
-      {
-        studentId,
-        sessionId: workspace.session.id,
-        language: "CPP",
-        sourceCode: "int main() { return 0; }",
-      },
-      passingProvider,
-    );
+    let notifyStarted = () => {};
+    let releaseExecution = () => {};
+    const started = new Promise<void>((resolve) => {
+      notifyStarted = resolve;
+    });
+    const executionGate = new Promise<void>((resolve) => {
+      releaseExecution = resolve;
+    });
+    const delayedProvider: ServerExecutionProvider = {
+      executionMode: "simulated",
+      execute: vi.fn(async (request: ServerExecutionRequest) => {
+        notifyStarted();
+        await executionGate;
+        return passingProvider.execute(request);
+      }),
+    };
+    const input = {
+      studentId,
+      sessionId: workspace.session.id,
+      language: "CPP" as const,
+      sourceCode: "int main() { return 0; }",
+    };
+    const firstRun = runStudentDraft(input, delayedProvider);
+    await started;
+
+    const attemptCountBeforeRejection = await prisma.runAttempt.count({
+      where: { codingSessionId: workspace.session.id },
+    });
+    try {
+      await expect(runStudentDraft(input, passingProvider)).rejects.toMatchObject({
+        code: "in_progress",
+        message: "A run is already in progress.",
+      });
+      expect(
+        await prisma.runAttempt.count({
+          where: { codingSessionId: workspace.session.id },
+        }),
+      ).toBe(attemptCountBeforeRejection);
+    } finally {
+      releaseExecution();
+    }
+
+    const run = await firstRun;
     expect(run.passedTests).toBe(1);
     expect(run.visibleTotalTests).toBe(1);
     expect(run.hiddenTotalTests).toBe(0);
     expect(run.testResults).toHaveLength(1);
-    expect(passingProvider.execute).toHaveBeenLastCalledWith(
+    expect(delayedProvider.execute).toHaveBeenLastCalledWith(
       expect.objectContaining({
         tests: [expect.objectContaining({ visibility: "VISIBLE" })],
       }),
