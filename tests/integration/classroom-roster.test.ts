@@ -10,6 +10,7 @@ import {
 import {
   deactivateStudentMembership,
   getTeacherClassroomRoster,
+  reactivateStudentMembership,
   regenerateClassroomJoinCode,
 } from "@/server/classrooms/roster";
 
@@ -165,6 +166,7 @@ describe.sequential("teacher roster controls", () => {
         latestSubmission: expect.objectContaining({ id: submissionId }),
       }),
     ]);
+    expect(roster.inactiveStudents).toEqual([]);
     await expect(
       getTeacherClassroomRoster(otherTeacherId, classroomId),
     ).rejects.toBeInstanceOf(AccessDeniedError);
@@ -235,7 +237,19 @@ describe.sequential("teacher roster controls", () => {
     ).rejects.toBeInstanceOf(AccessDeniedError);
     await expect(
       getTeacherClassroomRoster(teacherId, classroomId),
-    ).resolves.toMatchObject({ students: [] });
+    ).resolves.toMatchObject({
+      students: [],
+      inactiveStudents: [
+        expect.objectContaining({
+          membershipId,
+          studentId,
+          status: "INACTIVE",
+          submissionCount: 1,
+          publishedReviewCount: 1,
+          latestSubmission: expect.objectContaining({ id: submissionId }),
+        }),
+      ],
+    });
 
     const [membership, user, session, draft, submission, result, run, review] = await Promise.all([
       prisma.classMembership.findUniqueOrThrow({ where: { id: membershipId } }),
@@ -259,5 +273,67 @@ describe.sequential("teacher roster controls", () => {
       marksAwarded: 9,
       status: "PUBLISHED",
     });
+  });
+
+  it("rejects student and non-owner teacher reactivation attempts", async () => {
+    await expect(
+      reactivateStudentMembership(prisma, {
+        actor: { id: studentId, role: PlatformRole.STUDENT },
+        classroomId,
+        membershipId,
+      }),
+    ).rejects.toBeInstanceOf(AccessDeniedError);
+    await expect(
+      reactivateStudentMembership(prisma, {
+        actor: { id: otherTeacherId, role: PlatformRole.TEACHER },
+        classroomId,
+        membershipId,
+      }),
+    ).rejects.toBeInstanceOf(AccessDeniedError);
+    await expect(
+      prisma.classMembership.findUniqueOrThrow({ where: { id: membershipId } }),
+    ).resolves.toMatchObject({ active: false });
+  });
+
+  it("reactivates the same membership and restores access without changing history", async () => {
+    const reactivated = await reactivateStudentMembership(prisma, {
+      actor: { id: teacherId, role: PlatformRole.TEACHER },
+      classroomId,
+      membershipId,
+    });
+    expect(reactivated).toEqual({ membershipId, studentId });
+
+    await expect(
+      getClassroomForStudentById(studentId, classroomId),
+    ).resolves.toMatchObject({ id: classroomId });
+    await expect(
+      requirePublishedTaskForStudent(prisma, studentId, taskId),
+    ).resolves.toMatchObject({ id: taskId });
+    await expect(
+      prisma.classMembership.count({ where: { classroomId, userId: studentId } }),
+    ).resolves.toBe(1);
+    await expect(
+      getTeacherClassroomRoster(teacherId, classroomId),
+    ).resolves.toMatchObject({
+      students: [
+        expect.objectContaining({
+          membershipId,
+          status: "ACTIVE",
+          submissionCount: 1,
+          publishedReviewCount: 1,
+        }),
+      ],
+      inactiveStudents: [],
+    });
+
+    const preservedCounts = await Promise.all([
+      prisma.codingSession.count({ where: { id: sessionId } }),
+      prisma.draft.count({ where: { id: draftId } }),
+      prisma.runAttempt.count({ where: { id: runId } }),
+      prisma.resultSnapshot.count({ where: { id: resultId } }),
+      prisma.submissionAttempt.count({ where: { id: submissionId } }),
+      prisma.submissionReview.count({ where: { id: reviewId } }),
+    ]);
+    expect(preservedCounts).toEqual([1, 1, 1, 1, 1, 1]);
   });
 });

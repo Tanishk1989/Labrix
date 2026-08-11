@@ -6,6 +6,7 @@ import { EmptyState, MetricCard, StatusBadge } from "@/components/design-system"
 import {
   DeactivateMembershipButton,
   JoinCodeControls,
+  ReactivateMembershipButton,
 } from "@/features/classes/roster-controls";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getTeacherClassroomProgress } from "@/server/attempts/service";
@@ -55,7 +56,7 @@ export default async function StudentProgressPage({
       <Link href={`/classes/${classroomId}`} className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white"><ArrowLeft size={13} /> Classroom overview</Link>
       <p className="eyebrow">Teacher workspace · Roster and progress</p>
       <h1 className="page-heading">{progress.classroom.name}</h1>
-      <p className="page-subtitle">Manage active classroom access without deleting students or their historical work.</p>
+      <p className="page-subtitle">Manage active and inactive classroom access without deleting students or their historical work.</p>
     </header>
 
     <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
@@ -78,6 +79,19 @@ export default async function StudentProgressPage({
         <td className="min-w-52">{student.latestSubmission ? <Link href={`/submissions/${student.latestSubmission.id}`} className="text-link"><span>{student.latestSubmission.taskTitle} · #{student.latestSubmission.attemptNumber}</span><ArrowRight size={12} /></Link> : <span className="text-xs text-[var(--text-muted)]">No submission yet</span>}</td>
         <td><DeactivateMembershipButton classroomId={classroomId} membershipId={student.membershipId} studentName={student.name} /></td>
       </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No active students" description="Students appear here after joining with the current classroom code." /></div>}
+    </section>
+
+    <section className="panel overflow-hidden">
+      <div className="panel-header"><div><h2 className="section-heading">Inactive student roster</h2><p className="section-description">Only the classroom owner can restore access. Reactivation reuses the existing membership and preserves all historical work.</p></div><span className="count-chip">{roster.inactiveStudents.length}</span></div>
+      {roster.inactiveStudents.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Membership</th><th>Originally joined</th><th>Submissions</th><th>Review summary</th><th>Latest submission</th><th><span className="sr-only">Access control</span></th></tr></thead><tbody>{roster.inactiveStudents.map((student) => <tr key={student.membershipId}>
+        <td className="min-w-52"><p className="font-semibold text-white">{student.name}</p><p className="text-[11px] text-[var(--text-muted)]">{student.email}</p></td>
+        <td><StatusBadge tone="neutral">Inactive</StatusBadge></td>
+        <td className="min-w-40 text-xs text-[var(--text-secondary)]">{new Date(student.joinedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</td>
+        <td><span className="font-semibold text-white">{student.submissionCount}</span><p className="text-[10px] text-[var(--text-muted)]">Preserved attempts</p></td>
+        <td className="min-w-40"><p className="text-xs text-[var(--text-secondary)]">{student.publishedReviewCount} published</p><p className="text-[10px] text-[var(--text-muted)]">{student.draftReviewCount} private drafts</p></td>
+        <td className="min-w-52">{student.latestSubmission ? <Link href={`/submissions/${student.latestSubmission.id}`} className="text-link"><span>{student.latestSubmission.taskTitle} · #{student.latestSubmission.attemptNumber}</span><ArrowRight size={12} /></Link> : <span className="text-xs text-[var(--text-muted)]">No submission yet</span>}</td>
+        <td><ReactivateMembershipButton classroomId={classroomId} membershipId={student.membershipId} studentName={student.name} /></td>
+      </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No inactive students" description="Students whose access is deactivated will remain visible here with their historical summaries." /></div>}
     </section>
 
     <section className="panel overflow-hidden">

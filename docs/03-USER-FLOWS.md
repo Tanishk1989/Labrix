@@ -47,10 +47,12 @@ flowchart LR
 ## Teacher: manage roster access
 
 1. The server resolves an active teacher and verifies classroom ownership before returning roster controls.
-2. The roster lists active student memberships with join date and aggregate submission/review context.
+2. The roster lists active and inactive student memberships with join date and aggregate submission/review context.
 3. `Deactivate access` changes only `ClassMembership.active`; it does not delete the user, drafts, runs, submissions, results, events, or reviews.
 4. Student classroom and published-practical access immediately fails because every student read/action requires an active membership.
-5. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
+5. `Reactivate access` is owner-only and changes the same membership row back to active, restoring classroom and practical access without duplicating or rewriting history.
+6. An inactive existing member cannot self-reactivate with a join code; Labrix directs the student to ask the classroom teacher.
+7. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
 
 **Status:** implemented for owner teachers on the classroom students/progress route.
 

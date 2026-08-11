@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { JoinCode } from "@/components/interactive-design-system";
 import {
   deactivateStudentMembershipAction,
+  reactivateStudentMembershipAction,
   regenerateClassroomJoinCodeAction,
   type RosterActionState,
 } from "./roster-actions";
@@ -53,6 +54,31 @@ export function DeactivateMembershipButton({
       disabled={pending}
       aria-label={`Deactivate classroom access for ${studentName}`}
     >{pending ? "Deactivating…" : "Deactivate access"}</button>
+    {state.message && !state.ok ? <p aria-live="polite" className="mt-1 max-w-44 text-[10px] text-rose-400">{state.message}</p> : null}
+  </form>;
+}
+
+export function ReactivateMembershipButton({
+  classroomId,
+  membershipId,
+  studentName,
+}: {
+  classroomId: string;
+  membershipId: string;
+  studentName: string;
+}) {
+  const action = reactivateStudentMembershipAction.bind(
+    null,
+    classroomId,
+    membershipId,
+  );
+  const [state, formAction, pending] = useActionState(action, initialState);
+  return <form action={formAction}>
+    <button
+      className="button-secondary min-h-8 px-2.5 py-1 text-emerald-300"
+      disabled={pending}
+      aria-label={`Reactivate classroom access for ${studentName}`}
+    >{pending ? "Reactivating…" : "Reactivate access"}</button>
     {state.message && !state.ok ? <p aria-live="polite" className="mt-1 max-w-44 text-[10px] text-rose-400">{state.message}</p> : null}
   </form>;
 }

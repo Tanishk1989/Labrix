@@ -11,7 +11,7 @@ import {
 type RosterDatabase = Pick<PrismaClient, "$transaction">;
 
 const classroomIdSchema = z.string().trim().min(1).max(120);
-const deactivateInputSchema = z.object({
+const membershipInputSchema = z.object({
   classroomId: classroomIdSchema,
   membershipId: z.string().trim().min(1).max(120),
 });
@@ -40,7 +40,7 @@ export async function getTeacherClassroomRoster(
       name: true,
       joinCode: true,
       memberships: {
-        where: { role: "STUDENT", active: true },
+        where: { role: "STUDENT" },
         orderBy: { joinedAt: "asc" },
         select: {
           id: true,
@@ -70,37 +70,42 @@ export async function getTeacherClassroomRoster(
   });
   if (!classroom) throw new AccessDeniedError();
 
+  const students = classroom.memberships.map((membership) => {
+    const attempts = membership.user.submissionAttempts;
+    return {
+      membershipId: membership.id,
+      studentId: membership.user.id,
+      name: membership.user.name,
+      email: membership.user.email,
+      status: membership.active ? ("ACTIVE" as const) : ("INACTIVE" as const),
+      joinedAt: membership.joinedAt.toISOString(),
+      submissionCount: attempts.length,
+      draftReviewCount: attempts.filter(
+        (attempt) => attempt.review?.status === "DRAFT",
+      ).length,
+      publishedReviewCount: attempts.filter(
+        (attempt) => attempt.review?.status === "PUBLISHED",
+      ).length,
+      latestSubmission: attempts[0]
+        ? {
+            id: attempts[0].id,
+            taskId: attempts[0].task.id,
+            taskTitle: attempts[0].task.title,
+            attemptNumber: attempts[0].attemptNumber,
+            submittedAt: attempts[0].submittedAt.toISOString(),
+          }
+        : null,
+    };
+  });
+
   return {
     id: classroom.id,
     name: classroom.name,
     joinCode: classroom.joinCode,
-    students: classroom.memberships.map((membership) => {
-      const attempts = membership.user.submissionAttempts;
-      return {
-        membershipId: membership.id,
-        studentId: membership.user.id,
-        name: membership.user.name,
-        email: membership.user.email,
-        status: "ACTIVE" as const,
-        joinedAt: membership.joinedAt.toISOString(),
-        submissionCount: attempts.length,
-        draftReviewCount: attempts.filter(
-          (attempt) => attempt.review?.status === "DRAFT",
-        ).length,
-        publishedReviewCount: attempts.filter(
-          (attempt) => attempt.review?.status === "PUBLISHED",
-        ).length,
-        latestSubmission: attempts[0]
-          ? {
-              id: attempts[0].id,
-              taskId: attempts[0].task.id,
-              taskTitle: attempts[0].task.title,
-              attemptNumber: attempts[0].attemptNumber,
-              submittedAt: attempts[0].submittedAt.toISOString(),
-            }
-          : null,
-      };
-    }),
+    students: students.filter((student) => student.status === "ACTIVE"),
+    inactiveStudents: students.filter(
+      (student) => student.status === "INACTIVE",
+    ),
   };
 }
 
@@ -113,7 +118,7 @@ export async function deactivateStudentMembership(
   },
 ) {
   const actor = requireTeacher(input.actor);
-  const parsed = deactivateInputSchema.safeParse(input);
+  const parsed = membershipInputSchema.safeParse(input);
   if (!parsed.success) throw new AccessDeniedError();
 
   return db.$transaction(async (tx) => {
@@ -132,6 +137,39 @@ export async function deactivateStudentMembership(
     await tx.classMembership.update({
       where: { id: membership.id },
       data: { active: false },
+    });
+    return { membershipId: membership.id, studentId: membership.userId };
+  });
+}
+
+export async function reactivateStudentMembership(
+  db: RosterDatabase,
+  input: {
+    actor: { id: string; role: PlatformRole };
+    classroomId: unknown;
+    membershipId: unknown;
+  },
+) {
+  const actor = requireTeacher(input.actor);
+  const parsed = membershipInputSchema.safeParse(input);
+  if (!parsed.success) throw new AccessDeniedError();
+
+  return db.$transaction(async (tx) => {
+    await requireOwnedClassroom(tx, actor.id, parsed.data.classroomId);
+    const membership = await tx.classMembership.findFirst({
+      where: {
+        id: parsed.data.membershipId,
+        classroomId: parsed.data.classroomId,
+        role: "STUDENT",
+        active: false,
+      },
+      select: { id: true, userId: true },
+    });
+    if (!membership) throw new AccessDeniedError();
+
+    await tx.classMembership.update({
+      where: { id: membership.id },
+      data: { active: true },
     });
     return { membershipId: membership.id, studentId: membership.userId };
   });
