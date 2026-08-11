@@ -10,6 +10,7 @@ Labrix separates fast checks from database-mutating verification. Unit tests and
 | Typecheck | `npm run typecheck` | None | Every change |
 | Unit | `npm test` or `npm run test:unit` | None | Every change |
 | Integration | `npm run test:integration` | Creates and removes isolated fixture rows; files run serially | Persistence, authorization, transaction, or service changes |
+| Java workspace acceptance | `npm run test:acceptance:java-workspace` | Creates and removes isolated workspace/run/result/submission fixtures | Local Docker Java runner through the existing service/persistence boundary |
 | Build | `npm run build` | No intended writes | Route, server, dependency, or deployment-sensitive changes |
 | Read-only acceptance | `npm run test:acceptance:read-only` | Reads the configured demo database; never opens a workspace or clicks Run/Submit | Safe route smoke check when seeded demo data is available |
 | Full Playwright | `npm run test:e2e` | Edits drafts and creates run/submission records | Only against a disposable database |
@@ -57,3 +58,32 @@ npm run test:integration -- tests/integration/submission-review.test.ts
 The read-only acceptance command checks dashboard, classes, classroom progress, and review-queue routes. It intentionally excludes the coding workspace because opening or interacting with that page can create or change persisted attempt state.
 
 Full Playwright refuses to reuse an already-running server. This prevents an isolated test command from silently connecting to a server that was started with the shared demo database.
+
+## Local Java workspace acceptance
+
+This acceptance is intentionally non-Playwright but database-mutating. It uses the same `LABRIX_TEST_DATABASE_URL` and `LABRIX_ALLOW_TEST_DATABASE_MUTATION=true` guard as integration tests, and it refuses a test database matching the configured development/demo database.
+
+Prepare the disposable database and pinned runner image:
+
+```bash
+npm run test:db:prepare
+npm run runner:java:pull
+```
+
+Run only the Java workspace service/persistence acceptance:
+
+```bash
+npm run test:acceptance:java-workspace
+```
+
+The test starts the Phase 15B HTTP runner on an ephemeral loopback port, selects `java-http` through environment-based default provider resolution, and calls the existing `runStudentDraft` and `submitStudentDraft` services. It proves all four Java states, persisted `RunAttempt`/`ResultSnapshot` mapping, visible-only Run, visible-plus-hidden Submit with student redaction, and mock selection when the provider variable is absent. It neither starts Next.js nor uses Playwright.
+
+For manual workspace acceptance against the same prepared disposable database:
+
+```bash
+npm run acceptance:java-workspace:dev
+```
+
+The supervised launcher verifies Docker and the pinned image, starts the Java runner with a restricted non-application environment, waits for `/healthz`, then starts Next.js with `LABRIX_EXECUTION_PROVIDER=java-http`, the loopback runner URL, demo identity, and `DATABASE_URL` forced to the confirmed disposable test URL. Open `http://127.0.0.1:3000/tasks/two-sum`; Run and Submit will mutate only that disposable database. Press Ctrl+C to stop both processes.
+
+Do not run the full Playwright suite for this proof, and do not bypass the guard by pointing `LABRIX_TEST_DATABASE_URL` at shared demo/development data.

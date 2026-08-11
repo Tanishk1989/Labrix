@@ -72,6 +72,8 @@ npm run runner:java
 
 Then set `LABRIX_EXECUTION_PROVIDER=java-http` and the loopback URL shown in `.env.example` for the Next.js process. The mock provider remains the default. See [docs/09-JAVA-RUNNER-SPIKE.md](docs/09-JAVA-RUNNER-SPIKE.md) for limits, smoke verification, and local-only caveats.
 
+Workspace-level Java acceptance is database-mutating and therefore requires the disposable-database guard. After configuring and preparing `LABRIX_TEST_DATABASE_URL`, use `npm run test:acceptance:java-workspace` for the targeted service/persistence proof or `npm run acceptance:java-workspace:dev` for a guarded manual workspace session. Neither command permits the configured development/demo database.
+
 ## Safety boundary
 
 Untrusted student code must never execute inside Next.js. `ServerMockExecutionProvider` only simulates outcomes. Production execution requires a separate isolated provider or sandbox with explicit resource and network controls.
