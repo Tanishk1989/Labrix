@@ -158,7 +158,7 @@ export default async function StudentProgressPage({
 
     <section className="panel overflow-hidden">
       <div className="panel-header"><div><h2 className="section-heading">Latest practical progress</h2><p className="section-description">{progress.task?.title ?? "No published practical"} · Latest immutable attempt per active student.</p></div><span className="count-chip">{progress.students.length}</span></div>
-      {progress.students.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Submission status</th><th>Stored simulated result</th><th>Attempt</th><th>Submitted</th><th><span className="sr-only">Review</span></th></tr></thead><tbody>{progress.students.map((student) => {
+      {progress.students.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Submission status</th><th>Stored result</th><th>Attempt</th><th>Submitted</th><th><span className="sr-only">Review</span></th></tr></thead><tbody>{progress.students.map((student) => {
         const latest = student.latestSubmission;
         const allPassed = latest && latest.resultSnapshot.passedTests === latest.resultSnapshot.totalTests;
         return <tr key={student.id}>

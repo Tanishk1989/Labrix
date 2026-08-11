@@ -166,6 +166,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the disposable-database, non-Playwright acceptance proof. The default provider remains mock; C++, production execution operations, and UI browser automation remain outside this slice.
 
+## Phase 15D — execution mode disclosure
+
+- Describe the selected server provider as `simulated` or `java-docker-local` without changing provider selection or runner behavior.
+- Return the mode with fresh Run and newly created Submit results and show **Simulated execution** or **Java Docker runner** in the workspace.
+- Show **Execution mode unavailable** for persisted submission and teacher-review snapshots because the current schema does not store provider identity.
+- Keep mock as the default and never derive a historical mode from language or the current environment.
+
+**Status:** complete for runtime disclosure and the safe historical fallback. Persisting provider provenance would require a separate schema and lifecycle decision.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

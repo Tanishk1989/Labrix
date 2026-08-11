@@ -11,6 +11,7 @@ const request = {
 describe("server-owned execution provider boundary", () => {
   it("accepts the deterministic mock through the typed provider interface", async () => {
     const provider: ServerExecutionProvider = new ServerMockExecutionProvider(0);
+    expect(provider.executionMode).toBe("simulated");
     const result = await provider.execute(request);
     expect(result.state).toBe("completed");
     expect(result.passedTests).toBe(1);

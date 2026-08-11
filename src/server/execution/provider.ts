@@ -1,4 +1,5 @@
 import type { AllowedLanguage } from "@prisma/client";
+import type { ExecutionMode } from "@/domain/execution/execution-mode";
 
 export type ServerExecutionState =
   | "completed"
@@ -37,5 +38,6 @@ export interface ServerExecutionResult {
 
 /** Implementations run only behind a server-owned application boundary. */
 export interface ServerExecutionProvider {
+  readonly executionMode: ExecutionMode;
   execute(request: ServerExecutionRequest): Promise<ServerExecutionResult>;
 }

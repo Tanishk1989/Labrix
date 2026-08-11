@@ -83,7 +83,7 @@ export default async function SubmissionsQueuePage({
 
   return <DemoShell actor={actor}><div className="space-y-5">
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="eyebrow">Teacher workspace</p><h1 className="page-heading">Review queue</h1><p className="page-subtitle">Grade immutable attempts using persisted simulated results and teacher-authored feedback.</p></div>
+      <div><p className="eyebrow">Teacher workspace</p><h1 className="page-heading">Review queue</h1><p className="page-subtitle">Grade immutable attempts using persisted results and teacher-authored feedback.</p></div>
       {nextReview ? <Link href={`/submissions/${nextReview.id}`} className="button">Review next <ArrowRight size={14} /></Link> : null}
     </header>
 
