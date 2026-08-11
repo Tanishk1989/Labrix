@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { DemoShell } from "@/components/app-shell";
 import { EmptyState, MetricCard, StatusBadge } from "@/components/design-system";
+import { SubmissionTimingBadge } from "@/components/submission-timing-badge";
 import {
   filterTeacherReviewQueue,
   normalizeTeacherReviewQueueFilter,
@@ -115,7 +116,7 @@ export default async function SubmissionsQueuePage({
       <button className="button-secondary">Apply filters</button>
     </form>
 
-    {submissions.length ? <div className="panel overflow-hidden"><div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Class and practical</th><th>Attempt</th><th>Language</th><th>Submitted</th><th>Stored result</th><th>Suggested score</th><th>Teacher marks</th><th>Review status</th><th><span className="sr-only">Open review</span></th></tr></thead><tbody>{submissions.map((submission) => {
+    {submissions.length ? <div className="panel overflow-hidden"><div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Class and practical</th><th>Attempt</th><th>Language</th><th>Timing</th><th>Submitted</th><th>Stored result</th><th>Suggested score</th><th>Teacher marks</th><th>Review status</th><th><span className="sr-only">Open review</span></th></tr></thead><tbody>{submissions.map((submission) => {
       const result = resultMeta(submission.state, submission.passedTests, submission.totalTests);
       const review = teacherReviewStatusMeta(submission.reviewStatus);
       return <tr key={submission.id}>
@@ -123,6 +124,7 @@ export default async function SubmissionsQueuePage({
         <td className="min-w-52"><p className="text-xs text-white">{submission.taskTitle}</p><p className="text-[11px] text-[var(--text-muted)]">{submission.classroomName} · {submission.classroomSubject}</p></td>
         <td>#{submission.attemptNumber}</td>
         <td>{submission.language === "CPP" ? "C++" : "Java"}</td>
+        <td><SubmissionTimingBadge status={submission.timingStatus} /></td>
         <td className="min-w-44 text-xs text-[var(--text-secondary)]">{new Date(submission.submittedAt).toLocaleString("en-IN")}</td>
         <td><StatusBadge tone={result.tone}>{result.label}</StatusBadge><p className="mt-1 text-[10px] text-[var(--text-muted)]">{submission.passedTests}/{submission.totalTests} tests</p></td>
         <td><span className="font-semibold text-white">{submission.suggestedScore.toFixed(1)}/10</span><p className="text-[10px] text-[var(--text-muted)]">Automatic</p></td>

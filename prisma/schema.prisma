@@ -61,6 +61,11 @@ enum ExecutionMode {
   CPP_DOCKER_LOCAL
 }
 
+enum SubmissionTimingStatus {
+  ON_TIME
+  LATE
+}
+
 enum CodeEventType {
   SESSION_STARTED
   DRAFT_SAVED
@@ -256,20 +261,21 @@ model ResultSnapshot {
 }
 
 model SubmissionAttempt {
-  id                 String            @id @default(cuid())
+  id                 String                  @id @default(cuid())
   taskId             String
   studentId          String
-  codingSessionId    String            @unique
-  resultSnapshotId   String            @unique
+  codingSessionId    String                  @unique
+  resultSnapshotId   String                  @unique
   attemptNumber      Int
   idempotencyKey     String
   language           AllowedLanguage
   sourceCodeSnapshot String
-  submittedAt        DateTime          @default(now())
-  task               Task              @relation(fields: [taskId], references: [id], onDelete: Restrict)
-  student            User              @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
-  codingSession      CodingSession     @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
-  resultSnapshot     ResultSnapshot    @relation(fields: [resultSnapshotId], references: [id], onDelete: Restrict)
+  submittedAt        DateTime                @default(now())
+  timingStatus       SubmissionTimingStatus?
+  task               Task                    @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  student            User                    @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
+  codingSession      CodingSession           @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)
+  resultSnapshot     ResultSnapshot          @relation(fields: [resultSnapshotId], references: [id], onDelete: Restrict)
   events             CodeEvent[]
   review             SubmissionReview?
 
