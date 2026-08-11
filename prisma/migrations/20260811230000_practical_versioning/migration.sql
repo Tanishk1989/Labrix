@@ -1,0 +1,5 @@
+ALTER TABLE "Task"
+ADD COLUMN "version" INTEGER NOT NULL DEFAULT 1;
+
+ALTER TABLE "SubmissionAttempt"
+ADD COLUMN "practicalVersion" INTEGER;

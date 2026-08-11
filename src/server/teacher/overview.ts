@@ -18,6 +18,7 @@ export type TeacherSubmissionRecord = {
   language: "CPP" | "JAVA";
   submittedAt: string;
   timingStatus: "ON_TIME" | "LATE" | null;
+  practicalVersion: number | null;
   state: RunResultState;
   passedTests: number;
   totalTests: number;
@@ -202,6 +203,7 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
           language: attempt.language,
           submittedAt: attempt.submittedAt.toISOString(),
           timingStatus: attempt.timingStatus,
+          practicalVersion: attempt.practicalVersion,
           state: attempt.resultSnapshot.state,
           passedTests: attempt.resultSnapshot.passedTests,
           totalTests: attempt.resultSnapshot.totalTests,

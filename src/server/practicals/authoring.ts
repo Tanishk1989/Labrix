@@ -4,6 +4,10 @@ import {
   type TaskStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import {
+  nextPracticalVersion,
+  versionedPracticalContentChanged,
+} from "@/domain/practicals/versioning";
 
 export type PracticalAuthoringErrorCode =
   | "CLASSROOM_UNAVAILABLE"
@@ -87,8 +91,15 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
             },
             select: {
               id: true,
+              version: true,
               status: true,
               publishedAt: true,
+              instructions: true,
+              constraints: true,
+              allowedLanguages: true,
+              cppStarterCode: true,
+              javaStarterCode: true,
+              deadline: true,
               testCases: {
                 orderBy: { position: "asc" },
                 select: {
@@ -152,15 +163,42 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
         status,
         publishedAt,
       };
+      const contentChanged = current
+        ? versionedPracticalContentChanged(
+            {
+              instructions: current.instructions,
+              constraints: current.constraints,
+              allowedLanguages: current.allowedLanguages,
+              cppStarterCode: current.cppStarterCode,
+              javaStarterCode: current.javaStarterCode,
+              deadline: current.deadline,
+            },
+            {
+              instructions: taskData.instructions,
+              constraints: taskData.constraints,
+              allowedLanguages: taskData.allowedLanguages,
+              cppStarterCode: taskData.cppStarterCode,
+              javaStarterCode: taskData.javaStarterCode,
+              deadline: taskData.deadline,
+            },
+            testsChanged,
+          )
+        : true;
+      const version = nextPracticalVersion({
+        currentVersion: current?.version ?? null,
+        isPublished: current?.status === "PUBLISHED",
+        contentChanged,
+      });
 
       const task = current
         ? await tx.task.update({
             where: { id: current.id },
-            data: taskData,
+            data: { ...taskData, version },
           })
         : await tx.task.create({
             data: {
               ...taskData,
+              version,
               classroomId: input.classroomId,
               authorTeacherId: input.teacherId,
             },
@@ -181,7 +219,7 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
         }
       }
 
-      return { taskId: task.id, status: task.status, testsChanged };
+      return { taskId: task.id, status: task.status, testsChanged, version };
     },
     {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
