@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { existsSync } from "node:fs";
 import {
   configuredDevelopmentDatabaseUrl,
   verificationValue,
@@ -25,15 +26,54 @@ let commandArguments: string[];
 let childEnvironment = { ...process.env };
 
 if (target === "read-only") {
+  const databaseUrl = configuredDevelopmentDatabaseUrl();
+  const publishableKey = verificationValue(
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  );
+  const secretKey = verificationValue("CLERK_SECRET_KEY");
+  const teacherStorageState = verificationValue(
+    "LABRIX_READ_ONLY_TEACHER_STORAGE_STATE",
+  );
+  const studentStorageState = verificationValue(
+    "LABRIX_READ_ONLY_STUDENT_STORAGE_STATE",
+  );
+  if (!databaseUrl) {
+    console.error("DATABASE_URL is required for read-only acceptance.");
+    process.exit(1);
+  }
+  if (!publishableKey || !secretKey) {
+    console.error(
+      "Clerk development keys are required for read-only acceptance.",
+    );
+    process.exit(1);
+  }
+  if (!teacherStorageState || !studentStorageState) {
+    console.error(
+      "LABRIX_READ_ONLY_TEACHER_STORAGE_STATE and LABRIX_READ_ONLY_STUDENT_STORAGE_STATE are required.",
+    );
+    process.exit(1);
+  }
+  const teacherStoragePath = resolve(process.cwd(), teacherStorageState);
+  const studentStoragePath = resolve(process.cwd(), studentStorageState);
+  if (!existsSync(teacherStoragePath) || !existsSync(studentStoragePath)) {
+    console.error(
+      "The configured read-only Playwright storage-state files are unavailable.",
+    );
+    process.exit(1);
+  }
   childEnvironment = {
     ...childEnvironment,
+    DATABASE_URL: databaseUrl,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey,
+    CLERK_SECRET_KEY: secretKey,
     LABRIX_E2E_READ_ONLY: "true",
-    LABRIX_IDENTITY_MODE: "demo",
+    LABRIX_IDENTITY_MODE: "clerk",
+    LABRIX_READ_ONLY_TEACHER_STORAGE_STATE: teacherStoragePath,
+    LABRIX_READ_ONLY_STUDENT_STORAGE_STATE: studentStoragePath,
   };
   commandArguments = [
     resolve(process.cwd(), "node_modules/@playwright/test/cli.js"),
     "test",
-    "tests/e2e/read-only-routes.spec.ts",
     ...forwardedArguments,
   ];
 } else {
