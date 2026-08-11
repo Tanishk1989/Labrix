@@ -44,6 +44,16 @@ flowchart LR
 
 **Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale.
 
+## Teacher: manage roster access
+
+1. The server resolves an active teacher and verifies classroom ownership before returning roster controls.
+2. The roster lists active student memberships with join date and aggregate submission/review context.
+3. `Deactivate access` changes only `ClassMembership.active`; it does not delete the user, drafts, runs, submissions, results, events, or reviews.
+4. Student classroom and published-practical access immediately fails because every student read/action requires an active membership.
+5. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
+
+**Status:** implemented for owner teachers on the classroom students/progress route.
+
 ## Identity transition
 
 **Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in production. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
@@ -55,6 +65,7 @@ flowchart LR
 ## Failure and security behavior
 
 - Invalid, unenrolled, cross-student, or non-owner access fails in server services.
+- Deactivated memberships are treated as unenrolled by classroom, practical, and workspace authorization.
 - Autosave failure is visible and does not clear the editor buffer.
 - Provider failure creates bounded internal-error feedback and does not execute source locally.
 - Database uniqueness plus idempotency prevents duplicate submissions.
