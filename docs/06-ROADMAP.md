@@ -157,6 +157,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the opt-in local single-flight proof. Production provider selection, queueing, concurrency, observability, retry/outage behavior, broader abuse testing, and C++ remain future decisions/work.
 
+## Phase 15C — Java runner workspace acceptance
+
+- Exercise the existing workspace Run and Submit services with default provider resolution configured explicitly as `java-http`.
+- Persist and verify Java success, compilation error, runtime error, and timeout across `RunAttempt` and immutable `ResultSnapshot` records.
+- Confirm Run remains visible-only, Submit evaluates visible and hidden tests while redacting hidden detail from the student result, and an unset provider still selects mock.
+- Provide guarded targeted and manual acceptance paths that refuse the shared development/demo database.
+
+**Status:** complete for the disposable-database, non-Playwright acceptance proof. The default provider remains mock; C++, production execution operations, and UI browser automation remain outside this slice.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

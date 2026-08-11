@@ -113,3 +113,25 @@ This suite starts the worker on an ephemeral loopback port and verifies through 
 6. a concurrent execution rejected instead of queued or run in parallel.
 
 The suite does not load Prisma, connect to PostgreSQL, or mutate Labrix data. Adapter unit tests remain separate and do not substitute for this container-backed proof.
+
+## Workspace acceptance
+
+Phase 15C adds a separate database-guarded acceptance layer above the runner smoke suite. It does not alter Run, Submit, persistence, grading, hidden-test, authorization, or immutability code. Instead, it configures the existing default provider resolution as `java-http` and calls the existing workspace services against a disposable PostgreSQL database.
+
+After setting `LABRIX_TEST_DATABASE_URL` and `LABRIX_ALLOW_TEST_DATABASE_MUTATION=true` for a database distinct from development/demo data, prepare it and run:
+
+```bash
+npm run test:db:prepare
+npm run test:acceptance:java-workspace
+```
+
+The targeted non-Playwright suite verifies:
+
+- successful Java Run persistence;
+- compilation, runtime, and timeout state mapping into `RunAttempt` and `ResultSnapshot`;
+- visible-only tests and zero hidden counters for Run;
+- visible and hidden execution/counters for Submit, with hidden test details omitted from the returned student result;
+- exact submitted/run source snapshots and completed timestamps;
+- the unchanged mock default when `LABRIX_EXECUTION_PROVIDER` is absent.
+
+For a manual workspace proof, first pull the pinned image and prepare the disposable database, then run `npm run acceptance:java-workspace:dev`. The launcher starts both services with the runner isolated from application/database environment variables and forces Next.js to use only the guarded disposable database. Full Playwright is neither required nor permitted against shared data for this acceptance.

@@ -34,7 +34,7 @@ Status reflects repository behavior as of 2026-08-11.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
-- A separate, loopback-only local Java worker compiles once and runs tests in a fresh locked-down Docker container per request. It is single-flight, explicitly opt-in through `java-http`, and verified for success, compiler failure, runtime failure, and timeout; it is not the selected production execution system.
+- A separate, loopback-only local Java worker compiles once and runs tests in a fresh locked-down Docker container per request. It is single-flight, explicitly opt-in through `java-http`, and verified for success, compiler failure, runtime failure, and timeout through both its HTTP boundary and the existing workspace Run/Submit persistence service. It is not the selected production execution system.
 
 ## Mock
 
