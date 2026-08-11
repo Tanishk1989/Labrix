@@ -29,6 +29,7 @@ export interface TeacherPracticalInput {
   instructions: string;
   constraints: string | null;
   allowedLanguages: AllowedLanguage[];
+  starterCodes: { CPP: string; JAVA: string };
   deadline: Date | null;
   testCases: Array<{
     input: string;
@@ -145,6 +146,8 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
         instructions: input.instructions.trim(),
         constraints: input.constraints?.trim() || null,
         allowedLanguages: input.allowedLanguages,
+        cppStarterCode: input.starterCodes.CPP,
+        javaStarterCode: input.starterCodes.JAVA,
         deadline: input.deadline,
         status,
         publishedAt,

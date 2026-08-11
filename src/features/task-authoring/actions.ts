@@ -48,6 +48,7 @@ async function persist(
       instructions: data.instructions,
       constraints: data.constraints?.trim() || null,
       allowedLanguages: data.allowedLanguages,
+      starterCodes: data.starterCodes,
       deadline: data.deadlineLocal ? new Date(data.deadlineLocal) : null,
       testCases: data.testCases.map((testCase) => ({
         input: testCase.input,

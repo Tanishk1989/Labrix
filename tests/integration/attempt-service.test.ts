@@ -64,6 +64,8 @@ describe.sequential("persisted student-attempt service", () => {
         title: "Integration practical",
         instructions: "Return the provided value.",
         allowedLanguages: ["CPP", "JAVA"],
+        cppStarterCode: "// C++ practical starter\nint main() { return 0; }",
+        javaStarterCode: "// Java practical starter\npublic class Main {}",
         status: "PUBLISHED",
         publishedAt: new Date(),
         testCases: {
@@ -118,7 +120,13 @@ describe.sequential("persisted student-attempt service", () => {
   it("skips unchanged saves and persists later edits exactly once each", async () => {
     const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
     expect(workspace.session.attemptNumber).toBe(1);
-    expect(workspace.draft.sourceCode).toContain("fail_test");
+    expect(workspace.draft.sourceCode).toBe(
+      "// C++ practical starter\nint main() { return 0; }",
+    );
+    expect(workspace.task.starterCodes).toEqual({
+      CPP: "// C++ practical starter\nint main() { return 0; }",
+      JAVA: "// Java practical starter\npublic class Main {}",
+    });
 
     const initialDraft = await prisma.draft.findUniqueOrThrow({
       where: { codingSessionId: workspace.session.id },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { PublishingChecklist, Stepper, StatusBadge } from "@/components/design-system";
+import { DEFAULT_STARTER_CODES } from "@/domain/tasks/starter-code";
 import {
   type CreatePracticalFormValues,
 } from "./schema";
@@ -33,6 +34,7 @@ export function CreatePracticalForm({
       instructions: initialValues?.instructions ?? "",
       constraints: initialValues?.constraints ?? "",
       allowedLanguages: initialValues?.allowedLanguages ?? ["CPP", "JAVA"],
+      starterCodes: initialValues?.starterCodes ?? DEFAULT_STARTER_CODES,
       deadlineLocal: initialValues?.deadlineLocal ?? "",
       testCases: initialValues?.testCases ?? [
         { clientId: "tc-1", input: "", expectedOutput: "", visible: true },
@@ -307,6 +309,23 @@ export function CreatePracticalForm({
                     </label>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-3 border-t border-[var(--border)] pt-5">
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-200">Starter code templates</h3>
+                  <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">A new student attempt starts with the template for its selected language. Existing saved drafts are never replaced.</p>
+                </div>
+                {watchLanguages.map((language) => <div key={language}>
+                  <label className="block text-[11px] font-semibold text-slate-300">{language === "CPP" ? "C++ starter code" : "Java starter code"}</label>
+                  <textarea
+                    {...form.register(`starterCodes.${language}`)}
+                    rows={language === "CPP" ? 8 : 7}
+                    className="input mt-1 font-mono text-xs leading-5"
+                    spellCheck={false}
+                  />
+                </div>)}
+                {watchLanguages.length === 0 ? <p className="text-xs text-amber-300">Select a language to configure its starter code.</p> : null}
               </div>
             </div>
           ) : null}

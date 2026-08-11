@@ -5,6 +5,7 @@ import {
   type CodeEventType,
 } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import {
   AccessDeniedError,
   requireOwnedClassroom,
@@ -43,6 +44,7 @@ export interface StudentWorkspace {
     constraints: string | null;
     deadline: string | null;
     allowedLanguages: AllowedLanguage[];
+    starterCodes: { CPP: string; JAVA: string };
     tests: Array<{
       id: string;
       position: number;
@@ -90,13 +92,6 @@ export interface PersistedSubmission {
   result: PersistedRun;
 }
 
-function starterCode(language: AllowedLanguage) {
-  if (language === AllowedLanguage.JAVA) {
-    return "public class Main {\n  public static void main(String[] args) {\n    // Write your solution here\n  }\n}";
-  }
-  return "#include <iostream>\nusing namespace std;\n\nint main() {\n  // fail_test — replace this comment with your solution\n  return 0;\n}";
-}
-
 function toWorkspace(
   task: Awaited<ReturnType<typeof requirePublishedTaskForStudent>>,
   session: WorkspaceSession,
@@ -111,6 +106,7 @@ function toWorkspace(
       constraints: task.constraints,
       deadline: task.deadline?.toISOString() ?? null,
       allowedLanguages: task.allowedLanguages,
+      starterCodes: resolveStarterCodes(task),
       tests: task.testCases.map((test) => ({
         id: test.id,
         position: test.position,
@@ -150,7 +146,11 @@ export async function getOrCreateStudentWorkspace(
   try {
     const created = await prisma.$transaction(
       async (tx) => {
-        await requirePublishedTaskForStudent(tx, studentId, taskId);
+        const authorizedTask = await requirePublishedTaskForStudent(
+          tx,
+          studentId,
+          taskId,
+        );
         const active = await tx.codingSession.findFirst({
           where: { studentId, taskId, status: "ACTIVE" },
           include: workspaceSessionInclude,
@@ -161,14 +161,16 @@ export async function getOrCreateStudentWorkspace(
           where: { studentId, taskId },
           _max: { attemptNumber: true },
         });
-        const language = task.allowedLanguages[0] ?? AllowedLanguage.CPP;
+        const language =
+          authorizedTask.allowedLanguages[0] ?? AllowedLanguage.CPP;
+        const starterCodes = resolveStarterCodes(authorizedTask);
         return tx.codingSession.create({
           data: {
             studentId,
             taskId,
             attemptNumber: (latest._max.attemptNumber ?? 0) + 1,
             language,
-            draft: { create: { sourceCode: starterCode(language) } },
+            draft: { create: { sourceCode: starterCodes[language] } },
             events: { create: { sequence: 1, type: "SESSION_STARTED" } },
           },
           include: workspaceSessionInclude,

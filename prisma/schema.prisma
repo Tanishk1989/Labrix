@@ -156,6 +156,8 @@ model Task {
   instructions       String
   constraints        String?
   allowedLanguages   AllowedLanguage[]
+  cppStarterCode     String?
+  javaStarterCode    String?
   status             TaskStatus          @default(DRAFT)
   deadline           DateTime?
   publishedAt        DateTime?
