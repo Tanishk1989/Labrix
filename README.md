@@ -10,10 +10,10 @@ Labrix presents evidence for teacher judgment. It does not declare cheating or a
 
 ## Current repository state
 
-- **Implemented:** Next.js classroom/practical persistence; visible/hidden test authoring for the single-problem model; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary with honest runtime mode disclosure; immutable submission attempts and result snapshots with visibility counters and a suggested equal-weight test score; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; teacher-authored draft/published marks and feedback per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; and controlled identity linking.
-- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model. Separate loopback-only local Java and C++ workers can compile and execute code in disposable locked-down Docker containers, but both are opt-in development proofs rather than a production execution system.
+- **Implemented:** Next.js classroom/practical persistence; visible/hidden test authoring for the single-problem model; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary with honest runtime mode disclosure; immutable submission attempts and result snapshots with visibility counters and a suggested equal-weight test score; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; teacher-authored draft/published marks and feedback per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; controlled identity linking; and guarded administrator teacher provisioning.
+- **Partial:** production authentication still needs a security acceptance pass and operational secret-management procedure. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model. Separate loopback-only local Java and C++ workers can compile and execute code in disposable locked-down Docker containers, but both are opt-in development proofs rather than a production execution system.
 - **Mock:** execution results still use the default deterministic provider and simulated source markers. The UI identifies it as **Simulated execution**. Real Java and C++ execution require explicit local `java-http` or `cpp-http` selection and a separately started worker. The visible role selector changes demo presentation and is not authentication.
-- **Planned:** administrator-controlled teacher provisioning, authentication security hardening, isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
+- **Planned:** authentication security hardening, production-isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
 See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
@@ -43,14 +43,20 @@ npm run dev
 
 With `LABRIX_IDENTITY_MODE=demo`, open `http://127.0.0.1:3000/classes`; the seeded actors and role preview are explicitly non-production. With `clerk`, sign in at `/sign-in`; only explicitly linked local users can enter the product.
 
-For local Clerk verification, explicitly link existing users using verified Clerk user IDs. The command never matches email or changes roles:
+For non-production recovery, explicitly enable the generic linker and identify the local user by ID. It never matches email or changes roles and is disabled in production:
 
 ```bash
-npm run auth:link-clerk -- --user-id demo-student-1 --clerk-subject <verified-clerk-user-id>
-npm run auth:link-clerk -- --user-id demo-teacher --clerk-subject <verified-clerk-user-id>
+LABRIX_ALLOW_IDENTITY_LINKING=true npm run auth:link-clerk -- --user-id demo-student-1 --clerk-subject <verified-clerk-user-id> --confirm LINK_EXTERNAL_IDENTITY
 ```
 
-Use a different Clerk account for each mapping. Duplicate or conflicting mappings are rejected.
+Provision a pilot teacher through the guarded administrator command. Creation never links an existing account by email; linking an existing teacher requires its explicit Labrix user ID:
+
+```bash
+LABRIX_ALLOW_TEACHER_PROVISIONING=true npm run auth:provision-teacher -- --name "Pilot Teacher" --email teacher@example.com --clerk-subject <verified-clerk-user-id> --confirm PROVISION_TEACHER
+LABRIX_ALLOW_TEACHER_PROVISIONING=true npm run auth:provision-teacher -- --user-id <existing-active-teacher-id> --clerk-subject <verified-clerk-user-id> --confirm PROVISION_TEACHER
+```
+
+Use a different Clerk account for each mapping. Duplicate subjects, student targets, disabled users, email collisions, and conflicting mappings are rejected.
 
 Checks:
 

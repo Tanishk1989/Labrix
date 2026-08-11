@@ -54,7 +54,7 @@ Initial authentication will use verified email and password with Clerk Hobby ses
 
 **Accepted 2026-08-09.** `LABRIX_IDENTITY_MODE` must be explicitly `demo` or `clerk`; missing/invalid configuration fails, production rejects `demo`, and Clerk failures never fall back. In Clerk mode, the server-verified subject is mapped through `ExternalIdentity`, then PostgreSQL supplies account status and role. Existing service membership and ownership checks remain mandatory.
 
-Initial linking is a controlled non-public command using an existing Labrix user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated Labrix user. Automatic student onboarding and teacher provisioning require later accepted implementation work.
+Initial linking is a controlled non-public command using an existing Labrix user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated Labrix user. Student onboarding and teacher provisioning follow the separate guarded policies recorded below.
 
 ### D-019 — Attempt-scoped teacher review
 
@@ -71,6 +71,10 @@ Initial linking is a controlled non-public command using an existing Labrix user
 ### D-021 — Practical versions on immutable submissions
 
 **Accepted 2026-08-11.** Practicals start at version 1. Material changes to instructions, constraints, allowed languages, starter code, deadline, or ordered tests increment an already-published practical’s version; draft edits and no-op saves do not. Each new immutable submission stores the current practical version. Legacy submissions remain null and display **Version unavailable**; they are not rewritten.
+
+### D-022 — Administrator-controlled teacher provisioning
+
+**Accepted 2026-08-11.** Teacher access is provisioned only through a guarded server-side administrator command using an explicit verified Clerk subject. The command may create a new `ACTIVE TEACHER` or link an explicitly identified existing `ACTIVE TEACHER`; it never promotes a `STUDENT`, links by email, or accepts disabled users. Duplicate subjects, provider conflicts, email collisions, and uniqueness races fail closed. No public provisioning route is exposed. The generic identity linker is restricted to confirmed non-production recovery operations.
 
 ## Proposed / unresolved
 

@@ -64,9 +64,9 @@ flowchart LR
 
 **Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in production. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
 
-**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated Labrix user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
+**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. Student onboarding requires a verified Clerk profile and valid active classroom join code, then creates only a local `STUDENT` plus student membership. It cannot select or obtain the teacher role.
 
-**Explicit local verification:** an administrator runs the non-public linking command with an existing Labrix user ID and verified Clerk subject. The command does not match email, create users, change roles, or create teachers.
+**Teacher provisioning:** an administrator runs the guarded non-public provisioning command with a verified Clerk subject. It may explicitly create a new `ACTIVE TEACHER`, or link an explicitly selected existing `ACTIVE TEACHER` by local user ID. It never promotes students or searches by email. Duplicate subjects, disabled users, email collisions, and provider conflicts fail closed. The generic identity linker remains a confirmed non-production recovery command only.
 
 ## Failure and security behavior
 
