@@ -222,6 +222,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete at the provider-configuration boundary. The override is an exceptional acknowledgment, not production certification; a future production provider still requires a separate decision and implementation.
 
+## Phase 19A — runner request guard
+
+- Guard the shared Run/Submit service boundary before execution-provider dispatch.
+- Reject overlapping work for the same student and coding session, and apply a short cooldown between Run starts.
+- Preserve Submit idempotency and avoid creating attempts or snapshots for rejected requests.
+- Keep the guard process-local and document that production multi-instance execution still needs distributed coordination.
+
+**Status:** complete as a small single-instance safeguard. It does not replace a durable production queue or distributed rate limiter.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

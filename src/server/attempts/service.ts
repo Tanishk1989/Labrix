@@ -29,6 +29,7 @@ import {
   calculateSuggestedScore,
   type ResultBreakdown,
 } from "@/server/execution/result-grading";
+import { executionRequestGuard } from "@/server/execution/request-guard";
 
 const workspaceSessionInclude = {
   draft: true,
@@ -567,7 +568,14 @@ export async function runStudentDraft(
   },
   provider: ServerExecutionProvider = getServerExecutionProvider(),
 ) {
-  return executeStudentDraft(input, provider, "VISIBLE");
+  return executionRequestGuard.execute(
+    {
+      studentId: input.studentId,
+      sessionId: input.sessionId,
+      kind: "run",
+    },
+    () => executeStudentDraft(input, provider, "VISIBLE"),
+  );
 }
 
 function persistedSubmissionResult(
@@ -608,7 +616,7 @@ async function findIdempotentSubmission(
   });
 }
 
-export async function submitStudentDraft(
+async function submitStudentDraftWithoutGuard(
   input: {
     studentId: string;
     sessionId: string;
@@ -700,6 +708,26 @@ export async function submitStudentDraft(
     }
     throw error;
   }
+}
+
+export async function submitStudentDraft(
+  input: {
+    studentId: string;
+    sessionId: string;
+    language: AllowedLanguage;
+    sourceCode: string;
+    idempotencyKey: string;
+  },
+  provider: ServerExecutionProvider = getServerExecutionProvider(),
+): Promise<PersistedSubmission> {
+  return executionRequestGuard.execute(
+    {
+      studentId: input.studentId,
+      sessionId: input.sessionId,
+      kind: "submit",
+    },
+    () => submitStudentDraftWithoutGuard(input, provider),
+  );
 }
 
 export async function getSubmissionForTeacher(
