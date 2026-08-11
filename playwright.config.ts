@@ -12,7 +12,8 @@ if (!readOnlyAcceptance) {
 
 export default defineConfig({
   testDir: "tests/e2e",
-  testMatch: readOnlyAcceptance ? "read-only-routes.spec.ts" : undefined,
+  testMatch: readOnlyAcceptance ? "read-only-*.spec.ts" : undefined,
+  workers: readOnlyAcceptance ? 1 : undefined,
   timeout: 120_000,
   expect: { timeout: 30_000 },
   use: {
@@ -24,4 +25,26 @@ export default defineConfig({
     url: "http://127.0.0.1:3000",
     reuseExistingServer: false,
   },
+  projects: readOnlyAcceptance
+    ? [
+        {
+          name: "signed-out",
+          testMatch: "read-only-signed-out.spec.ts",
+        },
+        {
+          name: "teacher",
+          testMatch: "read-only-routes.spec.ts",
+          use: {
+            storageState: process.env.LABRIX_READ_ONLY_TEACHER_STORAGE_STATE,
+          },
+        },
+        {
+          name: "student",
+          testMatch: "read-only-student.spec.ts",
+          use: {
+            storageState: process.env.LABRIX_READ_ONLY_STUDENT_STORAGE_STATE,
+          },
+        },
+      ]
+    : undefined,
 });

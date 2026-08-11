@@ -14,7 +14,7 @@ Labrix separates fast checks from database-mutating verification. Unit tests and
 | Integration | `npm run test:integration` | Creates and removes isolated fixture rows; files run serially | Persistence, authorization, transaction, or service changes |
 | Java workspace acceptance | `npm run test:acceptance:java-workspace` | Creates and removes isolated workspace/run/result/submission fixtures | Local Docker Java runner through the existing service/persistence boundary |
 | Build | `npm run build` | No intended writes | Route, server, dependency, or deployment-sensitive changes |
-| Read-only acceptance | `npm run test:acceptance:read-only` | Reads the configured demo database; never opens a workspace or clicks Run/Submit | Safe route smoke check when seeded demo data is available |
+| Read-only acceptance | `npm run test:acceptance:read-only` | Reads existing fixtures and verifies a database fingerprint; never clicks Run/Submit | Signed-out, teacher, and student route coverage against an existing non-production database |
 | Full Playwright | `npm run test:e2e` | Edits drafts and creates run/submission records | Only against a disposable database |
 | Manual acceptance | Follow the relevant route checklist | Depends on actions taken | UX, authentication, and professor-demo confirmation |
 
@@ -57,7 +57,37 @@ Pass a specific integration file after `--`; the same disposable-database guard 
 npm run test:integration -- tests/integration/submission-review.test.ts
 ```
 
-The read-only acceptance command checks dashboard, classes, classroom progress, and review-queue routes. It intentionally excludes the coding workspace because opening or interacting with that page can create or change persisted attempt state.
+## Read-only browser acceptance
+
+The read-only suite starts a fresh Clerk-mode Next.js server and runs three isolated browser projects:
+
+- signed-out checks protected-route redirects;
+- teacher checks dashboard, classes, classroom membership, practicals, progress, submissions, and an existing review detail;
+- student checks dashboard, classes, practical detail, an existing workspace, submission history, and an existing submission detail.
+
+The teacher and student Clerk subjects must already be explicitly linked to active Labrix users. The teacher must own the configured practical's classroom. The student defaults to `demo-student-1` and the practical defaults to `two-sum`; override those fixture IDs with `LABRIX_READ_ONLY_STUDENT_ID` and `LABRIX_READ_ONLY_TASK_ID` when needed. That student/task pair must already have an active coding session and an immutable submission. Missing prerequisites fail the suite; it never creates them.
+
+Provide Clerk development-instance keys, the existing database URL, and two Playwright storage-state files from separately authenticated teacher and student browser sessions:
+
+```dotenv
+DATABASE_URL=postgresql://...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+LABRIX_READ_ONLY_TEACHER_STORAGE_STATE=C:/secure/labrix-teacher-state.json
+LABRIX_READ_ONLY_STUDENT_STORAGE_STATE=C:/secure/labrix-student-state.json
+```
+
+Keep storage-state files outside the repository or in an ignored location; they contain reusable session material and must never be committed.
+
+Create each state against `http://127.0.0.1:3000/sign-in` (the same host used by the suite), using a temporarily started Clerk-mode development server and Playwright's `--save-storage` workflow. Sign in once as the linked teacher and once as the linked student, saving them to separate files. Do not navigate to or interact with Run/Submit while creating the states.
+
+Then run:
+
+```bash
+npm run test:acceptance:read-only
+```
+
+The suite does not seed, reset, migrate, click Run/Submit, or invoke demo-reset actions. It rejects unavailable auth-state files, records non-read same-origin browser requests, and compares persistence fingerprints before and after each authenticated project. Opening the workspace is safe only because the prerequisite guard confirms that its active coding session already exists. Student result assertions also reject teacher-only hidden-test identifiers and detail labels.
 
 Full Playwright refuses to reuse an already-running server. This prevents an isolated test command from silently connecting to a server that was started with the shared demo database.
 
