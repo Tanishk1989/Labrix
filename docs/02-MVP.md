@@ -1,6 +1,6 @@
 # MVP and implementation status
 
-Status reflects repository behavior as of 2026-08-10.
+Status reflects repository behavior as of 2026-08-11.
 
 ## Implemented
 
@@ -34,10 +34,11 @@ Status reflects repository behavior as of 2026-08-10.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
+- A separate, loopback-only local Java worker compiles once and runs tests in a fresh locked-down Docker container per request. It is single-flight, explicitly opt-in through `java-http`, and verified for success, compiler failure, runtime failure, and timeout; it is not the selected production execution system.
 
 ## Mock
 
-- Execution derives outcomes from source markers such as `fail_test`, `compile_error`, and `runtime_error`. Java/C++ are not compiled.
+- The default execution provider derives outcomes from source markers such as `fail_test`, `compile_error`, and `runtime_error`. C++ is not compiled; Java compilation requires explicit local `java-http` opt-in.
 - In explicit demo mode, the role selector is session-scoped presentation preview, not authentication or authorization. Clerk mode hides it.
 
 ## Planned

@@ -146,7 +146,16 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Define an opt-in Java-only HTTP adapter and a bounded contract for a separate local Docker worker.
 - Prove compilation, runtime, and timeout behavior only after the Docker daemon and locked-down worker are available.
 
-**Status:** partial scaffolding only. The adapter, configuration boundary, response limits, fail-closed mapping, and focused tests are implemented. The Docker daemon was unavailable during this slice, so no worker or real Java execution is included or claimed.
+**Status:** complete as scaffolding. The adapter, configuration boundary, response limits, fail-closed mapping, and focused tests are implemented. Phase 15B supplies the local worker proof; this phase did not claim production execution.
+
+## Phase 15B — local Docker Java runner worker
+
+- Add a separate loopback worker without putting Java, Docker, shell, or child-process execution in Next.js.
+- Create one disposable locked-down Java 21 container per request, compile once, and run ordered test inputs under fixed local limits.
+- Prove success, compilation error, runtime error, and timeout through the HTTP boundary without touching PostgreSQL.
+- Keep the deterministic mock provider as the default and keep C++, AI, grading, persistence, and authorization unchanged.
+
+**Status:** complete for the opt-in local single-flight proof. Production provider selection, queueing, concurrency, observability, retry/outage behavior, broader abuse testing, and C++ remain future decisions/work.
 
 ## Later slices
 

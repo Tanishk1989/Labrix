@@ -5,6 +5,7 @@ import type {
 } from "./provider";
 import {
   JAVA_RUNNER_OUTPUT_BYTES,
+  JAVA_RUNNER_HTTP_TIMEOUT_MS,
   JAVA_RUNNER_MAX_TESTS,
   JAVA_RUNNER_RESPONSE_BYTES,
   JAVA_RUNNER_SOURCE_BYTES,
@@ -127,7 +128,8 @@ export class JavaHttpExecutionProvider implements ServerExecutionProvider {
   constructor(options: JavaHttpExecutionProviderOptions) {
     this.endpoint = options.endpoint;
     this.fetchImplementation = options.fetchImplementation ?? fetch;
-    this.requestTimeoutMs = options.requestTimeoutMs ?? 4_000;
+    this.requestTimeoutMs =
+      options.requestTimeoutMs ?? JAVA_RUNNER_HTTP_TIMEOUT_MS;
   }
 
   async execute(
