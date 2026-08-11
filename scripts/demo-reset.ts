@@ -1,6 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { getDemoDatabaseUrl } from "./demo-env";
 
+if (process.env.NODE_ENV === "production") {
+  console.error("Demo reset refused: this command is unavailable in production.");
+  process.exit(1);
+}
+
 const databaseUrl = getDemoDatabaseUrl();
 if (!databaseUrl) {
   console.error("Demo reset refused: DATABASE_URL is not configured.");

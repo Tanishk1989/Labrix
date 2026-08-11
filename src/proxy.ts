@@ -9,6 +9,7 @@ const publicPaths = [
   "/unlinked-account",
   "/disabled-account",
   "/unauthorized",
+  "/api/health",
 ];
 
 const persistedRoutePrefixes = [
