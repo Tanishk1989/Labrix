@@ -95,6 +95,16 @@ export default async function StudentProgressPage({
     </section>
 
     <section className="panel overflow-hidden">
+      <div className="panel-header"><div><h2 className="section-heading">Recent membership activity</h2><p className="section-description">Owner-authorized access changes recorded by Labrix. Students cannot view this audit trail.</p></div><span className="count-chip">{roster.auditEntries.length}</span></div>
+      {roster.auditEntries.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Action</th><th>Student</th><th>Changed by</th><th>Recorded</th></tr></thead><tbody>{roster.auditEntries.map((entry) => <tr key={entry.id}>
+        <td><StatusBadge tone={entry.action === "REACTIVATED" ? "success" : "warning"}>{entry.action === "REACTIVATED" ? "Reactivated" : "Deactivated"}</StatusBadge></td>
+        <td className="min-w-52"><p className="font-semibold text-white">{entry.student.name}</p><p className="text-[11px] text-[var(--text-muted)]">{entry.student.email}</p></td>
+        <td className="min-w-40 text-xs text-[var(--text-secondary)]">{entry.actorTeacher.name}</td>
+        <td className="min-w-44 text-xs text-[var(--text-secondary)]">{new Date(entry.createdAt).toLocaleString("en-IN")}</td>
+      </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No membership activity" description="Deactivation and reactivation changes will appear here." /></div>}
+    </section>
+
+    <section className="panel overflow-hidden">
       <div className="panel-header"><div><h2 className="section-heading">Latest practical progress</h2><p className="section-description">{progress.task?.title ?? "No published practical"} · Latest immutable attempt per active student.</p></div><span className="count-chip">{progress.students.length}</span></div>
       {progress.students.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Submission status</th><th>Stored simulated result</th><th>Attempt</th><th>Submitted</th><th><span className="sr-only">Review</span></th></tr></thead><tbody>{progress.students.map((student) => {
         const latest = student.latestSubmission;

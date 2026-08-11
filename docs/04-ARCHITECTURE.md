@@ -38,7 +38,7 @@ Teacher classroom queries are owner-scoped. Latest-practical completion is deriv
 
 The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, and a derived review status without returning draft feedback text. Student DTOs remain separate and expose only published reviews belonging to that student.
 
-Roster reads and mutations use a server-only classroom service. Deactivation and owner-only reactivation update only the existing membership `active` flag after role and classroom-owner checks; the `(classroomId, userId)` uniqueness constraint prevents duplicate memberships and historical coding/review relations remain untouched. An inactive member cannot self-reactivate through the join-code action. Join-code regeneration updates the existing unique classroom code, so no schema change or invitation record is required for these MVP controls.
+Roster reads and mutations use a server-only classroom service. Deactivation and owner-only reactivation atomically update only the existing membership `active` flag and append a `MembershipAuditEntry` after role and classroom-owner checks; the `(classroomId, userId)` uniqueness constraint prevents duplicate memberships and historical coding/review relations remain untouched. Owner-scoped roster reads return the recent audit trail, while student DTOs do not include it. An inactive member cannot self-reactivate through the join-code action. Join-code regeneration updates the existing unique classroom code, so no invitation record is required for these MVP controls.
 
 ## Persisted model
 
@@ -51,6 +51,7 @@ Roster reads and mutations use a server-only classroom service. Deactivation and
 - `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
 - `User.accountStatus`: local `ACTIVE`/`DISABLED` lifecycle policy; existing users default to `ACTIVE`.
 - `ExternalIdentity`: optional provider/subject link to an existing local user. Composite uniqueness prevents a provider subject from mapping twice and prevents duplicate same-provider identities for one local user.
+- `MembershipAuditEntry`: append-only record of owner-authorized membership deactivation/reactivation with classroom, membership, student, acting teacher, optional reason, and server timestamp. Restrictive foreign keys preserve its references.
 
 Submission creation uses a serializable transaction to create the attempt, close the active session, and append its event. Unique constraints enforce attempt numbering, one submission per session, one result per submission, and student-scoped idempotency.
 

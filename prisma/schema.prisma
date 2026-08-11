@@ -27,6 +27,11 @@ enum MembershipRole {
   STUDENT
 }
 
+enum MembershipAuditAction {
+  DEACTIVATED
+  REACTIVATED
+}
+
 enum TaskStatus {
   DRAFT
   PUBLISHED
@@ -64,20 +69,22 @@ enum SubmissionReviewStatus {
 }
 
 model User {
-  id                 String              @id @default(cuid())
-  name               String
-  email              String              @unique
-  platformRole       PlatformRole
-  accountStatus      AccountStatus       @default(ACTIVE)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  externalIdentities ExternalIdentity[]
-  classroomsOwned    Classroom[]         @relation("ClassroomOwner")
-  memberships        ClassMembership[]
-  tasksAuthored      Task[]              @relation("TaskAuthor")
-  codingSessions     CodingSession[]     @relation("StudentCodingSessions")
-  submissionAttempts SubmissionAttempt[] @relation("StudentSubmissions")
-  submissionReviews  SubmissionReview[]  @relation("TeacherSubmissionReviews")
+  id                             String                 @id @default(cuid())
+  name                           String
+  email                          String                 @unique
+  platformRole                   PlatformRole
+  accountStatus                  AccountStatus          @default(ACTIVE)
+  createdAt                      DateTime               @default(now())
+  updatedAt                      DateTime               @updatedAt
+  externalIdentities             ExternalIdentity[]
+  classroomsOwned                Classroom[]            @relation("ClassroomOwner")
+  memberships                    ClassMembership[]
+  tasksAuthored                  Task[]                 @relation("TaskAuthor")
+  codingSessions                 CodingSession[]        @relation("StudentCodingSessions")
+  submissionAttempts             SubmissionAttempt[]    @relation("StudentSubmissions")
+  submissionReviews              SubmissionReview[]     @relation("TeacherSubmissionReviews")
+  studentMembershipAuditEntries  MembershipAuditEntry[] @relation("MembershipAuditStudent")
+  authoredMembershipAuditEntries MembershipAuditEntry[] @relation("MembershipAuditActor")
 }
 
 model ExternalIdentity {
@@ -94,31 +101,51 @@ model ExternalIdentity {
 }
 
 model Classroom {
-  id             String            @id @default(cuid())
-  name           String
-  subject        String
-  section        String
-  ownerTeacherId String
-  joinCode       String            @unique
-  status         ClassroomStatus   @default(ACTIVE)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  ownerTeacher   User              @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id])
-  memberships    ClassMembership[]
-  tasks          Task[]
+  id                     String                 @id @default(cuid())
+  name                   String
+  subject                String
+  section                String
+  ownerTeacherId         String
+  joinCode               String                 @unique
+  status                 ClassroomStatus        @default(ACTIVE)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  ownerTeacher           User                   @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id])
+  memberships            ClassMembership[]
+  tasks                  Task[]
+  membershipAuditEntries MembershipAuditEntry[]
 }
 
 model ClassMembership {
-  id          String         @id @default(cuid())
-  classroomId String
-  userId      String
-  role        MembershipRole
-  joinedAt    DateTime       @default(now())
-  active      Boolean        @default(true)
-  classroom   Classroom      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String                 @id @default(cuid())
+  classroomId  String
+  userId       String
+  role         MembershipRole
+  joinedAt     DateTime               @default(now())
+  active       Boolean                @default(true)
+  classroom    Classroom              @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditEntries MembershipAuditEntry[]
 
   @@unique([classroomId, userId])
+}
+
+model MembershipAuditEntry {
+  id             String                @id @default(cuid())
+  classroomId    String
+  membershipId   String
+  studentId      String
+  actorTeacherId String
+  action         MembershipAuditAction
+  reason         String?
+  createdAt      DateTime              @default(now())
+  classroom      Classroom             @relation(fields: [classroomId], references: [id], onDelete: Restrict)
+  membership     ClassMembership       @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  student        User                  @relation("MembershipAuditStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  actorTeacher   User                  @relation("MembershipAuditActor", fields: [actorTeacherId], references: [id], onDelete: Restrict)
+
+  @@index([classroomId, createdAt])
+  @@index([membershipId, createdAt])
 }
 
 model Task {

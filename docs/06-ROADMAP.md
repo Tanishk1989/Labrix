@@ -106,7 +106,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Restore access by reactivating the existing unique membership row; do not recreate membership or rewrite historical work.
 - Keep reactivation teacher-only and prevent join-code self-reactivation for inactive members.
 
-**Status:** complete for owner-controlled reactivation. Invitations, notifications, and membership audit history remain future work.
+**Status:** complete for owner-controlled reactivation. Membership auditing is tracked in Phase 10A; invitations and notifications remain future work.
+
+## Phase 10A — membership audit trail
+
+- Record every successful teacher-controlled membership deactivation and reactivation atomically.
+- Attribute each entry to the classroom, existing membership, student, acting teacher, action, and server timestamp.
+- Show recent entries only to the classroom-owning teacher without exposing them through student read models.
+
+**Status:** complete for membership access changes. Join-code changes, invitations, notifications, free-text reasons, and broader administrative audit events remain future work.
 
 ## Later slices
 
