@@ -2,8 +2,10 @@ import "server-only";
 
 import { type RunResultState, type TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { toTeacherReviewQueueStatus, type TeacherReviewQueueStatus } from "@/features/submission-review/review-queue";
+import { calculateSuggestedScore } from "@/server/execution/result-grading";
 
-type SubmissionRecord = {
+export type TeacherSubmissionRecord = {
   id: string;
   studentId: string;
   studentName: string;
@@ -18,6 +20,9 @@ type SubmissionRecord = {
   state: RunResultState;
   passedTests: number;
   totalTests: number;
+  suggestedScore: number;
+  teacherMarks: { awarded: number; outOf: number } | null;
+  reviewStatus: TeacherReviewQueueStatus;
 };
 
 export type TeacherPracticalSummary = {
@@ -50,6 +55,7 @@ export type TeacherOverview = {
     distinctStudentCount: number;
     publishedPracticalCount: number;
     submissionAttemptCount: number;
+    needsReviewCount: number;
   };
   classrooms: Array<{
     id: string;
@@ -63,7 +69,7 @@ export type TeacherOverview = {
     outstandingStudentCount: number;
   }>;
   practicals: TeacherPracticalSummary[];
-  submissions: SubmissionRecord[];
+  submissions: TeacherSubmissionRecord[];
   attention: TeacherAttentionItem[];
   progress: {
     eligibleStudentCount: number;
@@ -104,7 +110,19 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
             include: {
               student: { select: { id: true, name: true } },
               resultSnapshot: {
-                select: { state: true, passedTests: true, totalTests: true },
+                select: {
+                  state: true,
+                  passedTests: true,
+                  totalTests: true,
+                  suggestedScore: true,
+                },
+              },
+              review: {
+                select: {
+                  status: true,
+                  marksAwarded: true,
+                  marksOutOf: true,
+                },
               },
             },
           },
@@ -114,7 +132,7 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
   });
 
   const practicals: TeacherPracticalSummary[] = [];
-  const submissions: SubmissionRecord[] = [];
+  const submissions: TeacherSubmissionRecord[] = [];
   const attention: TeacherAttentionItem[] = [];
   const distinctStudentIds = new Set<string>();
   const availableTaskIdsByStudent = new Map<string, Set<string>>();
@@ -185,6 +203,24 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
           state: attempt.resultSnapshot.state,
           passedTests: attempt.resultSnapshot.passedTests,
           totalTests: attempt.resultSnapshot.totalTests,
+          suggestedScore:
+            attempt.resultSnapshot.suggestedScore ??
+            calculateSuggestedScore(
+              attempt.resultSnapshot.state === "COMPLETED"
+                ? "completed"
+                : "internal_error",
+              attempt.resultSnapshot.passedTests,
+              attempt.resultSnapshot.totalTests,
+            ),
+          teacherMarks: attempt.review
+            ? {
+                awarded: attempt.review.marksAwarded,
+                outOf: attempt.review.marksOutOf,
+              }
+            : null,
+          reviewStatus: toTeacherReviewQueueStatus(
+            attempt.review?.status ?? null,
+          ),
         });
       }
     }
@@ -275,6 +311,9 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
       distinctStudentCount: distinctStudentIds.size,
       publishedPracticalCount: practicals.filter((practical) => practical.status === "PUBLISHED").length,
       submissionAttemptCount: submissions.length,
+      needsReviewCount: submissions.filter(
+        (submission) => submission.reviewStatus !== "PUBLISHED_FEEDBACK",
+      ).length,
     },
     classrooms: classroomRows,
     practicals,

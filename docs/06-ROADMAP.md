@@ -84,6 +84,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete with the deterministic simulated provider. Real compilation, weighted grading, and rubrics remain excluded.
 
+## Phase 7A — teacher review queue
+
+- Add an owner-scoped grading queue over persisted immutable attempts.
+- Distinguish submissions needing review, private review drafts, and published feedback.
+- Show suggested score and teacher-awarded marks separately with simple review-status filters.
+
+**Status:** complete for the existing teacher submissions route. Notifications, rubrics, weighted grading, AI, and real execution remain excluded.
+
 ## Later slices
 
 1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.

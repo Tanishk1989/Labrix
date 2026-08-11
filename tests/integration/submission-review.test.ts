@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db/prisma";
 import {
   getSubmissionForStudent,
@@ -11,6 +11,9 @@ import {
   SubmissionReviewAccessError,
   SubmissionReviewValidationError,
 } from "@/server/reviews/submission-review";
+import { getTeacherOverview } from "@/server/teacher/overview";
+
+vi.mock("server-only", () => ({}));
 
 const suffix = randomUUID().slice(0, 8);
 const teacherId = `review-teacher-${suffix}`;
@@ -141,6 +144,36 @@ describe.sequential("teacher submission reviews", () => {
       status: "DRAFT",
       publishedAt: null,
     });
+  });
+
+  it("returns an owner-scoped queue with safe grading and review status", async () => {
+    const [ownerOverview, otherTeacherOverview] = await Promise.all([
+      getTeacherOverview(teacherId),
+      getTeacherOverview(otherTeacherId),
+    ]);
+    expect(ownerOverview.submissions).toHaveLength(2);
+    expect(otherTeacherOverview.submissions).toHaveLength(0);
+
+    const draft = ownerOverview.submissions.find(
+      (submission) => submission.id === submissionIds[0],
+    );
+    const unreviewed = ownerOverview.submissions.find(
+      (submission) => submission.id === submissionIds[1],
+    );
+    expect(draft).toMatchObject({
+      suggestedScore: 5,
+      teacherMarks: { awarded: 7, outOf: 10 },
+      reviewStatus: "DRAFT_SAVED",
+    });
+    expect(unreviewed).toMatchObject({
+      suggestedScore: 10,
+      teacherMarks: null,
+      reviewStatus: "NEEDS_REVIEW",
+    });
+    expect(ownerOverview.summary.needsReviewCount).toBe(2);
+    expect(JSON.stringify(ownerOverview)).not.toContain(
+      "Good direction; explain the edge case.",
+    );
   });
 
   it("rejects another teacher and a student", async () => {

@@ -39,7 +39,8 @@ flowchart LR
 3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
 4. Review shows the immutable source/result snapshots, separate visible/hidden test details, suggested test score, attempt number, timestamp, run count, and ordered foundation timeline.
 5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
-6. No cheating score, AI summary, or automated academic decision is produced.
+6. The owner-scoped review queue distinguishes `Needs review`, `Draft saved`, and `Published feedback`; its Needs review filter keeps unfinished private drafts visible, while Reviewed means feedback has been published.
+7. No cheating score, AI summary, or automated academic decision is produced.
 
 **Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale.
 
