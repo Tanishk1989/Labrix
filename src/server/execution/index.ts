@@ -6,44 +6,57 @@ import type { ServerExecutionProvider } from "./provider";
 const mockProvider: ServerExecutionProvider = new ServerMockExecutionProvider();
 
 export interface ExecutionProviderEnvironment {
+  NODE_ENV?: string;
   LABRIX_EXECUTION_PROVIDER?: string;
   LABRIX_JAVA_RUNNER_URL?: string;
   LABRIX_CPP_RUNNER_URL?: string;
+  LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION?: string;
 }
 
-function requireLoopbackRunnerUrl(value: string | undefined) {
-  if (!value) {
-    throw new Error(
-      "LABRIX_JAVA_RUNNER_URL is required for the java-http provider.",
-    );
-  }
+type LocalProviderMode = "java-http" | "cpp-http";
 
-  const url = new URL(value);
+function requireLocalRunnerProductionAllowance(
+  mode: LocalProviderMode,
+  environment: ExecutionProviderEnvironment,
+) {
   if (
-    url.protocol !== "http:" ||
-    !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)
+    environment.NODE_ENV === "production" &&
+    environment.LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION !== "true"
   ) {
     throw new Error(
-      "The Java runner spike must use a loopback HTTP endpoint.",
+      `Invalid execution provider configuration: ${mode} is a local development proof and is not production-ready. ` +
+        "Set LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=true only for an explicitly accepted local production exception.",
     );
   }
-  return url.toString();
 }
 
-function requireCppLoopbackRunnerUrl(value: string | undefined) {
+function requireLoopbackRunnerUrl(
+  value: string | undefined,
+  variableName: "LABRIX_JAVA_RUNNER_URL" | "LABRIX_CPP_RUNNER_URL",
+  providerMode: LocalProviderMode,
+) {
   if (!value) {
     throw new Error(
-      "LABRIX_CPP_RUNNER_URL is required for the cpp-http provider.",
+      `Invalid execution provider configuration: ${variableName} is required for the ${providerMode} provider.`,
     );
   }
 
-  const url = new URL(value);
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(
+      `Invalid execution provider configuration: ${variableName} must be a valid HTTP loopback URL.`,
+    );
+  }
   if (
     url.protocol !== "http:" ||
-    !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)
+    !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) ||
+    url.username !== "" ||
+    url.password !== ""
   ) {
     throw new Error(
-      "The C++ runner scaffold must use a loopback HTTP endpoint.",
+      `Invalid execution provider configuration: ${variableName} for ${providerMode} must use an unauthenticated loopback HTTP URL on 127.0.0.1, localhost, or ::1.`,
     );
   }
   return url.toString();
@@ -51,21 +64,34 @@ function requireCppLoopbackRunnerUrl(value: string | undefined) {
 
 export function getServerExecutionProvider(
   environment: ExecutionProviderEnvironment = {
+    NODE_ENV: process.env.NODE_ENV,
     LABRIX_EXECUTION_PROVIDER: process.env.LABRIX_EXECUTION_PROVIDER,
     LABRIX_JAVA_RUNNER_URL: process.env.LABRIX_JAVA_RUNNER_URL,
     LABRIX_CPP_RUNNER_URL: process.env.LABRIX_CPP_RUNNER_URL,
+    LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION:
+      process.env.LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION,
   },
 ): ServerExecutionProvider {
   const mode = environment.LABRIX_EXECUTION_PROVIDER ?? "mock";
   if (mode === "mock") return mockProvider;
   if (mode === "java-http") {
+    requireLocalRunnerProductionAllowance(mode, environment);
     return new JavaHttpExecutionProvider({
-      endpoint: requireLoopbackRunnerUrl(environment.LABRIX_JAVA_RUNNER_URL),
+      endpoint: requireLoopbackRunnerUrl(
+        environment.LABRIX_JAVA_RUNNER_URL,
+        "LABRIX_JAVA_RUNNER_URL",
+        mode,
+      ),
     });
   }
   if (mode === "cpp-http") {
+    requireLocalRunnerProductionAllowance(mode, environment);
     return new CppHttpExecutionProvider({
-      endpoint: requireCppLoopbackRunnerUrl(environment.LABRIX_CPP_RUNNER_URL),
+      endpoint: requireLoopbackRunnerUrl(
+        environment.LABRIX_CPP_RUNNER_URL,
+        "LABRIX_CPP_RUNNER_URL",
+        mode,
+      ),
     });
   }
   throw new Error(`Unsupported LABRIX_EXECUTION_PROVIDER: ${mode}`);
