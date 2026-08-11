@@ -175,6 +175,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for runtime disclosure and the safe historical fallback. Persisting provider provenance would require a separate schema and lifecycle decision.
 
+## Phase 16A — C++ runner planning spike
+
+- Confirm the language-neutral application and persistence contract can carry C++ without schema changes.
+- Add an explicit loopback-only `cpp-http` provider scaffold and a C++-literal bounded protocol without changing Java execution.
+- Keep mock as default and disclose the opt-in mode as **C++ runner scaffold**, not as real execution.
+- Document native-code threats and defer shared worker extraction until it can be validated against a real C++ sandbox.
+
+**Status:** complete as planning and fail-closed scaffolding only. No C++ worker, compiler image, Docker execution, start script, or end-to-end acceptance exists.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
