@@ -13,6 +13,9 @@ describe("execution mode disclosure", () => {
     expect(executionModeLabel("java-docker-local")).toBe(
       "Java Docker runner",
     );
+    expect(executionModeLabel("cpp-runner-scaffold")).toBe(
+      "C++ runner scaffold",
+    );
   });
 
   it("does not infer a provider for a legacy persisted snapshot", () => {
