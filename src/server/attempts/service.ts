@@ -8,6 +8,7 @@ import {
 import { prisma } from "@/lib/db/prisma";
 import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import { evaluateSubmissionDeadline } from "@/domain/submissions/deadline-policy";
+import { practicalVersionForSubmission } from "@/domain/practicals/versioning";
 import {
   executionModeFromPersistedSnapshot,
   type ExecutionMode,
@@ -100,6 +101,7 @@ export interface PersistedSubmission {
   attemptNumber: number;
   submittedAt: string;
   timingStatus: "ON_TIME" | "LATE" | null;
+  practicalVersion: number | null;
   result: PersistedRun;
 }
 
@@ -592,6 +594,7 @@ function persistedSubmissionResult(
     attemptNumber: submission.attemptNumber,
     submittedAt: submission.submittedAt.toISOString(),
     timingStatus: submission.timingStatus,
+    practicalVersion: submission.practicalVersion,
     result: {
       executionMode: disclosedSnapshotExecutionMode(snapshot.executionMode),
       id: snapshot.runAttemptId,
@@ -683,6 +686,7 @@ async function submitStudentDraftWithoutGuard(
             sourceCodeSnapshot: input.sourceCode,
             submittedAt,
             timingStatus: deadlineDecision.timingStatus,
+            practicalVersion: practicalVersionForSubmission(session.task.version),
           },
           include: { resultSnapshot: true },
         });
@@ -793,6 +797,7 @@ export async function getSubmissionForTeacher(
     sourceCode: submission.sourceCodeSnapshot,
     submittedAt: submission.submittedAt.toISOString(),
     timingStatus: submission.timingStatus,
+    practicalVersion: submission.practicalVersion,
     student: submission.student,
     task: {
       id: submission.task.id,
@@ -879,6 +884,7 @@ export async function getSubmissionForStudent(
     sourceCode: submission.sourceCodeSnapshot,
     submittedAt: submission.submittedAt.toISOString(),
     timingStatus: submission.timingStatus,
+    practicalVersion: submission.practicalVersion,
     student: submission.student,
     task: submission.task,
     result: {

@@ -68,6 +68,10 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 **Accepted 2026-08-11.** New immutable submission attempts store a nullable timing status determined from server time and the practical deadline. Submissions at or before the deadline, and submissions for practicals without a deadline, are `ON_TIME`; later submissions are `LATE`. The default policy allows late submissions while preserving their classification. Legacy attempts remain null and display **Timing unavailable**; they are not backfilled.
 
+### D-021 — Practical versions on immutable submissions
+
+**Accepted 2026-08-11.** Practicals start at version 1. Material changes to instructions, constraints, allowed languages, starter code, deadline, or ordered tests increment an already-published practical’s version; draft edits and no-op saves do not. Each new immutable submission stores the current practical version. Legacy submissions remain null and display **Version unavailable**; they are not rewritten.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

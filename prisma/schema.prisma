@@ -161,6 +161,7 @@ model MembershipAuditEntry {
 
 model Task {
   id                 String              @id @default(cuid())
+  version            Int                 @default(1)
   classroomId        String
   authorTeacherId    String
   title              String
@@ -272,6 +273,7 @@ model SubmissionAttempt {
   sourceCodeSnapshot String
   submittedAt        DateTime                @default(now())
   timingStatus       SubmissionTimingStatus?
+  practicalVersion   Int?
   task               Task                    @relation(fields: [taskId], references: [id], onDelete: Restrict)
   student            User                    @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Restrict)
   codingSession      CodingSession           @relation(fields: [codingSessionId], references: [id], onDelete: Restrict)

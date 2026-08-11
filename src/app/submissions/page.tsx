@@ -3,6 +3,7 @@ import { ArrowRight, Search } from "lucide-react";
 import { DemoShell } from "@/components/app-shell";
 import { EmptyState, MetricCard, StatusBadge } from "@/components/design-system";
 import { SubmissionTimingBadge } from "@/components/submission-timing-badge";
+import { PracticalVersionLabel } from "@/components/practical-version-label";
 import {
   filterTeacherReviewQueue,
   normalizeTeacherReviewQueueFilter,
@@ -125,7 +126,7 @@ export default async function SubmissionsQueuePage({
         <td>#{submission.attemptNumber}</td>
         <td>{submission.language === "CPP" ? "C++" : "Java"}</td>
         <td><SubmissionTimingBadge status={submission.timingStatus} /></td>
-        <td className="min-w-44 text-xs text-[var(--text-secondary)]">{new Date(submission.submittedAt).toLocaleString("en-IN")}</td>
+        <td className="min-w-44 text-xs text-[var(--text-secondary)]"><p>{new Date(submission.submittedAt).toLocaleString("en-IN")}</p><PracticalVersionLabel version={submission.practicalVersion} /></td>
         <td><StatusBadge tone={result.tone}>{result.label}</StatusBadge><p className="mt-1 text-[10px] text-[var(--text-muted)]">{submission.passedTests}/{submission.totalTests} tests</p></td>
         <td><span className="font-semibold text-white">{submission.suggestedScore.toFixed(1)}/10</span><p className="text-[10px] text-[var(--text-muted)]">Automatic</p></td>
         <td>{submission.teacherMarks ? <><span className="font-semibold text-white">{submission.teacherMarks.awarded}/{submission.teacherMarks.outOf}</span><p className="text-[10px] text-[var(--text-muted)]">Teacher-awarded</p></> : <span className="text-[var(--text-muted)]">—</span>}</td>
