@@ -13,6 +13,7 @@ Before changing product behavior, read:
 7. `docs/06-ROADMAP.md`
 8. `docs/07-DECISIONS.md`
 9. `CONTRIBUTING.md`
+10. `docs/08-VERIFICATION.md`
 
 Then inspect the relevant routes, Prisma schema and migrations, authorization boundary, execution provider, tests, and current working-tree status. Repository evidence overrides stale prose; update the prose when behavior changes.
 
@@ -44,7 +45,7 @@ Then inspect the relevant routes, Prisma schema and migrations, authorization bo
 - Add integration tests for Prisma transactions, persistence, and server-side authorization when those boundaries change.
 - Add or update Playwright coverage for behavior visible in the core teacher/student workflow.
 - Test failure, empty, loading, deadline, retry, and unauthorized states relevant to the change.
-- Run `npm run lint`, `npm run typecheck`, `npm test`, and the relevant integration/e2e tests. Run `npm run build` for routing, server, dependency, or deployment-sensitive changes.
+- Run `npm run lint`, `npm run typecheck`, and unit-only `npm test`. Database-backed integration tests must use `npm run test:integration` with an explicitly confirmed disposable database; full Playwright must use the same isolated workflow. Use `npm run test:acceptance:read-only` when a non-mutating route smoke check is sufficient. Run `npm run build` for routing, server, dependency, or deployment-sensitive changes. See `docs/08-VERIFICATION.md`.
 - Never describe mock execution as real language execution.
 
 ## Definition of done

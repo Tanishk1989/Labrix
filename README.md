@@ -58,10 +58,10 @@ Checks:
 npm run lint
 npm run typecheck
 npm test
-npm run test:integration
-npm run test:e2e
 npm run build
 ```
+
+`npm test` is unit-only and does not use PostgreSQL. Database integration and full Playwright tests are mutating and require an explicitly confirmed disposable database; `npm run test:acceptance:read-only` provides a non-mutating seeded-route smoke check. See [docs/08-VERIFICATION.md](docs/08-VERIFICATION.md) before running `npm run test:integration` or `npm run test:e2e`.
 
 ## Safety boundary
 
@@ -78,4 +78,5 @@ Submission attempts and result snapshots are protected from updates by database 
 - [AI and evidence system](docs/05-AI-EVIDENCE-SYSTEM.md)
 - [Roadmap](docs/06-ROADMAP.md)
 - [Decisions](docs/07-DECISIONS.md)
+- [Verification workflow](docs/08-VERIFICATION.md)
 - [Contributing](CONTRIBUTING.md)
