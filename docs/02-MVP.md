@@ -26,12 +26,12 @@ Status reflects repository behavior as of 2026-08-10.
 - A provider-neutral `resolveCurrentActor()` maps a server-verified Clerk subject to an explicitly linked local user and enforces local account status and role before existing resource authorization.
 - Controlled local/admin identity linking by explicit Labrix user ID and verified Clerk subject; no email matching or public linking endpoint.
 - Unit, database integration, and critical browser tests.
+- Canonical persisted navigation for dashboard, classrooms, practicals, progress, submissions, workspace, and teacher review. Known legacy list/history URLs redirect to persisted equivalents; arbitrary unmatched URLs no longer render hard-coded product data.
 
 ## Partial
 
 - Production authentication remains incomplete until a security acceptance pass and administrator-controlled teacher provisioning. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in production; `clerk` never falls back to demo.
-- Only the seeded practical vertical slice uses persisted workspace/submission/review behavior; remaining unmatched product paths may still use the legacy catch-all.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
 
@@ -39,14 +39,12 @@ Status reflects repository behavior as of 2026-08-10.
 
 - Execution derives outcomes from source markers such as `fail_test`, `compile_error`, and `runtime_error`. Java/C++ are not compiled.
 - In explicit demo mode, the role selector is session-scoped presentation preview, not authentication or authorization. Clerk mode hides it.
-- Remaining catch-all pages, including legacy “my submissions” and practical-list variants, retain demo behavior.
 
 ## Planned
 
 - Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
 - Administrator-controlled teacher provisioning. Email invitations, webhooks, MFA, and social login remain outside this slice.
 - Isolated production execution with queues, limits, retries, and observability.
-- Complete task/submission navigation beyond the seeded vertical slice.
 - Versioned deterministic evidence signals beyond the five foundation events.
 - AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.
 - Concurrency, retention/deletion, deadline/timezone, accessibility, and operations hardening.

@@ -58,7 +58,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Use explicit database-backed routes for classes, practicals, progress, submissions, review, and the coding workspace.
 - Scope teacher queries by ownership and student queries by active membership and resource ownership.
 
-**Status:** implemented for the primary routes. Remaining unmatched legacy catch-all routes still need retirement.
+**Status:** complete for the canonical persisted routes. Known legacy aliases redirect to persisted equivalents, and arbitrary unmatched paths no longer render mock product UI.
 
 ## Phase 3C.1 — single-practical authoring lifecycle
 
@@ -132,9 +132,17 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete on the classroom students/progress route. Historical trend charts, exports, configurable thresholds, and cross-practical comparison remain future work.
 
+## Phase 13A — legacy mock-route retirement
+
+- Replace the client-side catch-all demo with a server redirect/404 quarantine.
+- Redirect the old root, classroom-practical-list, and task-submission-history aliases to canonical persisted routes.
+- Remove the orphaned hard-coded classroom data and duplicate browser-only execution mock while retaining the active server execution provider and non-production demo identity mode.
+
+**Status:** complete. Canonical routes are explicit and database-backed; unknown paths no longer imitate working product behavior.
+
 ## Later slices
 
-1. Complete teacher provisioning, authentication security acceptance, and remaining legacy-route retirement.
+1. Complete teacher provisioning and authentication security acceptance.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
 3. Version deterministic evidence signals and teacher-facing definitions.
 4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance.

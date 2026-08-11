@@ -11,12 +11,14 @@ Labrix presents evidence for teacher judgment. It does not declare cheating or a
 ## Current repository state
 
 - **Implemented:** Next.js classroom/practical persistence; visible/hidden test authoring for the single-problem model; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary; immutable submission attempts and result snapshots with visibility counters and a suggested equal-weight test score; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; teacher-authored draft/published marks and feedback per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; and controlled identity linking.
-- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model, and unmatched legacy paths still use the catch-all.
+- **Partial:** production authentication still needs a security acceptance pass and administrator-controlled teacher provisioning. `demo` remains an explicit non-production resolver mode; `clerk` resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model.
 - **Mock:** execution results are simulated from deterministic source markers. Java and C++ are not compiled or executed. The visible role selector changes demo presentation and is not authentication.
 - **Planned:** administrator-controlled teacher provisioning, authentication security hardening, isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
 See [docs/02-MVP.md](docs/02-MVP.md) for the complete boundary.
+
+Canonical product routes are `/dashboard`, `/classes`, `/practicals`, `/progress`, `/submissions`, `/classes/[classroomId]`, `/classes/[classroomId]/students`, `/tasks/[taskId]`, and `/submissions/[submissionId]`. The retired root demo and its two known list/history aliases redirect to these persisted routes; other unmatched paths return a 404.
 
 ## Stack
 
