@@ -469,7 +469,7 @@ async function executeStudentDraft(
       state: "internal_error",
       passedTests: 0,
       totalTests: prepared.tests.length,
-      errorText: "The simulated execution provider was unavailable.",
+      errorText: "The configured execution provider was unavailable.",
       testResults: [],
     };
   }

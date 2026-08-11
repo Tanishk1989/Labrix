@@ -140,6 +140,14 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete. Canonical routes are explicit and database-backed; unknown paths no longer imitate working product behavior.
 
+## Phase 15A — local Java runner spike
+
+- Keep deterministic mock execution as the default.
+- Define an opt-in Java-only HTTP adapter and a bounded contract for a separate local Docker worker.
+- Prove compilation, runtime, and timeout behavior only after the Docker daemon and locked-down worker are available.
+
+**Status:** partial scaffolding only. The adapter, configuration boundary, response limits, fail-closed mapping, and focused tests are implemented. The Docker daemon was unavailable during this slice, so no worker or real Java execution is included or claimed.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

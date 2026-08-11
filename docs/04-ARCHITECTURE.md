@@ -15,6 +15,8 @@ flowchart TB
   SVC --> DB[("PostgreSQL via Prisma")]
   SVC --> EP["ServerExecutionProvider"]
   EP --> MOCK["Deterministic mock; no code execution"]
+  EP -. "opt-in scaffold" .-> JHTTP["Loopback Java HTTP adapter"]
+  JHTTP -. "not implemented in this spike" .-> WORKER["Separate Docker worker"]
   DB --> REVIEW["Persisted teacher progress and review"]
 ```
 
@@ -68,7 +70,7 @@ Submission creation uses a serializable transaction to create the attempt, close
 
 ## Execution and evidence boundaries
 
-No student source runs in Next.js. The current server provider only simulates deterministic feedback. A production adapter must call an isolated runner with explicit time, memory, process, filesystem, output, and network limits.
+No student source runs in Next.js. The default server provider only simulates deterministic feedback. An opt-in `java-http` adapter now defines a bounded, loopback-only contract for a separate Java runner, but the Docker worker is not implemented or runtime-verified while the local daemon is unavailable. The adapter has an HTTP deadline, bounded response parsing, Java-only enforcement, and fail-closed response validation; it never invokes Java, Docker, or child processes. A production adapter still requires an isolated runner with explicit time, memory, process, filesystem, output, network, queue, retry, and observability controls.
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 
