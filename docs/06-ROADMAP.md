@@ -240,12 +240,21 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for submission-level facts supported by existing records. New evidence event fields, source-size thresholds, AI summaries, viva generation, and class-level aggregation remain later governed slices.
 
+## Phase AI-1 — integrity review signals
+
+- Map Phase AI-0 facts through explicit, versioned thresholds to neutral `LOW_ATTENTION`, `REVIEW_RECOMMENDED`, and `HIGH_REVIEW_PRIORITY` categories.
+- Return explainable reason text only to the classroom-owning teacher on submission review and the compact review queue.
+- Treat missing legacy and unsupported source-jump facts as unavailable, never as reasons.
+- Add no AI provider, cheating verdict, guilt score, plagiarism accusation, grading, execution, review-state, or student DTO behavior.
+
+**Status:** complete for the five deterministic reasons supported by current Phase AI-0 facts. Policy configuration, acknowledgement/context notes, new evidence fields, class summaries, and AI assistance remain later governed slices.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
-3. Approve and add any further evidence event fields and threshold-based signals.
-4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance on top of Phase AI-0 facts.
+3. Approve and add any further evidence event fields and signal policies.
+4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance on top of deterministic evidence facts and signals.
 5. Pilot hardening: concurrency, deadlines/timezones, retention/deletion, audit, accessibility, backup, and incident paths.
 
 Do not pull screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, broad integrations, or automated verdicts into these slices.

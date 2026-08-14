@@ -12,6 +12,7 @@ import { getTeacherOverview } from "@/server/teacher/overview";
 import { StudentSubmissionResult } from "@/features/student/submission-result";
 import { SubmissionReviewForm } from "@/features/submission-review/submission-review-form";
 import { SubmissionEvidenceSection } from "@/features/submission-review/submission-evidence-section";
+import { IntegrityReviewSignalPanel } from "@/features/submission-review/integrity-review-signal";
 import { teacherReviewStatusMeta } from "@/features/submission-review/review-queue";
 
 const eventLabels = {
@@ -52,6 +53,7 @@ export default async function SubmissionReviewPage({ params }: { params: Promise
 
       <aside className="space-y-4">
         <SubmissionReviewForm key={review.review?.updatedAt ?? "new"} submissionAttemptId={review.id} review={review.review} />
+        <IntegrityReviewSignalPanel signal={review.integritySignal} />
         <SubmissionEvidenceSection facts={review.evidenceFacts} />
         <section className="panel p-4"><div className="flex items-center justify-between"><h2 className="section-heading">Process timeline</h2><span className="count-chip">{review.events.length}</span></div><ol className="mt-4 space-y-4">{review.events.map((event) => <li key={event.id} className="relative border-l border-[var(--border-strong)] pl-4"><span className="absolute -left-[4px] top-1 size-[7px] rounded-full bg-[var(--brand-accent)]" /><p className="text-xs font-medium text-white">{eventLabels[event.type]}</p><p className="mt-0.5 text-[10px] text-[var(--text-muted)]">#{event.sequence} · {new Date(event.occurredAt).toLocaleString("en-IN")}</p></li>)}</ol></section>
       </aside>

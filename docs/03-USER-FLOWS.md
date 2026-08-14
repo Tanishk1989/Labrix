@@ -40,11 +40,12 @@ flowchart LR
 3. Classroom completion counts each active student once when they have at least one immutable submission for the latest published practical; resubmissions do not inflate completion.
 4. Review shows the immutable source/result snapshots, separate visible/hidden test details, suggested test score, attempt number, timestamp, run count, and ordered foundation timeline.
 5. The teacher may save marks and feedback as a private draft or publish them to the student for that specific immutable attempt.
-6. The owner-scoped review queue distinguishes `Needs review`, `Draft saved`, and `Published feedback`; its Needs review filter keeps unfinished private drafts visible, while Reviewed means feedback has been published.
+6. The owner-scoped review queue distinguishes `Needs review`, `Draft saved`, and `Published feedback`; its Needs review filter keeps unfinished private drafts visible, while Reviewed means feedback has been published. It also shows the deterministic integrity review category and reason count without exposing raw source or event records through the queue DTO.
 7. The classroom progress route summarizes the latest published practical using one latest immutable attempt per active student: completion, deterministic suggested-score and visible/hidden pass-rate aggregates, published-review status, and neutral attention reasons.
 8. Legacy result snapshots remain readable; their undivided passed/total counters contribute as visible-only and do not invent hidden-test data.
 9. The submission review derives a teacher-only, versioned evidence section from immutable attempts, results, runs, session timestamps, and foundation events. Missing legacy fields remain explicitly unavailable, and unsupported source-size jumps are not inferred.
-10. No cheating score, AI summary, or automated academic decision is produced.
+10. The teacher detail maps available facts to a neutral integrity review category with explainable reasons. Zero reasons is `LOW_ATTENTION`, one is `REVIEW_RECOMMENDED`, and two or more is `HIGH_REVIEW_PRIORITY`; unavailable facts add no reason.
+11. No cheating verdict, guilt score, plagiarism accusation, AI summary, or automated academic decision is produced, and student DTOs receive no integrity signal.
 
 **Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale and owner-scoped latest-practical analytics.
 

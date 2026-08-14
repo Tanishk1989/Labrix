@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 also implements versioned, deterministic submission facts from existing persisted records. Additional event fields, threshold-based signals, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned, deterministic submission facts from existing persisted records, and Phase AI-1 maps available facts to teacher-only review-priority signals. Additional event fields, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
 
 ## Purpose and boundary
 
@@ -32,6 +32,14 @@ Signals must be versioned, reproducible, explainable, and linked to their underl
 - abrupt source-size changes or a very short active session, using teacher-visible thresholds.
 
 Phase AI-0 implements the non-threshold facts supported by current records: run and event counts, overall/visible/hidden test summaries, stored suggested score, timing status, practical version, execution mode, session-to-submission time, time to first run, source comparison with the latest successful pre-submission run, and whether a later draft-save event exists. The submit-time execution is excluded from that run comparison. Large source-size jumps are explicitly unavailable because `CodeEvent` does not store size deltas and `Draft` retains no revision history.
+
+Phase AI-1 applies these versioned rules only to available facts:
+
+- no pre-submission run, a session shorter than five minutes, a submitted source mismatch with the latest successful pre-submission run, a later draft save, or a stored suggested score of at least 8.0/10 with one or more hidden failures each adds one neutral reason;
+- zero reasons maps to `LOW_ATTENTION`, one to `REVIEW_RECOMMENDED`, and two or more to `HIGH_REVIEW_PRIORITY`;
+- the exact five-minute boundary is not short, the score boundary is inclusive, and unavailable or unsupported source-jump facts never add a reason.
+
+The category is an inspection-order aid, not a probability or student ranking. It is shown only to the classroom-owning teacher on submission detail and as a compact category/reason count in the review queue. Student DTOs contain neither the facts nor the signal.
 
 Display neutral language such as “72% of the final source appeared after one large paste event” or “No matching successful run was recorded.” Never display “cheated,” “plagiarized,” “suspicious student,” or a guilt probability.
 
