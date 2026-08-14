@@ -15,6 +15,7 @@ Status reflects repository behavior as of 2026-08-11.
 - New result snapshots store visible/hidden counters and a one-decimal, equal-weight suggested test score out of ten. This never overwrites teacher-awarded marks; legacy snapshots remain readable.
 - Immutable, numbered `SubmissionAttempt` records with exact source/result snapshots and student-scoped idempotency.
 - Foundation `CodeEvent` timeline: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`.
+- Versioned deterministic submission evidence facts for the owner-scoped teacher review: run/test summaries, stored timing/version/execution provenance, session timing, pre-submission successful-run comparison, draft-save timing, event counts, and explicit unavailable legacy fields. Source-size jumps remain unavailable because current events do not retain the required metadata.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned marks and feedback are stored separately for each immutable attempt; drafts remain teacher-only and published reviews are visible only to the owning student.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
@@ -47,7 +48,7 @@ Status reflects repository behavior as of 2026-08-11.
 - Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
 - Administrator-controlled teacher provisioning. Email invitations, webhooks, MFA, and social login remain outside this slice.
 - Isolated production execution with queues, limits, retries, and observability.
-- Versioned deterministic evidence signals beyond the five foundation events.
+- Additional evidence event fields and threshold-based signals beyond the Phase AI-0 submission facts.
 - AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.
 - Concurrency, retention/deletion, deadline/timezone, accessibility, and operations hardening.
 

@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db/prisma";
 import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import { evaluateSubmissionDeadline } from "@/domain/submissions/deadline-policy";
 import { practicalVersionForSubmission } from "@/domain/practicals/versioning";
+import { buildSubmissionEvidenceFacts } from "@/domain/evidence/submission-evidence";
 import {
   executionModeFromPersistedSnapshot,
   type ExecutionMode,
@@ -778,6 +779,10 @@ export async function getSubmissionForTeacher(
       codingSession: {
         include: {
           events: { orderBy: { sequence: "asc" } },
+          runs: {
+            orderBy: { sequence: "asc" },
+            include: { resultSnapshot: true },
+          },
           _count: { select: { runs: true } },
         },
       },
@@ -790,6 +795,30 @@ export async function getSubmissionForTeacher(
     submission.task.testCases.map((testCase) => [testCase.id, testCase]),
   );
   const breakdown = snapshotBreakdown(submission.resultSnapshot);
+  const evidenceFacts = buildSubmissionEvidenceFacts({
+    submission: {
+      sourceCodeSnapshot: submission.sourceCodeSnapshot,
+      submittedAt: submission.submittedAt,
+      timingStatus: submission.timingStatus,
+      practicalVersion: submission.practicalVersion,
+      resultRunAttemptId: submission.resultSnapshot.runAttemptId,
+    },
+    result: {
+      executionMode: submission.resultSnapshot.executionMode,
+      passedTests: submission.resultSnapshot.passedTests,
+      totalTests: submission.resultSnapshot.totalTests,
+      visiblePassedTests: submission.resultSnapshot.visiblePassedTests,
+      visibleTotalTests: submission.resultSnapshot.visibleTotalTests,
+      hiddenPassedTests: submission.resultSnapshot.hiddenPassedTests,
+      hiddenTotalTests: submission.resultSnapshot.hiddenTotalTests,
+      suggestedScore: submission.resultSnapshot.suggestedScore,
+    },
+    session: {
+      startedAt: submission.codingSession.startedAt,
+      runs: submission.codingSession.runs,
+      events: submission.codingSession.events,
+    },
+  });
   return {
     id: submission.id,
     attemptNumber: submission.attemptNumber,
@@ -829,6 +858,7 @@ export async function getSubmissionForTeacher(
       }),
     },
     runCount: submission.codingSession._count.runs,
+    evidenceFacts,
     review: submission.review
       ? {
           feedback: submission.review.feedback,

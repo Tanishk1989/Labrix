@@ -96,7 +96,29 @@ describe.sequential("teacher submission reviews", () => {
           state: "COMPLETED",
           passedTests: index + 1,
           totalTests: 2,
-          testResults: [],
+          executionMode: index === 0 ? "SIMULATED" : null,
+          visiblePassedTests: index === 0 ? 1 : null,
+          visibleTotalTests: index === 0 ? 1 : null,
+          hiddenPassedTests: index === 0 ? 0 : null,
+          hiddenTotalTests: index === 0 ? 1 : null,
+          suggestedScore: index === 0 ? 5 : null,
+          testResults:
+            index === 0
+              ? [
+                  {
+                    testId: `visible-review-test-${suffix}`,
+                    passed: true,
+                    actualOutput: "visible output",
+                    visibility: "VISIBLE",
+                  },
+                  {
+                    testId: `hidden-review-test-${suffix}`,
+                    passed: false,
+                    actualOutput: "hidden output",
+                    visibility: "HIDDEN",
+                  },
+                ]
+              : [],
         },
       });
       await prisma.submissionAttempt.create({
@@ -216,6 +238,29 @@ describe.sequential("teacher submission reviews", () => {
     ]);
     expect(teacherView.review?.status).toBe("DRAFT");
     expect(studentView.review).toBeNull();
+    expect(teacherView.evidenceFacts).toMatchObject({
+      schemaVersion: 1,
+      tests: {
+        hidden: {
+          availability: "AVAILABLE",
+          value: { passed: 0, total: 1 },
+        },
+      },
+    });
+    expect("evidenceFacts" in studentView).toBe(false);
+    expect(JSON.stringify(studentView)).not.toContain(
+      `hidden-review-test-${suffix}`,
+    );
+    expect(JSON.stringify(studentView)).not.toContain("hidden output");
+  });
+
+  it("returns evidence only to the classroom-owning teacher", async () => {
+    await expect(
+      getSubmissionForTeacher(otherTeacherId, submissionIds[0]),
+    ).rejects.toBeInstanceOf(AccessDeniedError);
+    await expect(
+      getSubmissionForTeacher(studentId, submissionIds[0]),
+    ).rejects.toBeInstanceOf(AccessDeniedError);
   });
 
   it("publishes feedback only to the owner student", async () => {

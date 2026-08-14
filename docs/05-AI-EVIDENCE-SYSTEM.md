@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Deterministic evidence signals, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 also implements versioned, deterministic submission facts from existing persisted records. Additional event fields, threshold-based signals, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
 
 ## Purpose and boundary
 
@@ -30,6 +30,8 @@ Signals must be versioned, reproducible, explainable, and linked to their underl
 - magnitude of source change between the last run and submission;
 - whether the submitted source had a matching successful run snapshot;
 - abrupt source-size changes or a very short active session, using teacher-visible thresholds.
+
+Phase AI-0 implements the non-threshold facts supported by current records: run and event counts, overall/visible/hidden test summaries, stored suggested score, timing status, practical version, execution mode, session-to-submission time, time to first run, source comparison with the latest successful pre-submission run, and whether a later draft-save event exists. The submit-time execution is excluded from that run comparison. Large source-size jumps are explicitly unavailable because `CodeEvent` does not store size deltas and `Draft` retains no revision history.
 
 Display neutral language such as “72% of the final source appeared after one large paste event” or “No matching successful run was recorded.” Never display “cheated,” “plagiarized,” “suspicious student,” or a guilt probability.
 
