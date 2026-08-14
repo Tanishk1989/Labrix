@@ -14,6 +14,8 @@ flowchart TB
   AUTHZ --> SVC["Attempt service"]
   SVC --> DB[("PostgreSQL via Prisma")]
   SVC --> EP["ServerExecutionProvider"]
+  SVC --> AIP["AIReviewBriefProvider"]
+  AIP --> FAKEAI["In-process fake provider v1"]
   EP --> MOCK["Deterministic mock; no code execution"]
   EP -. "explicit local opt-in" .-> JHTTP["Loopback Java HTTP adapter"]
   JHTTP --> WORKER["Separate single-flight Java worker"]
@@ -44,6 +46,10 @@ Each `Task` may store nullable Java and C++ starter-code fields. Null keeps lega
 The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, a derived review status, and the deterministic integrity review signal without returning draft feedback text, raw source snapshots, or event records. Student DTOs remain separate and expose only published reviews belonging to that student.
 
 The owner-scoped teacher submission-detail DTO also builds `SubmissionEvidenceFactsV1` in the domain layer from already persisted immutable submission/result data plus its session runs and foundation events. Every nullable legacy or unsupported value has an explicit unavailable state and explanation. The submit-time execution is excluded from latest-successful-run comparison so source matching is meaningful. A separate versioned domain calculator maps only available facts to neutral review-priority categories and reason text; it does not persist or infer misconduct. The separate student detail DTO receives no evidence or integrity-signal object and continues to redact hidden per-test records.
+
+Phase AI-2 adds a separate server-only `AIReviewBriefProvider` boundary. Its action accepts only a submission reference, resolves a teacher session again, and reloads the attempt through `getSubmissionForTeacher()` so classroom ownership is enforced at generation time. The minimized provider DTO omits student/classroom identity, raw events, test IDs, and visible or hidden per-test inputs/outputs; hidden information is aggregate pass/total only. Submitted source and practical text are explicitly untrusted data. Provider output is schema-validated and returned as a bounded transient DTO with provider/model/prompt provenance.
+
+The default and only v1 provider is deterministic and in-process. It strips source comments before structural heuristics, makes no network call, and cannot execute or follow instructions embedded in source. No generated output is persisted. The client receives the brief only after the teacher-only action succeeds and may edit or discard it locally; it has no automatic path to marks, saved review feedback, or publication. Student routes import neither the action UI nor an AI brief DTO.
 
 The practical-analytics DTO is classroom-owner scoped and read-only. It selects active student memberships and reduces only each student's latest immutable attempt for the selected published practical. It returns aggregate counters, pass rates, review state, and deterministic attention-reason codes; it does not return test-case contents, hidden result details, source code, or draft feedback.
 
@@ -83,4 +89,4 @@ The local worker supplies source and one test input at a time over `docker exec`
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 
-Only five foundation events are captured. Phase AI-0 deterministically counts and explains the records already available; it does not add event collection. Phase AI-1 derives teacher-only review priority from those facts: a session under five minutes, no pre-submission run, submitted source differing from the latest successful pre-submission run, a later draft save, or a stored score of at least 8.0/10 with hidden failures can add a neutral reason. One reason recommends review and two or more set high review priority; unavailable facts never add reasons. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, cheating verdict, guilt score, plagiarism accusation, or AI output exists in this slice.
+Only five foundation events are captured. Phase AI-0 deterministically counts and explains the records already available; it does not add event collection. Phase AI-1 derives teacher-only review priority from those facts: a session under five minutes, no pre-submission run, submitted source differing from the latest successful pre-submission run, a later draft save, or a stored score of at least 8.0/10 with hidden failures can add a neutral reason. One reason recommends review and two or more set high review priority; unavailable facts never add reasons. Phase AI-2 may explain those records in a teacher-requested, labeled fake-provider draft, but cannot alter facts, marks, reviews, or student data. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, cheating verdict, guilt score, or plagiarism accusation exists in this slice.

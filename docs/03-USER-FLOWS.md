@@ -45,7 +45,9 @@ flowchart LR
 8. Legacy result snapshots remain readable; their undivided passed/total counters contribute as visible-only and do not invent hidden-test data.
 9. The submission review derives a teacher-only, versioned evidence section from immutable attempts, results, runs, session timestamps, and foundation events. Missing legacy fields remain explicitly unavailable, and unsupported source-size jumps are not inferred.
 10. The teacher detail maps available facts to a neutral integrity review category with explainable reasons. Zero reasons is `LOW_ATTENTION`, one is `REVIEW_RECOMMENDED`, and two or more is `HIGH_REVIEW_PRIORITY`; unavailable facts add no reason.
-11. No cheating verdict, guilt score, plagiarism accusation, AI summary, or automated academic decision is produced, and student DTOs receive no integrity signal.
+11. The owning teacher may explicitly generate a transient review brief. The server reloads the immutable attempt through the ownership boundary and sends only practical text, language, submitted source, aggregate result summaries, deterministic facts/signals, timing, and version to the configured provider. V1's configured provider is the in-process fake provider.
+12. The returned draft includes an approach summary, likely bugs/edge cases, evidence explanation, three implementation-specific viva questions with expected answers, one modification task, and constructive feedback. The teacher may edit or discard every field; generation never saves marks, saves a review, or publishes feedback.
+13. Student pages and DTOs receive no AI brief or action. No cheating verdict, guilt score, plagiarism accusation, automatic mark, or automated academic decision is produced.
 
 **Status:** implemented for persisted attempts in the seeded classroom, including teacher-authored draft/published reviews on a fixed ten-point scale and owner-scoped latest-practical analytics.
 
