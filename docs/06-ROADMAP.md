@@ -261,11 +261,12 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 ## Phase AI-3 — configurable prototype review provider
 
 - Keep the fake provider as the default and sole test provider.
-- Add explicit `fake | groq` selection with a required Groq key and an environment-configurable model defaulting to `openai/gpt-oss-20b`.
+- Add explicit `fake | groq` selection with a required Groq key/model and documented `openai/gpt-oss-20b` configuration.
 - Send only the existing minimized teacher-only contract through a fixed HTTPS adapter with timeout, bounded errors, structured output, and Zod validation.
 - Keep output transient and keep identity, raw events, per-test details, marks, feedback, verdicts, and student DTOs outside the provider boundary.
+- Permit only manual one-submission teacher generation, reject overlapping work per teacher, map 429 without retry, and add no class-wide action or background queue.
 
-**Status:** complete for a low-cost prototype/demo Groq adapter. This does not select or certify an institutional production provider and does not resolve residency, retention, training-use, evaluation, audit, or operational prompt-injection policy under D-013.
+**Status:** complete for low-volume, one-at-a-time teacher-triggered demo use. Groq free-tier limits are not suitable for automatic generation across 30–60 simultaneous submissions. This does not select or certify an institutional production provider and does not resolve residency, retention, training-use, evaluation, audit, distributed limiting, or operational prompt-injection policy under D-013.
 
 ## Later slices
 

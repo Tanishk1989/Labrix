@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import {
   AIReviewBriefProviderError,
+  AIReviewBriefProviderRateLimitError,
   type AIReviewBriefInputV1,
   type AIReviewBriefProvider,
 } from "./review-brief-provider";
@@ -171,6 +172,9 @@ export class GroqReviewBriefProvider implements AIReviewBriefProvider {
         signal: AbortSignal.timeout(this.requestTimeoutMs),
       });
 
+      if (response.status === 429) {
+        throw new AIReviewBriefProviderRateLimitError();
+      }
       if (!response.ok) throw safeProviderError();
       const body = await response.text();
       if (Buffer.byteLength(body, "utf8") > MAX_RESPONSE_BYTES) {

@@ -82,3 +82,10 @@ export class AIReviewBriefProviderError extends Error {
     this.name = "AIReviewBriefProviderError";
   }
 }
+
+export class AIReviewBriefProviderRateLimitError extends AIReviewBriefProviderError {
+  constructor() {
+    super("AI provider rate limit reached. Please try again later.");
+    this.name = "AIReviewBriefProviderRateLimitError";
+  }
+}

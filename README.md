@@ -103,6 +103,8 @@ Production rejects both local adapters unless `LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRO
 
 Submission attempts and result snapshots are protected from updates by database triggers. Repeated submission requests are deduplicated by a student-scoped idempotency key; a later resubmission creates a new numbered attempt.
 
+AI review briefs are generated only when a classroom-owning teacher opens one submission and clicks **Generate brief**. Fake remains the default. The opt-in Groq integration is a one-at-a-time prototype for low-volume demos: there is no post-submission generation, class-wide bulk action, background queue, student action, or automatic retry. A process-local per-teacher guard rejects overlapping requests, while Groq rate limits return a safe retry-later message and leave the review page usable.
+
 ## Documentation
 
 - [Product](docs/01-PRODUCT.md)

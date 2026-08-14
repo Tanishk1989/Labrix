@@ -7,6 +7,7 @@ import type {
 import { GroqReviewBriefProvider } from "@/server/ai/groq-review-brief-provider";
 import {
   AIReviewBriefProviderError,
+  AIReviewBriefProviderRateLimitError,
   type AIReviewBriefContentV1,
   type AIReviewBriefInputV1,
 } from "@/server/ai/review-brief-provider";
@@ -247,5 +248,29 @@ describe("Groq AI review brief provider", () => {
     expect(failure).toBeInstanceOf(AIReviewBriefProviderError);
     expect(String(failure)).not.toContain("raw-provider-secret");
     expect(String(failure)).not.toContain("test-key");
+  });
+
+  it("maps 429 to a teacher-safe rate-limit error without retrying", async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response("raw-rate-limit-response", { status: 429 }),
+    );
+    const provider = new GroqReviewBriefProvider({
+      apiKey: "test-key",
+      model: "test-model",
+      requestTimeoutMs: 15_000,
+      fetchImpl: fetchMock as typeof fetch,
+    });
+
+    const error = await provider.generateBrief(input()).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(error).toBeInstanceOf(AIReviewBriefProviderRateLimitError);
+    expect(String(error)).toContain(
+      "AI provider rate limit reached. Please try again later.",
+    );
+    expect(String(error)).not.toContain("raw-rate-limit-response");
+    expect(String(error)).not.toContain("test-key");
   });
 });

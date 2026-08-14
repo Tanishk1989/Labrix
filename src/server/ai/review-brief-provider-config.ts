@@ -5,7 +5,6 @@ import { GroqReviewBriefProvider } from "./groq-review-brief-provider";
 import type { AIReviewBriefProvider } from "./review-brief-provider";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
-const DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b";
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 60_000;
 const fakeProvider: AIReviewBriefProvider = new FakeAIReviewBriefProvider();
@@ -63,8 +62,10 @@ export function getAIReviewBriefProvider(
   if (mode === "groq") {
     return new GroqReviewBriefProvider({
       apiKey: requireValue(environment.GROQ_API_KEY, "GROQ_API_KEY"),
-      model:
-        environment.GROQ_AI_REVIEW_MODEL?.trim() || DEFAULT_GROQ_MODEL,
+      model: requireValue(
+        environment.GROQ_AI_REVIEW_MODEL,
+        "GROQ_AI_REVIEW_MODEL",
+      ),
       requestTimeoutMs: resolveTimeout(
         environment.LABRIX_AI_REVIEW_TIMEOUT_MS,
       ),

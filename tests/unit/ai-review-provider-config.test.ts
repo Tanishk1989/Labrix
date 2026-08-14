@@ -34,20 +34,15 @@ describe("AI review brief provider configuration", () => {
     });
   });
 
-  it("uses the configurable GPT-OSS 20B default when no model override is set", () => {
-    const provider = getAIReviewBriefProvider({
-      LABRIX_AI_REVIEW_PROVIDER: "groq",
-      GROQ_API_KEY: "test-key",
-    });
-
-    expect(provider.descriptor).toEqual({
-      provider: "groq",
-      model: "openai/gpt-oss-20b",
-    });
-  });
-
   it.each([
     [{ LABRIX_AI_REVIEW_PROVIDER: "groq" }, /GROQ_API_KEY/],
+    [
+      {
+        LABRIX_AI_REVIEW_PROVIDER: "groq",
+        GROQ_API_KEY: "test-key",
+      },
+      /GROQ_AI_REVIEW_MODEL/,
+    ],
     [
       {
         LABRIX_AI_REVIEW_PROVIDER: "groq",
