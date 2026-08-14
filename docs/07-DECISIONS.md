@@ -76,6 +76,12 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 **Accepted 2026-08-11.** Teacher access is provisioned only through a guarded server-side administrator command using an explicit verified Clerk subject. The command may create a new `ACTIVE TEACHER` or link an explicitly identified existing `ACTIVE TEACHER`; it never promotes a `STUDENT`, links by email, or accepts disabled users. Duplicate subjects, provider conflicts, email collisions, and uniqueness races fail closed. No public provisioning route is exposed. The generic identity linker is restricted to confirmed non-production recovery operations.
 
+### D-023 — Transient fake-provider AI review brief v1
+
+**Accepted 2026-08-14.** Phase AI-2 introduces a provider-neutral structured review-brief contract but configures only an in-process deterministic fake provider. A classroom-owning teacher must explicitly request generation for one immutable attempt; the server re-authorizes ownership and constructs the minimized input without student/classroom identity, raw events, per-test details, marks, or existing feedback. Hidden result information is aggregate-only.
+
+Source code and comments are untrusted data and never instructions. Provider output is schema-validated, labeled with provider/model/prompt/non-persistence provenance, editable, discardable, and transient. It cannot assign marks, save or publish feedback, create a misconduct verdict, or reach student DTOs. No external AI call is approved by this decision; D-013 remains unresolved and controls any later real provider.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

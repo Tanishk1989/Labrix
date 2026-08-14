@@ -249,12 +249,21 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the five deterministic reasons supported by current Phase AI-0 facts. Policy configuration, acknowledgement/context notes, new evidence fields, class summaries, and AI assistance remain later governed slices.
 
+## Phase AI-2 — AI review brief and viva questions v1
+
+- Add a provider-neutral, schema-validated review-brief boundary with the deterministic in-process fake provider as the only implementation.
+- Build a minimized teacher-only request from one owner-scoped immutable submission, aggregate result summaries, facts, and signals.
+- Return a transient editable/discardable brief with seven required sections and explicit provider/model/prompt/non-persistence provenance.
+- Treat source/comments as untrusted data and add no AI persistence, automatic feedback publication, marks, verdict, student DTO, schema, execution, or grading behavior.
+
+**Status:** complete for the fake-provider v1 workflow. External provider selection, data governance, model evaluation, rate/cost limits, persistence/audit decisions, and production prompt-injection defenses remain unresolved under D-013.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
 3. Approve and add any further evidence event fields and signal policies.
-4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance on top of deterministic evidence facts and signals.
+4. Approve and implement a governed external AI provider behind the Phase AI-2 contract only after D-013 is resolved.
 5. Pilot hardening: concurrency, deadlines/timezones, retention/deletion, audit, accessibility, backup, and incident paths.
 
 Do not pull screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, broad integrations, or automated verdicts into these slices.

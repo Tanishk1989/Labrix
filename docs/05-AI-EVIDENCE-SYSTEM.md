@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned, deterministic submission facts from existing persisted records, and Phase AI-1 maps available facts to teacher-only review-priority signals. Additional event fields, AI integration, summaries, feedback drafting, and viva generation remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, and Phase AI-2 adds a transient review/viva draft through an in-process fake provider. External AI integration and additional event fields remain **planned**.
 
 ## Purpose and boundary
 
@@ -74,3 +74,23 @@ Questions should test understanding, not accuse. Do not reveal hidden policy thr
 - Keep deterministic facts visually distinct from generated interpretation.
 - Test prompt injection from source/comments and require the model to treat source as data, not instructions.
 - Evaluate grounding, neutrality, usefulness, and false implication before pilot release.
+
+## Phase AI-2 v1 review brief
+
+The owning teacher explicitly requests one brief for one immutable attempt. The action re-authenticates the teacher and reuses the classroom-owner-scoped submission service. It does not accept source, facts, identity, result data, marks, or feedback from the browser.
+
+The provider input contains only practical title/instructions, language, immutable submitted source, overall/visible/hidden aggregate result summaries, Phase AI-0 facts, Phase AI-1 signal, timing status, and practical version. It excludes student name/email, classroom identity, raw events, test identifiers, hidden inputs, hidden expected output, hidden actual output, existing teacher feedback, and marks.
+
+The structured output contains:
+
+1. approach summary;
+2. likely bugs or edge cases;
+3. an explanation grounded in deterministic evidence;
+4. exactly three implementation-specific viva questions;
+5. expected-answer bullets for every question;
+6. one small modification task;
+7. a constructive feedback draft.
+
+Every field is editable and the entire draft is discardable. Generation does not persist output, modify marks, save a teacher review, or publish feedback. Provenance identifies the provider, model, prompt version, generation time, and `persisted: false`.
+
+V1 supports only `FakeAIReviewBriefProvider`, a deterministic in-process test/demo implementation. It makes no external API call. It strips comments before source-structure heuristics and never treats submitted source or practical text as instructions. Structured output is validated with Zod before it crosses the server-action boundary. A production provider remains blocked until D-013 resolves provider/model selection, retention/training policy, region, cost, evaluation, and operational prompt-injection controls.

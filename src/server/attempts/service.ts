@@ -762,6 +762,7 @@ export async function getSubmissionForTeacher(
         select: {
           id: true,
           title: true,
+          instructions: true,
           classroom: { select: { id: true, name: true } },
           testCases: {
             orderBy: { position: "asc" },
@@ -833,6 +834,7 @@ export async function getSubmissionForTeacher(
     task: {
       id: submission.task.id,
       title: submission.task.title,
+      instructions: submission.task.instructions,
       classroom: submission.task.classroom,
     },
     result: {
