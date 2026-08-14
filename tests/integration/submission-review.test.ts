@@ -186,6 +186,13 @@ describe.sequential("teacher submission reviews", () => {
       suggestedScore: 5,
       teacherMarks: { awarded: 7, outOf: 10 },
       reviewStatus: "DRAFT_SAVED",
+      integritySignal: {
+        category: "HIGH_REVIEW_PRIORITY",
+        reasons: [
+          { code: "NO_RUN_BEFORE_SUBMISSION" },
+          { code: "VERY_SHORT_SESSION" },
+        ],
+      },
     });
     expect(unreviewed).toMatchObject({
       suggestedScore: 10,
@@ -196,6 +203,8 @@ describe.sequential("teacher submission reviews", () => {
     expect(JSON.stringify(ownerOverview)).not.toContain(
       "Good direction; explain the edge case.",
     );
+    expect(JSON.stringify(ownerOverview)).not.toContain("sourceCodeSnapshot");
+    expect(JSON.stringify(ownerOverview)).not.toContain("hidden output");
   });
 
   it("rejects another teacher and a student", async () => {
@@ -247,11 +256,23 @@ describe.sequential("teacher submission reviews", () => {
         },
       },
     });
+    expect(teacherView.integritySignal).toMatchObject({
+      schemaVersion: 1,
+      category: "HIGH_REVIEW_PRIORITY",
+      reasons: [
+        { code: "NO_RUN_BEFORE_SUBMISSION" },
+        { code: "VERY_SHORT_SESSION" },
+      ],
+    });
     expect("evidenceFacts" in studentView).toBe(false);
+    expect("integritySignal" in studentView).toBe(false);
     expect(JSON.stringify(studentView)).not.toContain(
       `hidden-review-test-${suffix}`,
     );
     expect(JSON.stringify(studentView)).not.toContain("hidden output");
+    expect(JSON.stringify(studentView)).not.toContain(
+      "HIGH_SCORE_WITH_HIDDEN_FAILURES",
+    );
   });
 
   it("returns evidence only to the classroom-owning teacher", async () => {

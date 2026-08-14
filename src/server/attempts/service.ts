@@ -10,6 +10,7 @@ import { resolveStarterCodes } from "@/domain/tasks/starter-code";
 import { evaluateSubmissionDeadline } from "@/domain/submissions/deadline-policy";
 import { practicalVersionForSubmission } from "@/domain/practicals/versioning";
 import { buildSubmissionEvidenceFacts } from "@/domain/evidence/submission-evidence";
+import { buildIntegrityReviewSignal } from "@/domain/evidence/integrity-review-signals";
 import {
   executionModeFromPersistedSnapshot,
   type ExecutionMode,
@@ -819,6 +820,7 @@ export async function getSubmissionForTeacher(
       events: submission.codingSession.events,
     },
   });
+  const integritySignal = buildIntegrityReviewSignal(evidenceFacts);
   return {
     id: submission.id,
     attemptNumber: submission.attemptNumber,
@@ -859,6 +861,7 @@ export async function getSubmissionForTeacher(
     },
     runCount: submission.codingSession._count.runs,
     evidenceFacts,
+    integritySignal,
     review: submission.review
       ? {
           feedback: submission.review.feedback,

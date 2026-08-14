@@ -2,6 +2,11 @@ import "server-only";
 
 import { type RunResultState, type TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { buildSubmissionEvidenceFacts } from "@/domain/evidence/submission-evidence";
+import {
+  buildIntegrityReviewSignal,
+  type IntegrityReviewSignalV1,
+} from "@/domain/evidence/integrity-review-signals";
 import { toTeacherReviewQueueStatus, type TeacherReviewQueueStatus } from "@/features/submission-review/review-queue";
 import { calculateSuggestedScore } from "@/server/execution/result-grading";
 
@@ -25,6 +30,7 @@ export type TeacherSubmissionRecord = {
   suggestedScore: number;
   teacherMarks: { awarded: number; outOf: number } | null;
   reviewStatus: TeacherReviewQueueStatus;
+  integritySignal: IntegrityReviewSignalV1;
 };
 
 export type TeacherPracticalSummary = {
@@ -116,7 +122,43 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
                   state: true,
                   passedTests: true,
                   totalTests: true,
+                  executionMode: true,
+                  runAttemptId: true,
+                  visiblePassedTests: true,
+                  visibleTotalTests: true,
+                  hiddenPassedTests: true,
+                  hiddenTotalTests: true,
                   suggestedScore: true,
+                },
+              },
+              codingSession: {
+                select: {
+                  startedAt: true,
+                  runs: {
+                    orderBy: { sequence: "asc" },
+                    select: {
+                      id: true,
+                      sequence: true,
+                      sourceCodeSnapshot: true,
+                      requestedAt: true,
+                      completedAt: true,
+                      resultSnapshot: {
+                        select: {
+                          state: true,
+                          passedTests: true,
+                          totalTests: true,
+                        },
+                      },
+                    },
+                  },
+                  events: {
+                    orderBy: { sequence: "asc" },
+                    select: {
+                      sequence: true,
+                      type: true,
+                      occurredAt: true,
+                    },
+                  },
                 },
               },
               review: {
@@ -178,6 +220,30 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
       });
 
       for (const attempt of task.submissionAttempts) {
+        const evidenceFacts = buildSubmissionEvidenceFacts({
+          submission: {
+            sourceCodeSnapshot: attempt.sourceCodeSnapshot,
+            submittedAt: attempt.submittedAt,
+            timingStatus: attempt.timingStatus,
+            practicalVersion: attempt.practicalVersion,
+            resultRunAttemptId: attempt.resultSnapshot.runAttemptId,
+          },
+          result: {
+            executionMode: attempt.resultSnapshot.executionMode,
+            passedTests: attempt.resultSnapshot.passedTests,
+            totalTests: attempt.resultSnapshot.totalTests,
+            visiblePassedTests: attempt.resultSnapshot.visiblePassedTests,
+            visibleTotalTests: attempt.resultSnapshot.visibleTotalTests,
+            hiddenPassedTests: attempt.resultSnapshot.hiddenPassedTests,
+            hiddenTotalTests: attempt.resultSnapshot.hiddenTotalTests,
+            suggestedScore: attempt.resultSnapshot.suggestedScore,
+          },
+          session: {
+            startedAt: attempt.codingSession.startedAt,
+            runs: attempt.codingSession.runs,
+            events: attempt.codingSession.events,
+          },
+        });
         if (task.status === "PUBLISHED") {
           const submitted = submittedTaskIdsByStudent.get(attempt.studentId) ?? new Set<string>();
           submitted.add(task.id);
@@ -225,6 +291,7 @@ export async function getTeacherOverview(teacherId: string): Promise<TeacherOver
           reviewStatus: toTeacherReviewQueueStatus(
             attempt.review?.status ?? null,
           ),
+          integritySignal: buildIntegrityReviewSignal(evidenceFacts),
         });
       }
     }

@@ -10,6 +10,7 @@ import {
   teacherReviewStatusMeta,
   type TeacherReviewQueueFilter,
 } from "@/features/submission-review/review-queue";
+import { IntegrityReviewBadge } from "@/features/submission-review/integrity-review-signal";
 import { StudentSubmissions } from "@/features/student/student-pages";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getStudentOverview } from "@/server/student/overview";
@@ -117,7 +118,7 @@ export default async function SubmissionsQueuePage({
       <button className="button-secondary">Apply filters</button>
     </form>
 
-    {submissions.length ? <div className="panel overflow-hidden"><div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Class and practical</th><th>Attempt</th><th>Language</th><th>Timing</th><th>Submitted</th><th>Stored result</th><th>Suggested score</th><th>Teacher marks</th><th>Review status</th><th><span className="sr-only">Open review</span></th></tr></thead><tbody>{submissions.map((submission) => {
+    {submissions.length ? <div className="panel overflow-hidden"><div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Class and practical</th><th>Attempt</th><th>Language</th><th>Timing</th><th>Submitted</th><th>Stored result</th><th>Review priority</th><th>Suggested score</th><th>Teacher marks</th><th>Review status</th><th><span className="sr-only">Open review</span></th></tr></thead><tbody>{submissions.map((submission) => {
       const result = resultMeta(submission.state, submission.passedTests, submission.totalTests);
       const review = teacherReviewStatusMeta(submission.reviewStatus);
       return <tr key={submission.id}>
@@ -128,6 +129,7 @@ export default async function SubmissionsQueuePage({
         <td><SubmissionTimingBadge status={submission.timingStatus} /></td>
         <td className="min-w-44 text-xs text-[var(--text-secondary)]"><p>{new Date(submission.submittedAt).toLocaleString("en-IN")}</p><PracticalVersionLabel version={submission.practicalVersion} /></td>
         <td><StatusBadge tone={result.tone}>{result.label}</StatusBadge><p className="mt-1 text-[10px] text-[var(--text-muted)]">{submission.passedTests}/{submission.totalTests} tests</p></td>
+        <td><IntegrityReviewBadge signal={submission.integritySignal} /><p className="mt-1 text-[10px] text-[var(--text-muted)]">{submission.integritySignal.reasons.length} {submission.integritySignal.reasons.length === 1 ? "reason" : "reasons"}</p></td>
         <td><span className="font-semibold text-white">{submission.suggestedScore.toFixed(1)}/10</span><p className="text-[10px] text-[var(--text-muted)]">Automatic</p></td>
         <td>{submission.teacherMarks ? <><span className="font-semibold text-white">{submission.teacherMarks.awarded}/{submission.teacherMarks.outOf}</span><p className="text-[10px] text-[var(--text-muted)]">Teacher-awarded</p></> : <span className="text-[var(--text-muted)]">—</span>}</td>
         <td><StatusBadge tone={review.tone}>{review.label}</StatusBadge></td>
