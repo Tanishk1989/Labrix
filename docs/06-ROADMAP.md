@@ -261,7 +261,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 ## Phase AI-3 — configurable prototype review provider
 
 - Keep the fake provider as the default and sole test provider.
-- Add explicit `fake | groq` selection with required Groq key/model configuration.
+- Add explicit `fake | groq` selection with a required Groq key and an environment-configurable model defaulting to `openai/gpt-oss-20b`.
 - Send only the existing minimized teacher-only contract through a fixed HTTPS adapter with timeout, bounded errors, structured output, and Zod validation.
 - Keep output transient and keep identity, raw events, per-test details, marks, feedback, verdicts, and student DTOs outside the provider boundary.
 
