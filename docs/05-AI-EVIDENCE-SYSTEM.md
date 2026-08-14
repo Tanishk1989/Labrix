@@ -54,6 +54,8 @@ Thresholds should guide attention, not rank students morally. Teachers must be a
 
 AI must not calculate facts that deterministic code can calculate, decide misconduct, assign sanctions, or silently alter grades. Generated output must be labeled, retain model/prompt/context provenance, and be discardable. A teacher remains responsible for any feedback or viva use.
 
+Integrity review signals are also calculated only by the versioned deterministic domain rules. AI receives existing facts/signals as read-only explanatory context: it may explain them, combine them with code to generate viva questions, draft constructive feedback, and suggest what the teacher should inspect manually. It must not create, recalculate, replace, reclassify, or add facts, reasons, thresholds, categories, or scores.
+
 ## Minimal viva output
 
 For each immutable attempt, generate a small set of questions covering:

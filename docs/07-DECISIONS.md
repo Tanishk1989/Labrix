@@ -90,6 +90,8 @@ Provider input excludes student/classroom identity, raw events, teacher marks/fe
 
 Generation is restricted to an explicit teacher click on one owner-authorized submission. A process-local guard allows one active generation per teacher; overlap and Groq 429 are rejected without retry, queueing, persistence, or page failure. No student, submission-completion, review-queue, progress, or class-wide bulk path invokes AI. Free-tier Groq is approved only for low-volume demonstration and is not suitable for automatic processing of 30–60 simultaneous submissions.
 
+Deterministic domain code remains the sole producer of evidence facts and integrity review signals. Groq may explain supplied facts/signals, ground viva questions in code plus evidence, draft constructive feedback, and suggest manual teacher inspection. It cannot create, recalculate, replace, reclassify, or add facts, signal reasons, thresholds, categories, guilt scores, or verdicts, and its output never feeds the deterministic signal calculation.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

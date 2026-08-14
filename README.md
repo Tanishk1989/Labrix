@@ -105,6 +105,8 @@ Submission attempts and result snapshots are protected from updates by database 
 
 AI review briefs are generated only when a classroom-owning teacher opens one submission and clicks **Generate brief**. Fake remains the default. The opt-in Groq integration is a one-at-a-time prototype for low-volume demos: there is no post-submission generation, class-wide bulk action, background queue, student action, or automatic retry. A process-local per-teacher guard rejects overlapping requests, while Groq rate limits return a safe retry-later message and leave the review page usable.
 
+AI may explain the deterministic evidence facts and integrity review signals already supplied by Labrix, use them with the submitted code for viva questions, draft constructive feedback, and suggest manual inspection points. AI never calculates, replaces, reclassifies, or adds evidence facts or integrity signals and never produces a cheating verdict or guilt score.
+
 ## Documentation
 
 - [Product](docs/01-PRODUCT.md)

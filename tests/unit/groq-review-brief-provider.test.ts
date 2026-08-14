@@ -148,6 +148,12 @@ describe("Groq AI review brief provider", () => {
       json_schema: { name: "labrix_ai_review_brief_v1" },
     });
     expect(body.messages[0].content).toContain("untrusted data");
+    expect(body.messages[0].content).toContain(
+      "do not create, recalculate, reclassify, replace, or add evidence facts",
+    );
+    expect(body.messages[0].content).toContain(
+      "items for the teacher to inspect manually",
+    );
     expect(JSON.stringify(body)).not.toContain("test-secret-key");
   });
 

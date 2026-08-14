@@ -118,6 +118,12 @@ describe("AI review brief v1", () => {
     expect(output.evidenceExplanation[0]).toContain(
       "Deterministic review reason",
     );
+    expect(output.evidenceExplanation[0]).toContain(
+      input().integritySignal.reasons[0].text,
+    );
+    expect(output.evidenceExplanation).toHaveLength(
+      input().integritySignal.reasons.length + 1,
+    );
     expect(output.vivaQuestions).toHaveLength(3);
     expect(
       output.vivaQuestions.every(
