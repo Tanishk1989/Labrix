@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AIReviewBriefV1 } from "@/server/ai/review-brief-provider";
+import {
+  AIReviewBriefProviderRateLimitError,
+  type AIReviewBriefV1,
+} from "@/server/ai/review-brief-provider";
+import { AIReviewBriefUsageLimitError } from "@/server/ai/review-brief-usage-guard";
+
+vi.mock("server-only", () => ({}));
 
 const mocks = vi.hoisted(() => ({
   resolveCurrentActor: vi.fn(),
@@ -107,6 +113,51 @@ describe("AI review brief server action", () => {
 
     expect(result.ok).toBe(false);
     expect(result.message).not.toContain("provider secret failure");
+    expect("brief" in result).toBe(false);
+  });
+
+  it("returns the safe retry-later message for provider rate limiting", async () => {
+    mocks.resolveCurrentActor.mockResolvedValue({
+      id: "teacher-1",
+      role: "TEACHER",
+    });
+    mocks.generateTeacherAIReviewBrief.mockRejectedValue(
+      new AIReviewBriefProviderRateLimitError(),
+    );
+
+    const result = await generateAIReviewBriefAction(
+      "submission-1",
+      {},
+      new FormData(),
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      message: "AI provider rate limit reached. Please try again later.",
+    });
+    expect("brief" in result).toBe(false);
+  });
+
+  it("returns a safe wait message for overlapping teacher generation", async () => {
+    mocks.resolveCurrentActor.mockResolvedValue({
+      id: "teacher-1",
+      role: "TEACHER",
+    });
+    mocks.generateTeacherAIReviewBrief.mockRejectedValue(
+      new AIReviewBriefUsageLimitError(),
+    );
+
+    const result = await generateAIReviewBriefAction(
+      "submission-1",
+      {},
+      new FormData(),
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      message:
+        "An AI review brief is already being generated. Please wait and try again.",
+    });
     expect("brief" in result).toBe(false);
   });
 });

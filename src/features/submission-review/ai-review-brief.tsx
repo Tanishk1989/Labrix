@@ -63,7 +63,9 @@ export function AIReviewBriefPanel({
             saved automatically.
           </p>
         </div>
-        <span className="status-badge status-neutral">Fake provider v1</span>
+        <span className="status-badge status-neutral">
+          {brief ? `${brief.provenance.provider} provider` : "Provider selected server-side"}
+        </span>
       </div>
 
       <form action={formAction} className="mt-4">

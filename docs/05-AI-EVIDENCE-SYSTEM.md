@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, and Phase AI-2 adds a transient review/viva draft through an in-process fake provider. External AI integration and additional event fields remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, Phase AI-2 adds a transient review/viva draft, and Phase AI-3 adds an explicit prototype Groq option while retaining the fake default. Institutional AI governance and additional event fields remain **planned**.
 
 ## Purpose and boundary
 
@@ -54,6 +54,8 @@ Thresholds should guide attention, not rank students morally. Teachers must be a
 
 AI must not calculate facts that deterministic code can calculate, decide misconduct, assign sanctions, or silently alter grades. Generated output must be labeled, retain model/prompt/context provenance, and be discardable. A teacher remains responsible for any feedback or viva use.
 
+Integrity review signals are also calculated only by the versioned deterministic domain rules. AI receives existing facts/signals as read-only explanatory context: it may explain them, combine them with code to generate viva questions, draft constructive feedback, and suggest what the teacher should inspect manually. It must not create, recalculate, replace, reclassify, or add facts, reasons, thresholds, categories, or scores.
+
 ## Minimal viva output
 
 For each immutable attempt, generate a small set of questions covering:
@@ -93,4 +95,8 @@ The structured output contains:
 
 Every field is editable and the entire draft is discardable. Generation does not persist output, modify marks, save a teacher review, or publish feedback. Provenance identifies the provider, model, prompt version, generation time, and `persisted: false`.
 
-V1 supports only `FakeAIReviewBriefProvider`, a deterministic in-process test/demo implementation. It makes no external API call. It strips comments before source-structure heuristics and never treats submitted source or practical text as instructions. Structured output is validated with Zod before it crosses the server-action boundary. A production provider remains blocked until D-013 resolves provider/model selection, retention/training policy, region, cost, evaluation, and operational prompt-injection controls.
+`FakeAIReviewBriefProvider` remains the deterministic in-process default and the only provider used in tests. It makes no external API call, strips comments before source-structure heuristics, and never treats submitted source or practical text as instructions.
+
+Phase AI-3 permits explicit `LABRIX_AI_REVIEW_PROVIDER=groq` prototype/demo operation only when a server-side API key and model are configured. The documented default configuration uses `GROQ_AI_REVIEW_MODEL=openai/gpt-oss-20b`; the environment value can switch to a compatible model such as `openai/gpt-oss-120b` without code changes. Before dispatch, the adapter reconstructs the allowlisted input and excludes identity, raw events, per-test details, marks, and feedback even if unexpected fields reach the adapter. It sends practical text and submitted source as explicitly untrusted data, requests JSON-schema output, applies a bounded timeout and response size, and passes parsed model JSON through the existing Zod contract. It logs none of the key, prompt, source, request body, or raw response.
+
+Generation remains a manual action on one owner-authorized submission review. A process-local per-teacher guard rejects overlapping requests; no submission hook, class-wide bulk operation, student action, background queue, or automatic retry exists. Groq 429 responses become the bounded message **AI provider rate limit reached. Please try again later.** and create no persisted or partial output. The free-tier prototype is suitable only for low-volume, teacher-triggered demonstration—not 30–60 simultaneous class submissions. Groq is not the accepted final institutional provider, and Labrix makes no enterprise residency, retention, or training-use guarantee for this prototype; those policies and production evaluation remain unresolved under D-013.

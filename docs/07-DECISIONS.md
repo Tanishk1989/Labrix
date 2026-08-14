@@ -82,6 +82,16 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 Source code and comments are untrusted data and never instructions. Provider output is schema-validated, labeled with provider/model/prompt/non-persistence provenance, editable, discardable, and transient. It cannot assign marks, save or publish feedback, create a misconduct verdict, or reach student DTOs. No external AI call is approved by this decision; D-013 remains unresolved and controls any later real provider.
 
+### D-024 — Prototype Groq review provider
+
+**Accepted 2026-08-14.** Phase AI-3 permits Groq as an explicitly configured low-cost prototype/demo provider behind the existing `AIReviewBriefProvider` contract. Fake remains the default and the only provider used by automated tests. Groq mode requires a server-side API key and model; the documented default configuration is `openai/gpt-oss-20b`, and a compatible model such as `openai/gpt-oss-120b` may be selected through the environment without code changes. The adapter uses a fixed HTTPS endpoint, sends only the Phase AI-2 minimized allowlist, treats practical text/source/comments as untrusted data, requests structured output, applies a timeout and response bound, and validates returned content through the unchanged Zod contract.
+
+Provider input excludes student/classroom identity, raw events, teacher marks/feedback, test IDs, and hidden inputs/expected/actual output. Labrix does not log API keys, prompts, submitted source, request bodies, or raw provider responses. Output remains transient, editable, discardable, non-authoritative, and unable to assign marks or publish feedback. This decision does not designate Groq as the institutional production provider or claim enterprise residency, retention, or training-use guarantees; D-013 remains unresolved for production governance and evaluation.
+
+Generation is restricted to an explicit teacher click on one owner-authorized submission. A process-local guard allows one active generation per teacher; overlap and Groq 429 are rejected without retry, queueing, persistence, or page failure. No student, submission-completion, review-queue, progress, or class-wide bulk path invokes AI. Free-tier Groq is approved only for low-volume demonstration and is not suitable for automatic processing of 30–60 simultaneous submissions.
+
+Deterministic domain code remains the sole producer of evidence facts and integrity review signals. Groq may explain supplied facts/signals, ground viva questions in code plus evidence, draft constructive feedback, and suggest manual teacher inspection. It cannot create, recalculate, replace, reclassify, or add facts, signal reasons, thresholds, categories, guilt scores, or verdicts, and its output never feeds the deterministic signal calculation.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

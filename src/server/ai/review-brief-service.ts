@@ -2,7 +2,8 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { getSubmissionForTeacher } from "@/server/attempts/service";
-import { FakeAIReviewBriefProvider } from "./fake-review-brief-provider";
+import { getAIReviewBriefProvider } from "./review-brief-provider-config";
+import { withTeacherAIReviewBriefUsageGuard } from "./review-brief-usage-guard";
 import {
   aiReviewBriefContentSchema,
   AIReviewBriefProviderError,
@@ -74,31 +75,32 @@ export async function generateTeacherAIReviewBrief(options: {
   now?: () => Date;
   generationId?: () => string;
 }): Promise<AIReviewBriefV1> {
-  const submission = await (options.loadSubmission ?? getSubmissionForTeacher)(
-    options.teacherId,
-    options.submissionId,
-  );
-  const provider = options.provider ?? new FakeAIReviewBriefProvider();
+  return withTeacherAIReviewBriefUsageGuard(options.teacherId, async () => {
+    const submission = await (
+      options.loadSubmission ?? getSubmissionForTeacher
+    )(options.teacherId, options.submissionId);
+    const provider = options.provider ?? getAIReviewBriefProvider();
 
-  let content: AIReviewBriefContentV1;
-  try {
-    content = aiReviewBriefContentSchema.parse(
-      await provider.generateBrief(buildAIReviewBriefInput(submission)),
-    );
-  } catch (error) {
-    if (error instanceof AIReviewBriefProviderError) throw error;
-    throw new AIReviewBriefProviderError();
-  }
+    let content: AIReviewBriefContentV1;
+    try {
+      content = aiReviewBriefContentSchema.parse(
+        await provider.generateBrief(buildAIReviewBriefInput(submission)),
+      );
+    } catch (error) {
+      if (error instanceof AIReviewBriefProviderError) throw error;
+      throw new AIReviewBriefProviderError();
+    }
 
-  return {
-    ...content,
-    provenance: {
-      provider: provider.descriptor.provider,
-      model: provider.descriptor.model,
-      promptVersion: "ai-review-brief-v1",
-      generatedAt: (options.now ?? (() => new Date()))().toISOString(),
-      generationId: (options.generationId ?? randomUUID)(),
-      persisted: false,
-    },
-  };
+    return {
+      ...content,
+      provenance: {
+        provider: provider.descriptor.provider,
+        model: provider.descriptor.model,
+        promptVersion: "ai-review-brief-v1" as const,
+        generatedAt: (options.now ?? (() => new Date()))().toISOString(),
+        generationId: (options.generationId ?? randomUUID)(),
+        persisted: false as const,
+      },
+    };
+  });
 }
