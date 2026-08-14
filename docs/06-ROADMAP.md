@@ -238,7 +238,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Keep missing legacy values and unsupported source-size jumps explicit instead of inventing data.
 - Add no AI provider, verdict, new event collection, grading, review, execution, or authorization behavior.
 
-**Status:** complete for submission-level facts supported by existing records. New evidence event fields, source-size thresholds, AI summaries, viva generation, and class-level aggregation remain later governed slices.
+**Status:** complete for submission-level facts supported by existing records. New evidence event fields and source-size thresholds remain later governed slices; subsequent AI phases consume these facts without changing them.
 
 ## Phase AI-1 — integrity review signals
 
@@ -247,7 +247,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Treat missing legacy and unsupported source-jump facts as unavailable, never as reasons.
 - Add no AI provider, cheating verdict, guilt score, plagiarism accusation, grading, execution, review-state, or student DTO behavior.
 
-**Status:** complete for the five deterministic reasons supported by current Phase AI-0 facts. Policy configuration, acknowledgement/context notes, new evidence fields, class summaries, and AI assistance remain later governed slices.
+**Status:** complete for the five deterministic reasons supported by current Phase AI-0 facts. Policy configuration, acknowledgement/context notes, and new evidence fields remain later governed slices; subsequent AI phases may explain but not replace these signals.
 
 ## Phase AI-2 — AI review brief and viva questions v1
 
@@ -267,6 +267,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 - Permit only manual one-submission teacher generation, reject overlapping work per teacher, map 429 without retry, and add no class-wide action or background queue.
 
 **Status:** complete for low-volume, one-at-a-time teacher-triggered demo use. Groq free-tier limits are not suitable for automatic generation across 30–60 simultaneous submissions. This does not select or certify an institutional production provider and does not resolve residency, retention, training-use, evaluation, audit, distributed limiting, or operational prompt-injection policy under D-013.
+
+## Phase AI-4 — teacher-triggered class summary v1
+
+- Add a manual owner-teacher action for one published practical using anonymous deterministic aggregates only.
+- Select top verified and needs-attention groups deterministically before AI; keep names outside provider input.
+- Reuse the fake-default and explicit prototype Groq configuration with structured output, timeout, safe 429 handling, and no persistence.
+- Add no automatic generation, bulk queue, marks, verdict, schema, grading, execution, authorization, hidden-test, or student DTO behavior.
+
+**Status:** complete for transient one-practical-at-a-time summaries on the classroom students/progress route. Cross-practical trends, persistent reports, background generation, and institutional production-provider governance remain later work.
 
 ## Later slices
 

@@ -65,6 +65,19 @@ flowchart LR
 
 **Status:** implemented for owner teachers on the classroom students/progress route.
 
+## Teacher-triggered class summary
+
+1. The classroom-owning teacher opens the students/progress route for a classroom with a published practical.
+2. Labrix shows deterministic practical analytics without invoking AI.
+3. The teacher explicitly clicks **Generate class summary** for that one practical.
+4. The server re-resolves the teacher, rechecks classroom ownership and published-practical scope, and rebuilds latest-attempt aggregates.
+5. Deterministic rules select top verified performers and students who need attention. A high integrity review-priority category excludes top verified membership.
+6. The provider receives practical text, anonymous aggregate counters, deterministic signal counts, and group counts/criteria only. It receives no student identity, classroom identity, source, events, per-test details, marks, or feedback.
+7. Labrix validates eight structured sections and returns a transient, editable draft. Student names are joined from the deterministic teacher DTO after the provider call and are never sent to AI.
+8. The teacher may edit, regenerate, or discard the draft. Nothing is saved, published, or converted to marks automatically.
+
+**Status:** implemented for one teacher-triggered published-practical summary at a time. There is no page-load generation, student action, background queue, or multi-practical bulk generation.
+
 ## Identity transition
 
 **Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in production. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.

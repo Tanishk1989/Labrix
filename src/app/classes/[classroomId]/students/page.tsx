@@ -8,6 +8,7 @@ import {
   JoinCodeControls,
   ReactivateMembershipButton,
 } from "@/features/classes/roster-controls";
+import { AIClassSummaryPanel } from "@/features/classes/ai-class-summary";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getTeacherClassroomProgress } from "@/server/attempts/service";
 import { getTeacherClassroomRoster } from "@/server/classrooms/roster";
@@ -21,6 +22,7 @@ const attentionLabels: Record<PracticalAnalyticsAttentionReason, string> = {
   LOW_SUGGESTED_SCORE: "Suggested score below 5/10",
   FAILED_HIDDEN_TESTS: "Hidden tests not all passed",
   NEEDS_REVIEW: "Needs teacher review",
+  HIGH_REVIEW_PRIORITY: "High review priority",
 };
 
 function rateLabel(value: number | null) {
@@ -120,6 +122,11 @@ export default async function StudentProgressPage({
           <MetricCard label="Pending students" value={analytics.pendingStudentCount} detail="No immutable submission" />
           <MetricCard label="Needs teacher review" value={analytics.needsReviewCount} detail="Includes private drafts" />
         </div>
+
+        <AIClassSummaryPanel
+          classroomId={classroomId}
+          taskId={analytics.task.id}
+        />
 
         <div className="panel overflow-hidden">
           <div className="panel-header"><div><h3 className="section-heading">Students needing attention</h3><p className="section-description">Deterministic signals only. They guide review and do not make academic-integrity judgments.</p></div><span className="count-chip">{analytics.attention.length}</span></div>

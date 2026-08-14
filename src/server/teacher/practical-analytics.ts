@@ -1,17 +1,24 @@
 import "server-only";
 
 import type { RunResultState, SubmissionReviewStatus } from "@prisma/client";
+import {
+  buildIntegrityReviewSignal,
+  type IntegrityReviewCategory,
+} from "@/domain/evidence/integrity-review-signals";
+import { buildSubmissionEvidenceFacts } from "@/domain/evidence/submission-evidence";
 import { prisma } from "@/lib/db/prisma";
 import { snapshotBreakdown } from "@/server/attempts/service";
 import { AccessDeniedError, requireOwnedClassroom } from "@/server/authorization/classroom-access";
 
 export const LOW_SUGGESTED_SCORE_THRESHOLD = 5;
+export const TOP_VERIFIED_SCORE_THRESHOLD = 8;
 
 export type PracticalAnalyticsAttentionReason =
   | "NO_SUBMISSION"
   | "LOW_SUGGESTED_SCORE"
   | "FAILED_HIDDEN_TESTS"
-  | "NEEDS_REVIEW";
+  | "NEEDS_REVIEW"
+  | "HIGH_REVIEW_PRIORITY";
 
 export type PracticalAnalyticsStudent = {
   id: string;
@@ -25,6 +32,7 @@ export type PracticalAnalyticsAttempt = {
   attemptNumber: number;
   submittedAt: Date;
   reviewStatus: SubmissionReviewStatus | null;
+  integrityCategory: IntegrityReviewCategory;
   result: {
     state: RunResultState;
     passedTests: number;
@@ -71,8 +79,22 @@ export function buildPracticalAnalytics(
   let hiddenPassed = 0;
   let hiddenTotal = 0;
   let reviewedCount = 0;
+  let latestAttemptNumberTotal = 0;
+  let resubmittedStudentCount = 0;
+  const reviewStatusCounts = { published: 0, draft: 0, unreviewed: 0 };
+  const integritySignalCounts: Record<IntegrityReviewCategory, number> = {
+    LOW_ATTENTION: 0,
+    REVIEW_RECOMMENDED: 0,
+    HIGH_REVIEW_PRIORITY: 0,
+  };
 
   const attention: PracticalAnalyticsAttentionItem[] = [];
+  const topVerifiedPerformers: Array<{
+    student: PracticalAnalyticsStudent;
+    submissionId: string;
+    attemptNumber: number;
+    suggestedScore: number;
+  }> = [];
   for (const student of students) {
     const attempt = latestByStudent.get(student.id);
     if (!attempt) {
@@ -87,12 +109,31 @@ export function buildPracticalAnalytics(
     }
 
     const breakdown = snapshotBreakdown(attempt.result);
+    latestAttemptNumberTotal += attempt.attemptNumber;
+    if (attempt.attemptNumber > 1) resubmittedStudentCount += 1;
     suggestedScoreTotal += breakdown.suggestedScore;
     visiblePassed += breakdown.visiblePassedTests;
     visibleTotal += breakdown.visibleTotalTests;
     hiddenPassed += breakdown.hiddenPassedTests;
     hiddenTotal += breakdown.hiddenTotalTests;
     if (attempt.reviewStatus === "PUBLISHED") reviewedCount += 1;
+    if (attempt.reviewStatus === "PUBLISHED") reviewStatusCounts.published += 1;
+    else if (attempt.reviewStatus === "DRAFT") reviewStatusCounts.draft += 1;
+    else reviewStatusCounts.unreviewed += 1;
+    integritySignalCounts[attempt.integrityCategory] += 1;
+
+    if (
+      breakdown.suggestedScore >= TOP_VERIFIED_SCORE_THRESHOLD &&
+      attempt.reviewStatus === "PUBLISHED" &&
+      attempt.integrityCategory !== "HIGH_REVIEW_PRIORITY"
+    ) {
+      topVerifiedPerformers.push({
+        student,
+        submissionId: attempt.id,
+        attemptNumber: attempt.attemptNumber,
+        suggestedScore: breakdown.suggestedScore,
+      });
+    }
 
     const reasons: PracticalAnalyticsAttentionReason[] = [];
     if (breakdown.suggestedScore < LOW_SUGGESTED_SCORE_THRESHOLD) {
@@ -105,6 +146,9 @@ export function buildPracticalAnalytics(
       reasons.push("FAILED_HIDDEN_TESTS");
     }
     if (attempt.reviewStatus !== "PUBLISHED") reasons.push("NEEDS_REVIEW");
+    if (attempt.integrityCategory === "HIGH_REVIEW_PRIORITY") {
+      reasons.push("HIGH_REVIEW_PRIORITY");
+    }
 
     if (reasons.length) {
       attention.push({
@@ -136,6 +180,16 @@ export function buildPracticalAnalytics(
     },
     reviewedCount,
     needsReviewCount: submittedCount - reviewedCount,
+    anonymizedAttemptStatistics: {
+      latestAttemptNumberAverage:
+        submittedCount > 0
+          ? oneDecimal(latestAttemptNumberTotal / submittedCount)
+          : null,
+      resubmittedStudentCount,
+    },
+    reviewStatusCounts,
+    integritySignalCounts,
+    topVerifiedPerformers,
     attention,
   };
 }
@@ -149,7 +203,7 @@ export async function getTeacherPracticalAnalytics(
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, classroomId, status: "PUBLISHED" },
-    select: { id: true, title: true },
+    select: { id: true, title: true, instructions: true },
   });
   if (!task) throw new AccessDeniedError();
 
@@ -170,10 +224,15 @@ export async function getTeacherPracticalAnalytics(
           studentId: true,
           attemptNumber: true,
           submittedAt: true,
+          timingStatus: true,
+          practicalVersion: true,
+          sourceCodeSnapshot: true,
           review: { select: { status: true } },
           resultSnapshot: {
             select: {
+              runAttemptId: true,
               state: true,
+              executionMode: true,
               passedTests: true,
               totalTests: true,
               visiblePassedTests: true,
@@ -181,6 +240,32 @@ export async function getTeacherPracticalAnalytics(
               hiddenPassedTests: true,
               hiddenTotalTests: true,
               suggestedScore: true,
+            },
+          },
+          codingSession: {
+            select: {
+              startedAt: true,
+              runs: {
+                orderBy: { sequence: "asc" },
+                select: {
+                  id: true,
+                  sequence: true,
+                  sourceCodeSnapshot: true,
+                  requestedAt: true,
+                  completedAt: true,
+                  resultSnapshot: {
+                    select: {
+                      state: true,
+                      passedTests: true,
+                      totalTests: true,
+                    },
+                  },
+                },
+              },
+              events: {
+                orderBy: { sequence: "asc" },
+                select: { sequence: true, type: true, occurredAt: true },
+              },
             },
           },
         },
@@ -192,14 +277,28 @@ export async function getTeacherPracticalAnalytics(
     task,
     ...buildPracticalAnalytics(
       students,
-      attempts.map((attempt) => ({
-        id: attempt.id,
-        studentId: attempt.studentId,
-        attemptNumber: attempt.attemptNumber,
-        submittedAt: attempt.submittedAt,
-        reviewStatus: attempt.review?.status ?? null,
-        result: attempt.resultSnapshot,
-      })),
+      attempts.map((attempt) => {
+        const facts = buildSubmissionEvidenceFacts({
+          submission: {
+            sourceCodeSnapshot: attempt.sourceCodeSnapshot,
+            submittedAt: attempt.submittedAt,
+            timingStatus: attempt.timingStatus,
+            practicalVersion: attempt.practicalVersion,
+            resultRunAttemptId: attempt.resultSnapshot.runAttemptId,
+          },
+          result: attempt.resultSnapshot,
+          session: attempt.codingSession,
+        });
+        return {
+          id: attempt.id,
+          studentId: attempt.studentId,
+          attemptNumber: attempt.attemptNumber,
+          submittedAt: attempt.submittedAt,
+          reviewStatus: attempt.review?.status ?? null,
+          integrityCategory: buildIntegrityReviewSignal(facts).category,
+          result: attempt.resultSnapshot,
+        };
+      }),
     ),
   };
 }

@@ -19,6 +19,7 @@ Status reflects repository behavior as of 2026-08-14.
 - Teacher-only deterministic integrity review signals map available evidence facts to `LOW_ATTENTION`, `REVIEW_RECOMMENDED`, or `HIGH_REVIEW_PRIORITY` with neutral reasons. They prioritize review or viva only and never assert cheating, guilt, plagiarism, or an academic decision.
 - A teacher may request a transient, structured review brief for one owned immutable submission. The Phase AI-2 v1 workflow introduced the in-process fake provider and returns an editable/discardable approach summary, edge-case prompts, deterministic evidence explanation, three viva questions with expected-answer bullets, one modification task, constructive feedback draft, and explicit non-persisted provenance.
 - Provider selection remains fake by default. Explicit `groq` configuration enables a fetch-based prototype/demo adapter with a fixed endpoint, minimized allowlisted input, structured output, timeout, bounded errors, and the same transient teacher-only contract. Generation stays a one-submission teacher click with a process-local per-teacher single-flight guard; no automatic, bulk, queued, or student-triggered path exists.
+- A teacher may explicitly generate one transient class summary for one owned published practical from anonymous aggregate analytics. Labrix deterministically selects top verified and needs-attention membership before AI, keeps student names outside provider input, and returns eight editable/discardable teaching sections without persistence, marks, verdicts, automatic generation, or student access.
 - Teacher-owned review of student, practical, attempt, source, timestamp, simulated result, run count, and ordered timeline.
 - Teacher-owned marks and feedback are stored separately for each immutable attempt; drafts remain teacher-only and published reviews are visible only to the owning student.
 - Teacher-owned classroom summaries count distinct active students with at least one immutable submission for the latest published practical.
@@ -44,7 +45,7 @@ Status reflects repository behavior as of 2026-08-14.
 ## Mock
 
 - The default execution provider derives outcomes from source markers such as `fail_test`, `compile_error`, and `runtime_error`. C++ is not compiled; Java compilation requires explicit local `java-http` opt-in.
-- The deterministic in-process fake remains the default AI review provider and is the only provider used by tests. The opt-in Groq adapter is a prototype/demo integration, not an institutional production provider.
+- Deterministic in-process fakes remain the default AI providers and the only providers used by tests. The opt-in Groq adapters are prototype/demo integrations, not an institutional production provider.
 - In explicit demo mode, the role selector is session-scoped presentation preview, not authentication or authorization. Clerk mode hides it.
 
 ## Planned
