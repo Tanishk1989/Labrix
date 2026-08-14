@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, Phase AI-2 adds a transient review/viva draft, and Phase AI-3 adds an explicit prototype Groq option while retaining the fake default. Institutional AI governance and additional event fields remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, Phase AI-2 adds a transient review/viva draft, Phase AI-3 adds an explicit prototype Groq option while retaining the fake default, and Phase AI-4 adds a transient anonymous-aggregate class summary. Institutional AI governance and additional event fields remain **planned**.
 
 ## Purpose and boundary
 
@@ -78,6 +78,16 @@ Questions should test understanding, not accuse. Do not reveal hidden policy thr
 - Evaluate grounding, neutrality, usefulness, and false implication before pilot release.
 
 ## Phase AI-2 v1 review brief
+
+## Phase AI-4 class summary boundary
+
+The owner teacher may manually request one summary for one published practical from the classroom students/progress page. The page never generates on load. The service reloads owner-scoped analytics and sends only practical title/instructions, active/submitted/pending counts, average suggested score, visible/hidden aggregate counters, review-status counts, deterministic integrity-category counts, anonymized attempt statistics, and deterministic group counts/criteria. No student or classroom identity, submitted source, raw event, test identifier/detail, marks, or feedback enters the provider payload.
+
+Labrix selects group membership before the provider call. Top verified performers have a latest score of at least 8.0/10, a published review, and no high review-priority category. Needs attention covers no submission, score below 5.0/10, hidden aggregate failure, high review priority, or review not published. Names remain in the teacher-only server result and are rendered outside AI output. AI can explain the supplied criteria but cannot add/remove students or generate evidence/signals.
+
+The eight-section result covers class performance, likely misconceptions, reteaching topics, viva focus, neutral review-priority guidance, both deterministic criteria explanations, and a short teaching plan. It is Zod-validated, transient, editable, discardable, and never marks, publishes, or persists anything. Fake remains the test/default provider; explicit Groq uses the same timeout and safe 429 behavior. This remains low-volume prototype use, not automatic full-class processing.
+
+## Submission review brief boundary
 
 The owning teacher explicitly requests one brief for one immutable attempt. The action re-authenticates the teacher and reuses the classroom-owner-scoped submission service. It does not accept source, facts, identity, result data, marks, or feedback from the browser.
 

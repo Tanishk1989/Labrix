@@ -92,6 +92,16 @@ Generation is restricted to an explicit teacher click on one owner-authorized su
 
 Deterministic domain code remains the sole producer of evidence facts and integrity review signals. Groq may explain supplied facts/signals, ground viva questions in code plus evidence, draft constructive feedback, and suggest manual teacher inspection. It cannot create, recalculate, replace, reclassify, or add facts, signal reasons, thresholds, categories, guilt scores, or verdicts, and its output never feeds the deterministic signal calculation.
 
+### D-025 — Transient anonymous-aggregate class summary v1
+
+**Accepted 2026-08-14.** A classroom-owning teacher may explicitly generate one transient class summary for one published practical from the students/progress route. Page rendering, submission completion, student actions, and background work never invoke it. The same process-local per-teacher guard prevents overlapping review-brief or class-summary requests; no queue, bulk generation, retry loop, or persistence is added.
+
+Labrix computes all aggregates, deterministic integrity-category counts, and group membership before provider dispatch. Top verified membership requires a latest suggested score of at least 8.0/10, a published review, and no `HIGH_REVIEW_PRIORITY` category. Needs attention includes no submission, score below 5.0/10, hidden aggregate failure, high review priority, or review not published. These rules are versioned application behavior; AI may explain them but cannot select, remove, rank, or identify students.
+
+Provider input contains practical title/instructions and anonymous class-level counters only. It excludes student/classroom identity, submitted source, raw events, test identifiers and hidden inputs/expected/actual output, marks, and feedback. Names and submission links are joined from the deterministic owner-only DTO after the provider call. The eight-section output is Zod-validated, editable, discardable, non-authoritative, and transient. Fake remains default/tests; explicit Groq remains a low-volume prototype under D-024 and D-013, with the same timeout and safe 429 behavior.
+
+The summary uses neutral **needs attention**, **review priority**, and **top verified performers** wording. It cannot create evidence facts or integrity signals, make a cheating/plagiarism/guilt verdict, award marks, or publish feedback.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

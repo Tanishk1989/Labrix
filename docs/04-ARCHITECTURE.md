@@ -14,7 +14,7 @@ flowchart TB
   AUTHZ --> SVC["Attempt service"]
   SVC --> DB[("PostgreSQL via Prisma")]
   SVC --> EP["ServerExecutionProvider"]
-  SVC --> AIP["AIReviewBriefProvider"]
+  SVC --> AIP["Provider-neutral AI contracts"]
   AIP --> FAKEAI["In-process fake provider v1"]
   AIP -. "explicit prototype opt-in" .-> GROQ["Groq structured-output adapter"]
   EP --> MOCK["Deterministic mock; no code execution"]
@@ -54,7 +54,11 @@ The default provider is deterministic and in-process. It strips source comments 
 
 The domain evidence builder and integrity-signal calculator run before provider selection and remain the only authority for facts, thresholds, reasons, and review-priority categories. Providers receive those immutable structured outputs as explanatory context only. Their role is limited to teacher-friendly explanation, code/evidence-grounded viva questions, constructive feedback drafting, and manual inspection suggestions; provider output cannot feed back into or replace deterministic calculation.
 
-The practical-analytics DTO is classroom-owner scoped and read-only. It selects active student memberships and reduces only each student's latest immutable attempt for the selected published practical. It returns aggregate counters, pass rates, review state, and deterministic attention-reason codes; it does not return test-case contents, hidden result details, source code, or draft feedback.
+The practical-analytics DTO is classroom-owner scoped and read-only. It selects active student memberships and reduces only each student's latest immutable attempt for the selected published practical. It returns aggregate counters, pass rates, review state, deterministic integrity-category counts, and deterministic attention-reason codes; it does not return test-case contents, hidden result details, source code, or draft feedback.
+
+Phase AI-4 adds a separate `AIClassSummaryProvider` contract using the same fake-by-default and explicit Groq configuration. Its server action accepts classroom/task references only, resolves the teacher again, and reloads the owner-scoped published-practical analytics. The provider DTO is reconstructed from an allowlist containing practical text plus anonymous counts and aggregate visible/hidden outcomes; it contains no student/classroom identity, source, event records, test IDs/details, marks, or feedback. The structured eight-section output is Zod-validated, transient, editable, and discardable.
+
+Top verified and needs-attention membership is deterministic server logic, never provider output. Top verified requires a latest suggested score of at least 8.0/10, a published review, and no `HIGH_REVIEW_PRIORITY` category. Needs attention includes no submission, a score below 5.0/10, hidden aggregate failure, high review priority, or an unpublished review. Names and submission links are joined into the teacher-only action result outside provider input. No AI call occurs during page render.
 
 Roster reads and mutations use a server-only classroom service. Deactivation and owner-only reactivation atomically update only the existing membership `active` flag and append a `MembershipAuditEntry` after role and classroom-owner checks; the `(classroomId, userId)` uniqueness constraint prevents duplicate memberships and historical coding/review relations remain untouched. Owner-scoped roster reads return the recent audit trail, while student DTOs do not include it. An inactive member cannot self-reactivate through the join-code action. Join-code regeneration updates the existing unique classroom code, so no invitation record is required for these MVP controls.
 
