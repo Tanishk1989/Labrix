@@ -231,12 +231,21 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete as a small single-instance safeguard. It does not replace a durable production queue or distributed rate limiter.
 
+## Phase AI-0 — deterministic submission evidence facts
+
+- Build versioned, explainable facts from immutable submissions, result snapshots, session runs, and the five existing foundation events.
+- Show the facts only on the classroom-owning teacher's submission review while preserving the separate student DTO and hidden-test redaction.
+- Keep missing legacy values and unsupported source-size jumps explicit instead of inventing data.
+- Add no AI provider, verdict, new event collection, grading, review, execution, or authorization behavior.
+
+**Status:** complete for submission-level facts supported by existing records. New evidence event fields, source-size thresholds, AI summaries, viva generation, and class-level aggregation remain later governed slices.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
-3. Version deterministic evidence signals and teacher-facing definitions.
-4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance.
+3. Approve and add any further evidence event fields and threshold-based signals.
+4. Add governed AI explanation, feedback drafting, and implementation-specific viva assistance on top of Phase AI-0 facts.
 5. Pilot hardening: concurrency, deadlines/timezones, retention/deletion, audit, accessibility, backup, and incident paths.
 
 Do not pull screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, broad integrations, or automated verdicts into these slices.

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CircleX, Info } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleX } from "lucide-react";
 import { DemoShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/design-system";
 import { ExecutionModeBadge } from "@/components/execution-mode-badge";
@@ -11,6 +11,7 @@ import { getSubmissionForStudent, getSubmissionForTeacher } from "@/server/attem
 import { getTeacherOverview } from "@/server/teacher/overview";
 import { StudentSubmissionResult } from "@/features/student/submission-result";
 import { SubmissionReviewForm } from "@/features/submission-review/submission-review-form";
+import { SubmissionEvidenceSection } from "@/features/submission-review/submission-evidence-section";
 import { teacherReviewStatusMeta } from "@/features/submission-review/review-queue";
 
 const eventLabels = {
@@ -51,7 +52,7 @@ export default async function SubmissionReviewPage({ params }: { params: Promise
 
       <aside className="space-y-4">
         <SubmissionReviewForm key={review.review?.updatedAt ?? "new"} submissionAttemptId={review.id} review={review.review} />
-        <section className="panel p-4"><h2 className="section-heading">Attempt evidence</h2><dl className="mt-4 space-y-3 text-xs"><div className="flex justify-between gap-4"><dt className="text-[var(--text-muted)]">Student</dt><dd className="text-right font-medium text-white">{review.student.name}</dd></div><div className="flex justify-between gap-4"><dt className="text-[var(--text-muted)]">Language</dt><dd className="font-medium text-white">{review.language}</dd></div><div className="flex justify-between gap-4"><dt className="text-[var(--text-muted)]">Attempt</dt><dd className="font-medium text-white">#{review.attemptNumber}</dd></div><div className="flex justify-between gap-4"><dt className="text-[var(--text-muted)]">Runs recorded</dt><dd className="font-medium text-white">{review.runCount}</dd></div><div className="flex justify-between gap-4"><dt className="text-[var(--text-muted)]">Result</dt><dd className="text-right font-medium text-white">{review.result.passedTests}/{review.result.totalTests} tests</dd></div></dl><div className="mt-4 flex gap-2 rounded-md border border-blue-500/20 bg-blue-500/5 p-3"><Info size={14} className="mt-0.5 shrink-0 text-blue-400" /><p className="text-[11px] leading-5 text-[var(--text-secondary)]">Labrix presents persisted evidence for teacher judgment. Marks and feedback are recorded separately from the immutable attempt.</p></div></section>
+        <SubmissionEvidenceSection facts={review.evidenceFacts} />
         <section className="panel p-4"><div className="flex items-center justify-between"><h2 className="section-heading">Process timeline</h2><span className="count-chip">{review.events.length}</span></div><ol className="mt-4 space-y-4">{review.events.map((event) => <li key={event.id} className="relative border-l border-[var(--border-strong)] pl-4"><span className="absolute -left-[4px] top-1 size-[7px] rounded-full bg-[var(--brand-accent)]" /><p className="text-xs font-medium text-white">{eventLabels[event.type]}</p><p className="mt-0.5 text-[10px] text-[var(--text-muted)]">#{event.sequence} · {new Date(event.occurredAt).toLocaleString("en-IN")}</p></li>)}</ol></section>
       </aside>
     </div>

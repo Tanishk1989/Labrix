@@ -43,6 +43,8 @@ Each `Task` may store nullable Java and C++ starter-code fields. Null keeps lega
 
 The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, and a derived review status without returning draft feedback text. Student DTOs remain separate and expose only published reviews belonging to that student.
 
+The owner-scoped teacher submission-detail DTO also builds `SubmissionEvidenceFactsV1` in the domain layer from already persisted immutable submission/result data plus its session runs and foundation events. Every nullable legacy or unsupported value has an explicit unavailable state and explanation. The submit-time execution is excluded from latest-successful-run comparison so source matching is meaningful. The separate student detail DTO receives no evidence object and continues to redact hidden per-test records.
+
 The practical-analytics DTO is classroom-owner scoped and read-only. It selects active student memberships and reduces only each student's latest immutable attempt for the selected published practical. It returns aggregate counters, pass rates, review state, and deterministic attention-reason codes; it does not return test-case contents, hidden result details, source code, or draft feedback.
 
 Roster reads and mutations use a server-only classroom service. Deactivation and owner-only reactivation atomically update only the existing membership `active` flag and append a `MembershipAuditEntry` after role and classroom-owner checks; the `(classroomId, userId)` uniqueness constraint prevents duplicate memberships and historical coding/review relations remain untouched. Owner-scoped roster reads return the recent audit trail, while student DTOs do not include it. An inactive member cannot self-reactivate through the join-code action. Join-code regeneration updates the existing unique classroom code, so no invitation record is required for these MVP controls.
@@ -81,4 +83,4 @@ The local worker supplies source and one test input at a time over `docker exec`
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 
-Only five foundation events are captured. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.
+Only five foundation events are captured. Phase AI-0 deterministically counts and explains the records already available; it does not add event collection. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.
