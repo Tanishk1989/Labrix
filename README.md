@@ -109,6 +109,8 @@ AI may explain the deterministic evidence facts and integrity review signals alr
 
 Class-summary provider input contains only practical text and anonymous aggregate counters. Labrix deterministically selects top verified performers and students who need attention before the AI call; names are rendered to the teacher outside provider input. A high review-priority signal excludes a student from the top verified group. AI may explain criteria but cannot choose or rank students.
 
+The teacher practical-progress view also shows these deterministic groups without requiring an AI request. Top verified performers require a high suggested score, published review, no high review priority, and no known hidden aggregate failure. Needs attention uses neutral reason badges for missing submissions, low scores, hidden aggregate failures, high review priority, or unpublished reviews. Each card shows at most five students and exposes hidden pass/total aggregates only.
+
 ## Documentation
 
 - [Product](docs/01-PRODUCT.md)

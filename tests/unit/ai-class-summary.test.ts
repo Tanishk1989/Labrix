@@ -13,6 +13,69 @@ import {
 } from "@/server/ai/class-summary-service";
 
 function analytics() {
+  const topVerifiedPerformers = [
+    {
+      student: {
+        id: "student-secret-1",
+        name: "Private Asha",
+        email: "asha@example.test",
+      },
+      submissionId: "submission-1",
+      attemptNumber: 2,
+      suggestedScore: 9,
+      hiddenAggregate: {
+        availability: "AVAILABLE" as const,
+        passed: 2,
+        total: 2,
+      },
+      reviewStatus: "PUBLISHED" as const,
+      integrityCategory: "LOW_ATTENTION" as const,
+      reasons: [
+        "HIGH_SUGGESTED_SCORE" as const,
+        "NO_HIGH_REVIEW_PRIORITY" as const,
+        "HIDDEN_AGGREGATE_PASSED" as const,
+        "REVIEW_PUBLISHED" as const,
+      ],
+    },
+  ];
+  const attention = [
+    {
+      student: {
+        id: "student-secret-2",
+        name: "Private Bharat",
+        email: "bharat@example.test",
+      },
+      submissionId: "submission-2",
+      attemptNumber: 1,
+      suggestedScore: 6,
+      hiddenAggregate: {
+        availability: "AVAILABLE" as const,
+        passed: 2,
+        total: 2,
+      },
+      reviewStatus: "PUBLISHED" as const,
+      integrityCategory: "HIGH_REVIEW_PRIORITY" as const,
+      reasons: ["HIGH_REVIEW_PRIORITY" as const],
+    },
+    {
+      student: {
+        id: "student-secret-3",
+        name: "Private Chitra",
+        email: "chitra@example.test",
+      },
+      submissionId: null,
+      attemptNumber: null,
+      suggestedScore: null,
+      hiddenAggregate: {
+        availability: "UNAVAILABLE" as const,
+        passed: null,
+        total: null,
+      },
+      reviewStatus: "NOT_APPLICABLE" as const,
+      integrityCategory: null,
+      reasons: ["NO_SUBMISSION" as const],
+    },
+  ];
   return {
     classroom: { id: "private-classroom-id" },
     task: {
@@ -38,42 +101,18 @@ function analytics() {
       latestAttemptNumberAverage: 1.5,
       resubmittedStudentCount: 1,
     },
-    topVerifiedPerformers: [
-      {
-        student: {
-          id: "student-secret-1",
-          name: "Private Asha",
-          email: "asha@example.test",
-        },
-        submissionId: "submission-1",
-        attemptNumber: 2,
-        suggestedScore: 9,
+    topVerifiedPerformers,
+    attention,
+    groups: {
+      topVerifiedPerformers: {
+        totalCount: topVerifiedPerformers.length,
+        items: topVerifiedPerformers,
       },
-    ],
-    attention: [
-      {
-        student: {
-          id: "student-secret-2",
-          name: "Private Bharat",
-          email: "bharat@example.test",
-        },
-        submissionId: "submission-2",
-        attemptNumber: 1,
-        suggestedScore: 6,
-        reasons: ["HIGH_REVIEW_PRIORITY" as const],
+      needsAttention: {
+        totalCount: attention.length,
+        items: attention,
       },
-      {
-        student: {
-          id: "student-secret-3",
-          name: "Private Chitra",
-          email: "chitra@example.test",
-        },
-        submissionId: null,
-        attemptNumber: null,
-        suggestedScore: null,
-        reasons: ["NO_SUBMISSION" as const],
-      },
-    ],
+    },
   } as Parameters<typeof buildAIClassSummaryInput>[0];
 }
 

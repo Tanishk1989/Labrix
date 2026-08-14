@@ -12,6 +12,7 @@ import { AccessDeniedError, requireOwnedClassroom } from "@/server/authorization
 
 export const LOW_SUGGESTED_SCORE_THRESHOLD = 5;
 export const TOP_VERIFIED_SCORE_THRESHOLD = 8;
+export const TEACHER_ATTENTION_GROUP_LIMIT = 5;
 
 export type PracticalAnalyticsAttentionReason =
   | "NO_SUBMISSION"
@@ -19,6 +20,23 @@ export type PracticalAnalyticsAttentionReason =
   | "FAILED_HIDDEN_TESTS"
   | "NEEDS_REVIEW"
   | "HIGH_REVIEW_PRIORITY";
+
+export type PracticalAnalyticsTopVerifiedReason =
+  | "HIGH_SUGGESTED_SCORE"
+  | "NO_HIGH_REVIEW_PRIORITY"
+  | "HIDDEN_AGGREGATE_PASSED"
+  | "HIDDEN_AGGREGATE_NOT_APPLICABLE"
+  | "HIDDEN_AGGREGATE_UNAVAILABLE"
+  | "REVIEW_PUBLISHED";
+
+export type PracticalAnalyticsHiddenAggregate =
+  | { availability: "AVAILABLE"; passed: number; total: number }
+  | { availability: "UNAVAILABLE"; passed: null; total: null };
+
+export type PracticalAnalyticsReviewStatus =
+  | SubmissionReviewStatus
+  | "NOT_REVIEWED"
+  | "NOT_APPLICABLE";
 
 export type PracticalAnalyticsStudent = {
   id: string;
@@ -50,7 +68,24 @@ export type PracticalAnalyticsAttentionItem = {
   submissionId: string | null;
   attemptNumber: number | null;
   suggestedScore: number | null;
+  hiddenAggregate: PracticalAnalyticsHiddenAggregate;
+  reviewStatus: PracticalAnalyticsReviewStatus;
+  integrityCategory: IntegrityReviewCategory | null;
   reasons: PracticalAnalyticsAttentionReason[];
+};
+
+export type PracticalAnalyticsTopVerifiedItem = {
+  student: PracticalAnalyticsStudent;
+  submissionId: string;
+  attemptNumber: number;
+  suggestedScore: number;
+  hiddenAggregate: PracticalAnalyticsHiddenAggregate;
+  reviewStatus: "PUBLISHED";
+  integrityCategory: Exclude<
+    IntegrityReviewCategory,
+    "HIGH_REVIEW_PRIORITY"
+  >;
+  reasons: PracticalAnalyticsTopVerifiedReason[];
 };
 
 function percentage(passed: number, total: number) {
@@ -59,6 +94,50 @@ function percentage(passed: number, total: number) {
 
 function oneDecimal(value: number) {
   return Math.round(value * 10) / 10;
+}
+
+function hiddenAggregate(
+  result: PracticalAnalyticsAttempt["result"],
+): PracticalAnalyticsHiddenAggregate {
+  if (
+    result.hiddenPassedTests === null ||
+    result.hiddenTotalTests === null ||
+    result.hiddenPassedTests < 0 ||
+    result.hiddenTotalTests < 0 ||
+    result.hiddenPassedTests > result.hiddenTotalTests
+  ) {
+    return { availability: "UNAVAILABLE", passed: null, total: null };
+  }
+  return {
+    availability: "AVAILABLE",
+    passed: result.hiddenPassedTests,
+    total: result.hiddenTotalTests,
+  };
+}
+
+function reviewStatus(
+  status: SubmissionReviewStatus | null,
+): PracticalAnalyticsReviewStatus {
+  return status ?? "NOT_REVIEWED";
+}
+
+function compareStudentName(
+  left: { student: PracticalAnalyticsStudent },
+  right: { student: PracticalAnalyticsStudent },
+) {
+  return left.student.name.localeCompare(right.student.name, "en");
+}
+
+const attentionReasonPriority: Record<PracticalAnalyticsAttentionReason, number> = {
+  HIGH_REVIEW_PRIORITY: 0,
+  NO_SUBMISSION: 1,
+  FAILED_HIDDEN_TESTS: 2,
+  LOW_SUGGESTED_SCORE: 3,
+  NEEDS_REVIEW: 4,
+};
+
+function attentionPriority(item: PracticalAnalyticsAttentionItem) {
+  return Math.min(...item.reasons.map((reason) => attentionReasonPriority[reason]));
 }
 
 export function buildPracticalAnalytics(
@@ -89,12 +168,7 @@ export function buildPracticalAnalytics(
   };
 
   const attention: PracticalAnalyticsAttentionItem[] = [];
-  const topVerifiedPerformers: Array<{
-    student: PracticalAnalyticsStudent;
-    submissionId: string;
-    attemptNumber: number;
-    suggestedScore: number;
-  }> = [];
+  const topVerifiedPerformers: PracticalAnalyticsTopVerifiedItem[] = [];
   for (const student of students) {
     const attempt = latestByStudent.get(student.id);
     if (!attempt) {
@@ -103,6 +177,13 @@ export function buildPracticalAnalytics(
         submissionId: null,
         attemptNumber: null,
         suggestedScore: null,
+        hiddenAggregate: {
+          availability: "UNAVAILABLE",
+          passed: null,
+          total: null,
+        },
+        reviewStatus: "NOT_APPLICABLE",
+        integrityCategory: null,
         reasons: ["NO_SUBMISSION"],
       });
       continue;
@@ -121,17 +202,38 @@ export function buildPracticalAnalytics(
     else if (attempt.reviewStatus === "DRAFT") reviewStatusCounts.draft += 1;
     else reviewStatusCounts.unreviewed += 1;
     integritySignalCounts[attempt.integrityCategory] += 1;
+    const attemptHiddenAggregate = hiddenAggregate(attempt.result);
+    const failedAvailableHiddenAggregate =
+      attemptHiddenAggregate.availability === "AVAILABLE" &&
+      attemptHiddenAggregate.total > 0 &&
+      attemptHiddenAggregate.passed < attemptHiddenAggregate.total;
 
     if (
       breakdown.suggestedScore >= TOP_VERIFIED_SCORE_THRESHOLD &&
       attempt.reviewStatus === "PUBLISHED" &&
-      attempt.integrityCategory !== "HIGH_REVIEW_PRIORITY"
+      attempt.integrityCategory !== "HIGH_REVIEW_PRIORITY" &&
+      !failedAvailableHiddenAggregate
     ) {
+      const hiddenReason: PracticalAnalyticsTopVerifiedReason =
+        attemptHiddenAggregate.availability === "UNAVAILABLE"
+          ? "HIDDEN_AGGREGATE_UNAVAILABLE"
+          : attemptHiddenAggregate.total === 0
+            ? "HIDDEN_AGGREGATE_NOT_APPLICABLE"
+            : "HIDDEN_AGGREGATE_PASSED";
       topVerifiedPerformers.push({
         student,
         submissionId: attempt.id,
         attemptNumber: attempt.attemptNumber,
         suggestedScore: breakdown.suggestedScore,
+        hiddenAggregate: attemptHiddenAggregate,
+        reviewStatus: "PUBLISHED",
+        integrityCategory: attempt.integrityCategory,
+        reasons: [
+          "HIGH_SUGGESTED_SCORE",
+          "NO_HIGH_REVIEW_PRIORITY",
+          hiddenReason,
+          "REVIEW_PUBLISHED",
+        ],
       });
     }
 
@@ -156,12 +258,26 @@ export function buildPracticalAnalytics(
         submissionId: attempt.id,
         attemptNumber: attempt.attemptNumber,
         suggestedScore: breakdown.suggestedScore,
+        hiddenAggregate: attemptHiddenAggregate,
+        reviewStatus: reviewStatus(attempt.reviewStatus),
+        integrityCategory: attempt.integrityCategory,
         reasons,
       });
     }
   }
 
   const submittedCount = latestByStudent.size;
+  const orderedTopVerifiedPerformers = [...topVerifiedPerformers].sort(
+    (left, right) =>
+      right.suggestedScore - left.suggestedScore ||
+      right.attemptNumber - left.attemptNumber ||
+      compareStudentName(left, right),
+  );
+  const orderedAttention = [...attention].sort(
+    (left, right) =>
+      attentionPriority(left) - attentionPriority(right) ||
+      compareStudentName(left, right),
+  );
   return {
     activeStudentCount: students.length,
     submittedStudentCount: submittedCount,
@@ -189,8 +305,21 @@ export function buildPracticalAnalytics(
     },
     reviewStatusCounts,
     integritySignalCounts,
-    topVerifiedPerformers,
-    attention,
+    topVerifiedPerformers: orderedTopVerifiedPerformers,
+    attention: orderedAttention,
+    groups: {
+      topVerifiedPerformers: {
+        totalCount: orderedTopVerifiedPerformers.length,
+        items: orderedTopVerifiedPerformers.slice(
+          0,
+          TEACHER_ATTENTION_GROUP_LIMIT,
+        ),
+      },
+      needsAttention: {
+        totalCount: orderedAttention.length,
+        items: orderedAttention.slice(0, TEACHER_ATTENTION_GROUP_LIMIT),
+      },
+    },
   };
 }
 

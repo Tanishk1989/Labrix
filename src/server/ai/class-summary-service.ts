@@ -16,6 +16,7 @@ export const topVerifiedCriteria = [
   "latest immutable submission has a suggested score of at least 8.0/10",
   "teacher review is published",
   "deterministic integrity category is not HIGH_REVIEW_PRIORITY",
+  "no failed hidden aggregate is stored; unavailable hidden aggregates do not exclude",
 ] as const;
 
 export const needsAttentionCriteria = [
@@ -73,8 +74,9 @@ export function buildAIClassSummaryInput(
       anonymizedAttemptStatistics: analytics.anonymizedAttemptStatistics,
     },
     deterministicGroups: {
-      topVerifiedPerformerCount: analytics.topVerifiedPerformers.length,
-      needsAttentionCount: analytics.attention.length,
+      topVerifiedPerformerCount:
+        analytics.groups.topVerifiedPerformers.totalCount,
+      needsAttentionCount: analytics.groups.needsAttention.totalCount,
       topVerifiedCriteria,
       needsAttentionCriteria,
     },
@@ -119,12 +121,14 @@ export async function generateTeacherAIClassSummary(options: {
         },
       },
       deterministicGroups: {
-        topVerifiedPerformers: analytics.topVerifiedPerformers.map((item) => ({
-          name: item.student.name,
-          submissionId: item.submissionId,
-          suggestedScore: item.suggestedScore,
-        })),
-        needsAttention: analytics.attention.map((item) => ({
+        topVerifiedPerformers: analytics.groups.topVerifiedPerformers.items.map(
+          (item) => ({
+            name: item.student.name,
+            submissionId: item.submissionId,
+            suggestedScore: item.suggestedScore,
+          }),
+        ),
+        needsAttention: analytics.groups.needsAttention.items.map((item) => ({
           name: item.student.name,
           submissionId: item.submissionId,
           reasons: [...item.reasons],

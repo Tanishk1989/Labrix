@@ -102,6 +102,14 @@ Provider input contains practical title/instructions and anonymous class-level c
 
 The summary uses neutral **needs attention**, **review priority**, and **top verified performers** wording. It cannot create evidence facts or integrity signals, make a cheating/plagiarism/guilt verdict, award marks, or publish feedback.
 
+### D-026 — Deterministic teacher attention group presentation
+
+**Accepted 2026-08-14.** The classroom-owning teacher's published-practical progress page may render compact top verified performers and needs-attention groups directly from the Phase AI-4 deterministic analytics. Rendering never invokes AI and never labels AI as the group source.
+
+Top verified requires a submitted latest attempt, a suggested score of at least 8.0/10, published review, no `HIGH_REVIEW_PRIORITY` category, and no failed hidden aggregate when hidden counters are available. Unavailable legacy hidden counters do not invent a failure. Needs attention includes no submission, score below 5.0/10, failed hidden aggregate, high review priority, or review not published. Each displayed group is reproducibly ordered and limited to five while retaining its total count.
+
+The teacher-only DTO may include display name, submission reference, latest attempt/status, suggested score, hidden pass/total aggregate or unavailable state, review status, integrity category, and neutral reason codes. It excludes source, raw events, test IDs, hidden input/expected/actual output, marks, and feedback text. Student DTOs and pages receive no group projection.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

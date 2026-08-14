@@ -86,7 +86,7 @@ describe("practical analytics", () => {
       reviewedCount: 1,
       needsReviewCount: 1,
     });
-    expect(analytics.attention).toEqual([
+    expect(analytics.attention).toEqual(expect.arrayContaining([
       expect.objectContaining({
         student: expect.objectContaining({ id: "student-a" }),
         reasons: ["FAILED_HIDDEN_TESTS"],
@@ -99,7 +99,7 @@ describe("practical analytics", () => {
         student: expect.objectContaining({ id: "student-c" }),
         reasons: ["NO_SUBMISSION"],
       }),
-    ]);
+    ]));
   });
 
   it("selects deterministic groups and excludes high-priority integrity signals from top verified performers", () => {

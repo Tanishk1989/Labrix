@@ -9,21 +9,11 @@ import {
   ReactivateMembershipButton,
 } from "@/features/classes/roster-controls";
 import { AIClassSummaryPanel } from "@/features/classes/ai-class-summary";
+import { TeacherAttentionGroups } from "@/features/classes/teacher-attention-groups";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getTeacherClassroomProgress } from "@/server/attempts/service";
 import { getTeacherClassroomRoster } from "@/server/classrooms/roster";
-import {
-  getTeacherPracticalAnalytics,
-  type PracticalAnalyticsAttentionReason,
-} from "@/server/teacher/practical-analytics";
-
-const attentionLabels: Record<PracticalAnalyticsAttentionReason, string> = {
-  NO_SUBMISSION: "No submission",
-  LOW_SUGGESTED_SCORE: "Suggested score below 5/10",
-  FAILED_HIDDEN_TESTS: "Hidden tests not all passed",
-  NEEDS_REVIEW: "Needs teacher review",
-  HIGH_REVIEW_PRIORITY: "High review priority",
-};
+import { getTeacherPracticalAnalytics } from "@/server/teacher/practical-analytics";
 
 function rateLabel(value: number | null) {
   return value === null ? "Not available" : `${value.toFixed(1)}%`;
@@ -128,15 +118,7 @@ export default async function StudentProgressPage({
           taskId={analytics.task.id}
         />
 
-        <div className="panel overflow-hidden">
-          <div className="panel-header"><div><h3 className="section-heading">Students needing attention</h3><p className="section-description">Deterministic signals only. They guide review and do not make academic-integrity judgments.</p></div><span className="count-chip">{analytics.attention.length}</span></div>
-          {analytics.attention.length ? <div className="overflow-x-auto"><table className="dense-table"><thead><tr><th>Student</th><th>Reasons</th><th>Latest score</th><th><span className="sr-only">Action</span></th></tr></thead><tbody>{analytics.attention.map((item) => <tr key={item.student.id}>
-            <td className="min-w-52"><p className="font-semibold text-white">{item.student.name}</p><p className="text-[11px] text-[var(--text-muted)]">{item.student.email}</p></td>
-            <td className="min-w-72"><div className="flex flex-wrap gap-1.5">{item.reasons.map((reason) => <StatusBadge key={reason} tone={reason === "NO_SUBMISSION" || reason === "FAILED_HIDDEN_TESTS" ? "warning" : "neutral"}>{attentionLabels[reason]}</StatusBadge>)}</div></td>
-            <td>{item.suggestedScore === null ? <span className="text-[var(--text-muted)]">Not available</span> : <span className="font-semibold text-white">{item.suggestedScore.toFixed(1)}/10</span>}</td>
-            <td>{item.submissionId ? <Link className="button-secondary min-h-8 px-2.5 py-1" href={`/submissions/${item.submissionId}`}>Review <ArrowRight size={12} /></Link> : <span className="text-xs text-[var(--text-muted)]">Await submission</span>}</td>
-          </tr>)}</tbody></table></div> : <div className="p-4"><EmptyState title="No attention signals" description="Every active student has submitted, passed the configured thresholds, and received published feedback." /></div>}
-        </div>
+        <TeacherAttentionGroups groups={analytics.groups} />
       </> : <EmptyState title="No published practical" description="Publish a practical to start owner-scoped analytics." />}
     </section>
 

@@ -277,6 +277,15 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for transient one-practical-at-a-time summaries on the classroom students/progress route. Cross-practical trends, persistent reports, background generation, and institutional production-provider governance remain later work.
 
+## Phase AI-5 — deterministic teacher attention groups UI
+
+- Reuse the AI-4 deterministic selection on the owner-only practical progress page without making an AI call.
+- Exclude known hidden aggregate failures and high review priority from top verified membership; retain neutral needs-attention reasons.
+- Show reason badges, attempt/status, suggested score, hidden aggregate status, review status, and review links with a five-student display limit per group.
+- Add no provider, persistence, schema, grading, execution, authorization, hidden-test-detail, or student DTO behavior.
+
+**Status:** complete for compact top verified performers and needs-attention cards on the classroom students/progress route. Configurable thresholds, pagination, exports, and cross-practical grouping remain later work.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
