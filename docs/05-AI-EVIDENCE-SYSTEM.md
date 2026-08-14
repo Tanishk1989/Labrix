@@ -1,6 +1,6 @@
 # AI and evidence system
 
-Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, and Phase AI-2 adds a transient review/viva draft through an in-process fake provider. External AI integration and additional event fields remain **planned**.
+Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `RUN_REQUESTED`, `RUN_COMPLETED`, and `SUBMISSION_CREATED`. Phase AI-0 implements versioned deterministic submission facts, Phase AI-1 maps available facts to teacher-only review priority, Phase AI-2 adds a transient review/viva draft, and Phase AI-3 adds an explicit prototype Groq option while retaining the fake default. Institutional AI governance and additional event fields remain **planned**.
 
 ## Purpose and boundary
 
@@ -93,4 +93,6 @@ The structured output contains:
 
 Every field is editable and the entire draft is discardable. Generation does not persist output, modify marks, save a teacher review, or publish feedback. Provenance identifies the provider, model, prompt version, generation time, and `persisted: false`.
 
-V1 supports only `FakeAIReviewBriefProvider`, a deterministic in-process test/demo implementation. It makes no external API call. It strips comments before source-structure heuristics and never treats submitted source or practical text as instructions. Structured output is validated with Zod before it crosses the server-action boundary. A production provider remains blocked until D-013 resolves provider/model selection, retention/training policy, region, cost, evaluation, and operational prompt-injection controls.
+`FakeAIReviewBriefProvider` remains the deterministic in-process default and the only provider used in tests. It makes no external API call, strips comments before source-structure heuristics, and never treats submitted source or practical text as instructions.
+
+Phase AI-3 permits explicit `LABRIX_AI_REVIEW_PROVIDER=groq` prototype/demo operation only when a server-side API key and model are also configured. Before dispatch, the adapter reconstructs the allowlisted input and excludes identity, raw events, per-test details, marks, and feedback even if unexpected fields reach the adapter. It sends practical text and submitted source as explicitly untrusted data, requests JSON-schema output, applies a bounded timeout and response size, and passes parsed model JSON through the existing Zod contract. It logs none of the key, prompt, source, request body, or raw response. Groq is not the accepted final institutional provider, and Labrix makes no enterprise residency, retention, or training-use guarantee for this prototype; those policies and production evaluation remain unresolved under D-013.

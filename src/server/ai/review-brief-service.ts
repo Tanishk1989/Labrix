@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { getSubmissionForTeacher } from "@/server/attempts/service";
-import { FakeAIReviewBriefProvider } from "./fake-review-brief-provider";
+import { getAIReviewBriefProvider } from "./review-brief-provider-config";
 import {
   aiReviewBriefContentSchema,
   AIReviewBriefProviderError,
@@ -78,7 +78,7 @@ export async function generateTeacherAIReviewBrief(options: {
     options.teacherId,
     options.submissionId,
   );
-  const provider = options.provider ?? new FakeAIReviewBriefProvider();
+  const provider = options.provider ?? getAIReviewBriefProvider();
 
   let content: AIReviewBriefContentV1;
   try {

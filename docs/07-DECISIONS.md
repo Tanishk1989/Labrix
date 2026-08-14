@@ -82,6 +82,12 @@ Initial linking is a controlled non-public command using an existing Labrix user
 
 Source code and comments are untrusted data and never instructions. Provider output is schema-validated, labeled with provider/model/prompt/non-persistence provenance, editable, discardable, and transient. It cannot assign marks, save or publish feedback, create a misconduct verdict, or reach student DTOs. No external AI call is approved by this decision; D-013 remains unresolved and controls any later real provider.
 
+### D-024 — Prototype Groq review provider
+
+**Accepted 2026-08-14.** Phase AI-3 permits Groq as an explicitly configured low-cost prototype/demo provider behind the existing `AIReviewBriefProvider` contract. Fake remains the default and the only provider used by automated tests. Groq mode requires a server-side API key and model, uses a fixed HTTPS endpoint, sends only the Phase AI-2 minimized allowlist, treats practical text/source/comments as untrusted data, requests structured output, applies a timeout and response bound, and validates returned content through the unchanged Zod contract.
+
+Provider input excludes student/classroom identity, raw events, teacher marks/feedback, test IDs, and hidden inputs/expected/actual output. Labrix does not log API keys, prompts, submitted source, request bodies, or raw provider responses. Output remains transient, editable, discardable, non-authoritative, and unable to assign marks or publish feedback. This decision does not designate Groq as the institutional production provider or claim enterprise residency, retention, or training-use guarantees; D-013 remains unresolved for production governance and evaluation.
+
 ## Proposed / unresolved
 
 ### D-009 — Evidence policy

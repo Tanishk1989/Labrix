@@ -258,12 +258,21 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for the fake-provider v1 workflow. External provider selection, data governance, model evaluation, rate/cost limits, persistence/audit decisions, and production prompt-injection defenses remain unresolved under D-013.
 
+## Phase AI-3 — configurable prototype review provider
+
+- Keep the fake provider as the default and sole test provider.
+- Add explicit `fake | groq` selection with required Groq key/model configuration.
+- Send only the existing minimized teacher-only contract through a fixed HTTPS adapter with timeout, bounded errors, structured output, and Zod validation.
+- Keep output transient and keep identity, raw events, per-test details, marks, feedback, verdicts, and student DTOs outside the provider boundary.
+
+**Status:** complete for a low-cost prototype/demo Groq adapter. This does not select or certify an institutional production provider and does not resolve residency, retention, training-use, evaluation, audit, or operational prompt-injection policy under D-013.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.
 2. Add isolated execution, queues, resource limits, retry policy, and observability.
 3. Approve and add any further evidence event fields and signal policies.
-4. Approve and implement a governed external AI provider behind the Phase AI-2 contract only after D-013 is resolved.
+4. Select and evaluate an institutional production AI provider beyond the Phase AI-3 Groq prototype after D-013 governance is resolved.
 5. Pilot hardening: concurrency, deadlines/timezones, retention/deletion, audit, accessibility, backup, and incident paths.
 
 Do not pull screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, broad integrations, or automated verdicts into these slices.

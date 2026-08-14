@@ -45,7 +45,7 @@ flowchart LR
 8. Legacy result snapshots remain readable; their undivided passed/total counters contribute as visible-only and do not invent hidden-test data.
 9. The submission review derives a teacher-only, versioned evidence section from immutable attempts, results, runs, session timestamps, and foundation events. Missing legacy fields remain explicitly unavailable, and unsupported source-size jumps are not inferred.
 10. The teacher detail maps available facts to a neutral integrity review category with explainable reasons. Zero reasons is `LOW_ATTENTION`, one is `REVIEW_RECOMMENDED`, and two or more is `HIGH_REVIEW_PRIORITY`; unavailable facts add no reason.
-11. The owning teacher may explicitly generate a transient review brief. The server reloads the immutable attempt through the ownership boundary and sends only practical text, language, submitted source, aggregate result summaries, deterministic facts/signals, timing, and version to the configured provider. V1's configured provider is the in-process fake provider.
+11. The owning teacher may explicitly generate a transient review brief. The server reloads the immutable attempt through the ownership boundary and sends only practical text, language, submitted source, aggregate result summaries, deterministic facts/signals, timing, and version to the configured provider. The in-process fake is the default; explicit complete `groq` configuration enables the prototype external adapter.
 12. The returned draft includes an approach summary, likely bugs/edge cases, evidence explanation, three implementation-specific viva questions with expected answers, one modification task, and constructive feedback. The teacher may edit or discard every field; generation never saves marks, saves a review, or publishes feedback.
 13. Student pages and DTOs receive no AI brief or action. No cheating verdict, guilt score, plagiarism accusation, automatic mark, or automated academic decision is produced.
 
@@ -78,5 +78,6 @@ flowchart LR
 - Deactivated memberships are treated as unenrolled by classroom, practical, and workspace authorization.
 - Autosave failure is visible and does not clear the editor buffer.
 - Provider failure creates bounded internal-error feedback and does not execute source locally.
+- Missing or invalid Groq configuration, timeout, non-success response, oversized response, malformed JSON, or schema-invalid output produces a bounded teacher-visible retry error without logging provider payloads or secrets.
 - Database uniqueness plus idempotency prevents duplicate submissions.
 - Submission/result database triggers reject later updates.
