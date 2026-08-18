@@ -82,8 +82,23 @@ export function DemoRoleControl({ role, setRole, compact = false }: { role: Demo
 
 function Wordmark({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <Link href="/dashboard" onClick={onNavigate} className="editorial-wordmark shrink-0" aria-label="TRACE home">
-      <TraceLogo size={19} />
+    <Link
+      href="/dashboard"
+      onClick={onNavigate}
+      className="inline-flex items-center gap-2.5 shrink-0 group focus:outline-none"
+      aria-label="TRACE home"
+    >
+      <div className="grid size-8.5 place-items-center rounded-xl border border-emerald-500/30 bg-black/60 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all group-hover:scale-105 group-hover:border-emerald-400">
+        <TraceLogo size={18} />
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-extrabold tracking-tight text-white">
+          TRACE<span className="text-emerald-400">OS</span>
+        </span>
+        <span className="hidden xl:inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-mono font-bold text-emerald-300 uppercase tracking-widest">
+          LAB
+        </span>
+      </div>
     </Link>
   );
 }
@@ -92,10 +107,30 @@ function DesktopNavigation({ role }: { role: DemoRole }) {
   const pathname = usePathname() ?? "/";
   const navigation = role === "teacher" ? teacherNavigation : studentNavigation;
   return (
-    <nav aria-label="Primary navigation" className="editorial-desktop-nav">
+    <nav aria-label="Primary navigation" className="hidden lg:flex items-center gap-1.5">
       {navigation.map((item) => {
         const active = isActivePath(pathname, item.href);
-        return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`editorial-nav-link ${active ? "editorial-nav-link-active" : ""}`}>{item.label}</Link>;
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={`group inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+              active
+                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-bold"
+                : "text-white/70 hover:bg-white/[0.06] hover:text-white border border-transparent hover:border-white/10"
+            }`}
+          >
+            <Icon
+              size={14}
+              className={`transition-colors ${
+                active ? "text-emerald-400" : "text-white/50 group-hover:text-white"
+              }`}
+            />
+            <span>{item.label}</span>
+          </Link>
+        );
       })}
     </nav>
   );
