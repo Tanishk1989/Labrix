@@ -88,17 +88,12 @@ function Wordmark({ onNavigate }: { onNavigate?: () => void }) {
       className="inline-flex items-center gap-2.5 shrink-0 group focus:outline-none"
       aria-label="TRACE home"
     >
-      <div className="grid size-8 place-items-center rounded-xl border border-emerald-500/30 bg-black/60 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all group-hover:scale-105 group-hover:border-emerald-400">
+      <div className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/[0.04] shadow-sm transition-all group-hover:scale-105 group-hover:border-white/25">
         <TraceMark size={18} />
       </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm font-extrabold tracking-tight text-white">
-          TRACE<span className="text-emerald-400">OS</span>
-        </span>
-        <span className="hidden xl:inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-mono font-bold text-emerald-300 uppercase tracking-widest">
-          LAB
-        </span>
-      </div>
+      <span className="text-sm font-bold tracking-tight text-white">
+        TRACE<span className="text-cyan-400 font-semibold ml-0.5">OS</span>
+      </span>
     </Link>
   );
 }
@@ -107,28 +102,21 @@ function DesktopNavigation({ role }: { role: DemoRole }) {
   const pathname = usePathname() ?? "/";
   const navigation = role === "teacher" ? teacherNavigation : studentNavigation;
   return (
-    <nav aria-label="Primary navigation" className="hidden lg:flex items-center gap-1.5">
+    <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-1">
       {navigation.map((item) => {
         const active = isActivePath(pathname, item.href);
-        const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`group inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
               active
-                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-bold"
-                : "text-white/70 hover:bg-white/[0.06] hover:text-white border border-transparent hover:border-white/10"
+                ? "bg-white/[0.10] text-white font-semibold shadow-sm"
+                : "text-white/60 hover:text-white hover:bg-white/[0.05]"
             }`}
           >
-            <Icon
-              size={14}
-              className={`transition-colors ${
-                active ? "text-emerald-400" : "text-white/50 group-hover:text-white"
-              }`}
-            />
-            <span>{item.label}</span>
+            {item.label}
           </Link>
         );
       })}
@@ -299,7 +287,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               />
               <Link
                 href="/sign-in"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] transition-all hover:bg-emerald-500/20 hover:border-emerald-400 hover:text-white active:scale-95 shrink-0"
+                className="hidden sm:inline-flex items-center rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:bg-white/10 hover:border-white/25 active:scale-95 shrink-0"
               >
                 <span>Sign In</span>
               </Link>

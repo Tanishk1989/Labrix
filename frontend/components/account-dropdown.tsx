@@ -93,10 +93,10 @@ export function AccountDropdown({
       >
         {/* User Info */}
         <div className="flex flex-col items-end text-right leading-tight">
-          <span className="truncate max-w-[150px] text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+          <span className="truncate max-w-[150px] text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">
             {name}
           </span>
-          <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">
             {roleLabel}
           </span>
         </div>
@@ -105,7 +105,7 @@ export function AccountDropdown({
         <ChevronDown
           size={13}
           className={`text-white/40 transition-transform duration-200 group-hover:text-white ${
-            isOpen ? "rotate-180 text-emerald-400" : ""
+            isOpen ? "rotate-180 text-cyan-400" : ""
           }`}
         />
       </button>
@@ -117,7 +117,7 @@ export function AccountDropdown({
           <div className="px-3.5 py-3 border-b border-white/[0.08] mb-1.5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-bold text-white truncate">{name}</p>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-mono font-bold text-emerald-300 uppercase shrink-0">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-mono font-bold text-cyan-300 uppercase shrink-0">
                 {roleLabel}
               </span>
             </div>
@@ -127,7 +127,7 @@ export function AccountDropdown({
               </p>
             )}
             <div className="mt-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1 rounded-md border border-lime-500/30 bg-lime-500/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-lime-300 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-cyan-300 uppercase tracking-wider">
                 <Shield size={10} />
                 {roleLabel} Active
               </span>
