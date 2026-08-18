@@ -33,45 +33,26 @@ export function AuthModal({
 
   if (!isOpen) return null;
 
-  function handleSocialLogin(provider: "google" | "github") {
-    setLoadingType(provider);
-
-    const width = 520;
-    const height = 620;
-    const left = typeof window !== "undefined" ? window.screenX + (window.outerWidth - width) / 2 : 100;
-    const top = typeof window !== "undefined" ? window.screenY + (window.outerHeight - height) / 2 : 100;
-    
-    const authUrl =
-      provider === "google"
-        ? "https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin"
-        : "https://github.com/login";
-
-    let popup: Window | null = null;
+  function handleGoogleLogin() {
+    setLoadingType("google");
     if (typeof window !== "undefined") {
-      popup = window.open(
-        authUrl,
-        `${provider}Auth`,
-        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=yes`
-      );
+      window.sessionStorage.setItem("trace:user-name", "Google User");
+      window.sessionStorage.setItem("trace:demo-role", "student");
+      window.sessionStorage.setItem("trace:auth-provider", "google");
+      // Open real Google Account Chooser
+      window.location.href = "https://accounts.google.com/AccountChooser?service=lso&continue=https%3A%2F%2Ftrace-seven-alpha.vercel.app%2Fdashboard";
     }
+  }
 
-    // Monitor popup window closure
-    const pollTimer = window.setInterval(() => {
-      if (!popup || popup.closed) {
-        window.clearInterval(pollTimer);
-        const userName = provider === "google" ? "Google User" : "GitHub Developer";
-        window.sessionStorage.setItem("trace:user-name", userName);
-        window.sessionStorage.setItem("trace:demo-role", "student");
-        window.sessionStorage.setItem("trace:auth-provider", provider);
-        setSuccessMsg(`Signed in with ${provider === "google" ? "Google" : "GitHub"}!`);
-        setTimeout(() => {
-          setLoadingType(null);
-          setSuccessMsg(null);
-          onClose();
-          window.location.reload();
-        }, 500);
-      }
-    }, 800);
+  function handleGitHubLogin() {
+    setLoadingType("github");
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("trace:user-name", "GitHub Developer");
+      window.sessionStorage.setItem("trace:demo-role", "student");
+      window.sessionStorage.setItem("trace:auth-provider", "github");
+      // Open real GitHub Login/Authorize
+      window.location.href = "https://github.com/login?return_to=https%3A%2F%2Ftrace-seven-alpha.vercel.app%2Fdashboard";
+    }
   }
 
   function handleCredentialsSubmit(e: React.FormEvent) {
@@ -137,11 +118,11 @@ export function AuthModal({
 
         {/* Social Buttons */}
         <div className="space-y-2.5">
-          {/* Google */}
+          {/* Google Account Chooser */}
           <button
             type="button"
             disabled={loadingType !== null}
-            onClick={() => handleSocialLogin("google")}
+            onClick={handleGoogleLogin}
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-xs sm:text-sm font-semibold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer disabled:opacity-50"
           >
             {loadingType === "google" ? (
@@ -171,11 +152,11 @@ export function AuthModal({
             )}
           </button>
 
-          {/* GitHub */}
+          {/* GitHub Login */}
           <button
             type="button"
             disabled={loadingType !== null}
-            onClick={() => handleSocialLogin("github")}
+            onClick={handleGitHubLogin}
             className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#161a24] px-4 py-3 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-[#1f2433] hover:border-white/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
           >
             {loadingType === "github" ? (
