@@ -31,6 +31,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  distDir: process.env.VERCEL ? "../.next" : ".next",
   allowedDevOrigins: ["127.0.0.1"],
   output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
   async headers() {
