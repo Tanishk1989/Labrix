@@ -83,34 +83,34 @@ export function AccountDropdown({
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Trigger Button */}
+      {/* Trigger Button - Borderless Premium Minimal Design */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.04] py-1.5 pl-3 pr-2.5 text-xs font-medium text-white/90 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white cursor-pointer group focus:outline-none focus:ring-2 focus:ring-lime-400/40"
+        className="flex items-center gap-2.5 py-1 px-1 text-xs font-medium text-white/90 transition-all hover:text-white cursor-pointer group focus:outline-none"
       >
         {/* User Info on Medium/Large Screens */}
-        <div className="hidden sm:flex flex-col items-end text-right leading-none gap-0.5 mr-0.5">
-          <span className="truncate max-w-[130px] text-xs font-semibold text-white group-hover:text-lime-300 transition-colors">
+        <div className="hidden sm:flex flex-col items-end text-right leading-none gap-1 mr-1">
+          <span className="truncate max-w-[140px] text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
             {name}
           </span>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-lime-400 font-bold">
+          <span className="text-[9.5px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
             {roleLabel}
           </span>
         </div>
 
         {/* Avatar Bubble */}
-        <span className="grid size-7 place-items-center rounded-full border border-lime-400/40 bg-gradient-to-tr from-lime-600/30 to-emerald-500/20 text-xs font-bold text-lime-300 shadow-[0_0_10px_rgba(163,230,53,0.2)]">
+        <span className="grid size-8 place-items-center rounded-full border border-emerald-400/40 bg-gradient-to-tr from-emerald-600/30 to-teal-500/20 text-xs font-bold text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
           {avatar}
         </span>
 
         {/* Subtle Chevron */}
         <ChevronDown
-          size={14}
-          className={`text-white/50 transition-transform duration-200 group-hover:text-white ${
-            isOpen ? "rotate-180 text-lime-400" : ""
+          size={13}
+          className={`text-white/40 transition-transform duration-200 group-hover:text-white ${
+            isOpen ? "rotate-180 text-emerald-400" : ""
           }`}
         />
       </button>

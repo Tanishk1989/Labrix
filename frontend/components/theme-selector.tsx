@@ -26,16 +26,14 @@ export function ThemeSelector() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="group inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white"
+        className="group relative flex size-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition-all hover:scale-110 hover:border-white/25 hover:bg-white/[0.08]"
         aria-label="Change Theme Preset"
-        title="Change UI Theme"
+        title={`Current Theme: ${currentPreset.name}`}
       >
         <span
-          className="size-2 rounded-full shadow-[0_0_10px_rgba(var(--spotlight-rgb),0.8)] transition-transform group-hover:scale-125"
+          className="size-3 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.4)] transition-transform group-hover:scale-125"
           style={{ backgroundColor: currentPreset.accentColor }}
         />
-        <span className="hidden sm:inline font-medium">{currentPreset.name.split(" ")[0]}</span>
-        <Palette size={12} className="opacity-70 group-hover:rotate-12 transition-transform" />
       </button>
 
       {isOpen && (

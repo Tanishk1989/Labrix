@@ -8,7 +8,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type F
 import { useIdentityMode } from "@/components/identity-mode-provider";
 import { ThemeSelector } from "@/components/theme-selector";
 import { CommandPalette } from "@/components/command-palette";
-import { TraceLogo } from "@/components/trace-logo";
+import { TraceLogo, TraceMark } from "@/components/trace-logo";
 import { AccountDropdown } from "@/components/account-dropdown";
 import type { DemoRole } from "@/domain/tasks/models";
 
@@ -88,8 +88,8 @@ function Wordmark({ onNavigate }: { onNavigate?: () => void }) {
       className="inline-flex items-center gap-2.5 shrink-0 group focus:outline-none"
       aria-label="TRACE home"
     >
-      <div className="grid size-8.5 place-items-center rounded-xl border border-emerald-500/30 bg-black/60 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all group-hover:scale-105 group-hover:border-emerald-400">
-        <TraceLogo size={18} />
+      <div className="grid size-8 place-items-center rounded-xl border border-emerald-500/30 bg-black/60 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all group-hover:scale-105 group-hover:border-emerald-400">
+        <TraceMark size={18} />
       </div>
       <div className="flex items-center gap-1.5">
         <span className="text-sm font-extrabold tracking-tight text-white">

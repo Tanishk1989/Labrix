@@ -150,19 +150,15 @@ export function CommandPalette() {
 
   return (
     <>
-      {/* Search trigger pill in header */}
+      {/* Compact Search Logo Icon Button */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="group relative hidden md:inline-flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-3.5 py-1.5 text-xs text-white/70 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:scale-[1.03] hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white"
+        className="group relative flex size-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition-all hover:scale-110 hover:border-white/25 hover:bg-white/[0.08]"
         aria-label="Open Command Search"
+        title="Search or jump to... (⌘K)"
       >
-        <Search size={13} className="text-[var(--color-brand)] transition-transform group-hover:scale-110" />
-        <span className="font-medium tracking-tight">Search or jump to...</span>
-        <div className="flex items-center gap-0.5 rounded-md border border-white/[0.12] bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-white/50">
-          <Command size={10} className="opacity-80" />
-          <span>K</span>
-        </div>
+        <Search size={14} className="text-white/70 transition-transform group-hover:scale-110 group-hover:text-emerald-400" />
       </button>
 
       {isOpen && (
