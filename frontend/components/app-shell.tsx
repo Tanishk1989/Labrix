@@ -131,9 +131,17 @@ function CompactAccount({ name, roleLabel, avatar, showClerk }: { name: string; 
       {showClerk ? (
         <UserButton />
       ) : (
-        <span className="grid size-8 place-items-center rounded-full border border-white/20 bg-white/[0.08] text-xs font-bold text-white shadow-sm" aria-label={`${name}, ${roleLabel}`}>
-          {avatar}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="grid size-8 place-items-center rounded-full border border-white/20 bg-white/[0.08] text-xs font-bold text-white shadow-sm" aria-label={`${name}, ${roleLabel}`}>
+            {avatar}
+          </span>
+          <Link
+            href="/sign-in"
+            className="hidden sm:inline-flex text-[11px] font-semibold text-cyan-300 hover:text-white px-2.5 py-1 rounded-lg border border-cyan-500/20 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
+          >
+            Sign In
+          </Link>
+        </div>
       )}
     </div>
   );

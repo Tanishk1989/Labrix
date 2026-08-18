@@ -24,19 +24,46 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/server/*": ["../backend/server/*"],
-      "@/data/*": ["../backend/data/*"],
-      "@/domain/*": ["../backend/domain/*"],
-      "@/lib/*": ["../backend/lib/*"],
-      "@/runner/*": ["../backend/runner/*"],
-      "@/prisma/*": ["../backend/prisma/*"],
-      "@/components/*": ["./components/*"],
-      "@/features/*": ["./features/*"],
-      "@/app/*": ["./app/*"],
-      "@/proxy": ["./proxy"],
-      "@/*": ["./*", "../backend/*"],
-      "@frontend/*": ["./*"],
-      "@backend/*": ["../backend/*"]
+      "@/server/*": [
+        "../backend/server/*"
+      ],
+      "@/data/*": [
+        "../backend/data/*"
+      ],
+      "@/domain/*": [
+        "../backend/domain/*"
+      ],
+      "@/lib/*": [
+        "../backend/lib/*"
+      ],
+      "@/runner/*": [
+        "../backend/runner/*"
+      ],
+      "@/prisma/*": [
+        "../backend/prisma/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/features/*": [
+        "./features/*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/proxy": [
+        "./proxy"
+      ],
+      "@/*": [
+        "./*",
+        "../backend/*"
+      ],
+      "@frontend/*": [
+        "./*"
+      ],
+      "@backend/*": [
+        "../backend/*"
+      ]
     }
   },
   "include": [
@@ -45,7 +72,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "../.next/types/**/*.ts",
+    "../.next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
