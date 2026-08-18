@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, ArrowRight, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { TraceMark } from "@/components/trace-logo";
 
 export function AuthModal({
@@ -11,10 +12,12 @@ export function AuthModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<"google" | "github" | "email" | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape key
@@ -32,13 +35,45 @@ export function AuthModal({
 
   if (!isOpen) return null;
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  function handleSocialLogin(provider: "google" | "github") {
+    setLoadingType(provider);
+    
     setTimeout(() => {
-      setLoading(false);
-      onClose();
-    }, 400);
+      if (typeof window !== "undefined") {
+        const userName = provider === "google" ? "Google Student" : "GitHub Developer";
+        window.sessionStorage.setItem("trace:user-name", userName);
+        window.sessionStorage.setItem("trace:demo-role", "student");
+        window.sessionStorage.setItem("trace:auth-provider", provider);
+      }
+      setSuccessMsg(`Signed in with ${provider === "google" ? "Google" : "GitHub"}!`);
+      setTimeout(() => {
+        setLoadingType(null);
+        setSuccessMsg(null);
+        onClose();
+        // Refresh page state
+        window.location.reload();
+      }, 500);
+    }, 600);
+  }
+
+  function handleCredentialsSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoadingType("email");
+    
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        const nameFromEmail = email.split("@")[0] || "Student";
+        window.sessionStorage.setItem("trace:user-name", nameFromEmail);
+        window.sessionStorage.setItem("trace:demo-role", "student");
+      }
+      setSuccessMsg("Logged in successfully!");
+      setTimeout(() => {
+        setLoadingType(null);
+        setSuccessMsg(null);
+        onClose();
+        window.location.reload();
+      }, 500);
+    }, 600);
   }
 
   return (
@@ -74,45 +109,67 @@ export function AuthModal({
           </div>
         </div>
 
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-semibold text-emerald-300">
+            <CheckCircle2 size={15} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
         {/* Social Buttons */}
         <div className="space-y-2.5">
           {/* Google */}
           <button
             type="button"
-            onClick={handleSubmit}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-xs sm:text-sm font-semibold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer"
+            disabled={loadingType !== null}
+            onClick={() => handleSocialLogin("google")}
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-xs sm:text-sm font-semibold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer disabled:opacity-50"
           >
-            <svg className="size-4.5" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5c1.7 0 3 .6 4 1.5l3-3C17.2 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-              />
-            </svg>
-            <span>Continue with Google</span>
+            {loadingType === "google" ? (
+              <Loader2 size={16} className="animate-spin text-slate-900" />
+            ) : (
+              <>
+                <svg className="size-4.5" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12 5c1.7 0 3 .6 4 1.5l3-3C17.2 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
+                  />
+                </svg>
+                <span>Continue with Google</span>
+              </>
+            )}
           </button>
 
           {/* GitHub */}
           <button
             type="button"
-            onClick={handleSubmit}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#161a24] px-4 py-3 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-[#1f2433] hover:border-white/20 active:scale-[0.99] cursor-pointer"
+            disabled={loadingType !== null}
+            onClick={() => handleSocialLogin("github")}
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-[#161a24] px-4 py-3 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-[#1f2433] hover:border-white/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
           >
-            <svg className="size-4.5 fill-current" viewBox="0 0 24 24">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            <span>Continue with GitHub</span>
+            {loadingType === "github" ? (
+              <Loader2 size={16} className="animate-spin text-white" />
+            ) : (
+              <>
+                <svg className="size-4.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                <span>Continue with GitHub</span>
+              </>
+            )}
           </button>
         </div>
 
@@ -125,16 +182,17 @@ export function AuthModal({
         </div>
 
         {/* Credentials Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleCredentialsSubmit} className="space-y-3.5">
           <div>
             <label className="block text-xs font-semibold text-white/70 mb-1">
               Email
             </label>
             <input
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@university.edu"
+              placeholder="student@university.edu"
               className="w-full rounded-xl border border-white/10 bg-[#161a24] px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/50 transition-all"
             />
           </div>
@@ -146,6 +204,7 @@ export function AuthModal({
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -163,10 +222,10 @@ export function AuthModal({
 
           <button
             type="submit"
-            disabled={loading}
-            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer"
+            disabled={loadingType !== null}
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer disabled:opacity-50"
           >
-            {loading ? (
+            {loadingType === "email" ? (
               <Loader2 size={16} className="animate-spin text-slate-900" />
             ) : (
               <>

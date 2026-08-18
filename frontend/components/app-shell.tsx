@@ -201,6 +201,7 @@ function DemoPreviewBadge({ interactive }: { interactive: boolean }) {
 export function AppShell({ role, setRole, actor, children }: { role: DemoRole; setRole: (role: DemoRole) => void; actor?: ShellActor; children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [customUser, setCustomUser] = useState<string | null>(null);
   const [navigationPending, setNavigationPending] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const pathname = usePathname() ?? "/";
@@ -208,10 +209,16 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   const identityMode = useIdentityMode();
   const rolePreviewAvailable = identityMode === "demo" && supportsDemoRolePreview(pathname);
   const actorRole: DemoRole = actor?.role === "STUDENT" ? "student" : "teacher";
-  const effectiveRole: DemoRole = identityMode === "clerk" ? actorRole : rolePreviewAvailable ? role : actorRole;
-  const profileName = identityMode === "demo" ? effectiveRole === "teacher" ? actor?.name ?? "Demo teacher" : "Demo student" : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student");
+  const effectiveRole: DemoRole = customUser ? "student" : identityMode === "clerk" ? actorRole : rolePreviewAvailable ? role : actorRole;
+  const profileName = customUser ?? (identityMode === "demo" ? effectiveRole === "teacher" ? actor?.name ?? "Demo teacher" : "Demo student" : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student"));
   const profileLabel = effectiveRole === "teacher" ? "Teacher" : "Student";
   const avatar = useMemo(() => initials(profileName), [profileName]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCustomUser(window.sessionStorage.getItem("trace:user-name"));
+    }
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setNavigationPending(false), 0);
