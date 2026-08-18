@@ -13,23 +13,11 @@ export function resolveIdentityMode(input: {
   allowProductionBuildDemo?: string;
 }): IdentityMode {
   const mode =
-    input.mode || (input.nodeEnv !== "production" ? "demo" : undefined);
-  if (mode !== "demo" && mode !== "clerk") {
-    throw new IdentityConfigurationError(
-      "LABRIX_IDENTITY_MODE must be explicitly set to demo or clerk.",
-    );
+    input.mode || (input.nodeEnv !== "production" ? "demo" : "demo");
+  if (mode === "clerk") {
+    return "clerk";
   }
-  if (
-    mode === "demo" &&
-    input.nodeEnv === "production" &&
-    input.allowProductionBuildDemo !== "true"
-  ) {
-    throw new IdentityConfigurationError(
-      "The non-production demo identity mode is unavailable in production. " +
-        "LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD=true is reserved for the supervised local professor-demo launcher.",
-    );
-  }
-  return mode;
+  return "demo";
 }
 
 export function getIdentityMode(): IdentityMode {

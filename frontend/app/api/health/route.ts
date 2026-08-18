@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
+import { validateEnvironment } from "@/server/config/env-validator";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export async function GET() {
         latencyMs: dbLatencyMs,
       },
       environment: process.env.NODE_ENV ?? "development",
+      systemConfig: validateEnvironment(),
     },
     {
       status: 200,

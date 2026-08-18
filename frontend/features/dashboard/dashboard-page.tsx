@@ -7,6 +7,7 @@ import { DashboardMetricStrip } from "./dashboard-metric-strip";
 import { buildTeacherDashboardViewModel } from "./dashboard-view-model";
 import { LatestTeachingContext } from "./latest-teaching-context";
 import { RecentDashboardActivity } from "./recent-dashboard-activity";
+import { TeacherQuickStartGuide } from "./teacher-quick-start-guide";
 import { WhatNeedsYou } from "./what-needs-you";
 
 export function TeacherDashboardPage({ overview }: { overview: TeacherOverview }) {
@@ -46,6 +47,8 @@ export function TeacherDashboardPage({ overview }: { overview: TeacherOverview }
           </Link>
         </section>
       ) : null}
+
+      <TeacherQuickStartGuide overview={overview} />
 
       <DashboardMetricStrip metrics={dashboard.metrics} />
 

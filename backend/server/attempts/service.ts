@@ -31,6 +31,10 @@ import {
   type ResultBreakdown,
 } from "@/server/execution/result-grading";
 import { executionRequestGuard } from "@/server/execution/request-guard";
+import {
+  computeStructuralSimilarity,
+  type PairwiseStructuralSimilarity,
+} from "@/server/evidence/structural-ast-comparator";
 
 export class SubmissionDeadlineError extends Error {
   constructor(message = "The deadline for this practical has passed. New submissions are no longer accepted.") {
@@ -792,6 +796,47 @@ export async function getSubmissionForTeacher(
     },
   });
   if (!submission) throw new AccessDeniedError();
+
+  const peerSubmissions = await prisma.submissionAttempt.findMany({
+    where: {
+      taskId: submission.taskId,
+      task: { classroom: { ownerTeacherId: teacherId } },
+      id: { not: submission.id },
+    },
+    select: {
+      id: true,
+      studentId: true,
+      student: { select: { name: true } },
+      sourceCodeSnapshot: true,
+      language: true,
+    },
+  });
+
+  const peerComparisons: PairwiseStructuralSimilarity[] = peerSubmissions
+    .filter((peer) => peer.language === submission.language)
+    .map((peer) =>
+      computeStructuralSimilarity(
+        {
+          id: submission.id,
+          studentName: submission.student.name,
+          sourceCode: submission.sourceCodeSnapshot,
+          language: submission.language,
+        },
+        {
+          id: peer.id,
+          studentName: peer.student.name,
+          sourceCode: peer.sourceCodeSnapshot,
+          language: peer.language,
+        },
+      ),
+    )
+    .sort(
+      (a, b) =>
+        b.structuralSimilarityPercentage - a.structuralSimilarityPercentage,
+    );
+
+  const topPeerMatch = peerComparisons[0] ?? null;
+
   const storedTestResults =
     submission.resultSnapshot.testResults as unknown as StoredTestResult[];
   const testCaseById = new Map(
@@ -816,6 +861,8 @@ export async function getSubmissionForTeacher(
       })),
       classroom: submission.task.classroom,
     },
+    cohortSimilarity: topPeerMatch,
+    peerComparisons: peerComparisons.slice(0, 5),
     result: {
       executionMode: disclosedSnapshotExecutionMode(
         submission.resultSnapshot.executionMode,
@@ -1003,43 +1050,79 @@ export async function getTeacherClassroomProgress(
       tasks: {
         where: { status: "PUBLISHED" },
         orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, title: true },
+        select: { id: true, title: true, maximumMarks: true },
       },
     },
   });
-  const task = classroom.tasks[0] ?? null;
+
+  const tasks = classroom.tasks;
+  const primaryTask = tasks[0] ?? null;
+
   const students = await Promise.all(
-    classroom.memberships.map(async ({ user }) => ({
-      ...user,
-      latestSubmission: task
-        ? await prisma.submissionAttempt.findFirst({
-            where: { taskId: task.id, studentId: user.id },
-            orderBy: { attemptNumber: "desc" },
-            select: {
-              id: true,
-              attemptNumber: true,
-              submittedAt: true,
-              language: true,
-              resultSnapshot: {
-                select: { passedTests: true, totalTests: true },
-              },
-            },
-          })
-        : null,
-    })),
+    classroom.memberships.map(async ({ user }) => {
+      const submissions = await prisma.submissionAttempt.findMany({
+        where: {
+          taskId: { in: tasks.map((t) => t.id) },
+          studentId: user.id,
+        },
+        orderBy: { attemptNumber: "desc" },
+        select: {
+          id: true,
+          taskId: true,
+          attemptNumber: true,
+          submittedAt: true,
+          language: true,
+          resultSnapshot: {
+            select: { passedTests: true, totalTests: true },
+          },
+        },
+      });
+
+      const submissionByTask = new Map(submissions.map((s) => [s.taskId, s]));
+      const primarySubmission = primaryTask
+        ? submissionByTask.get(primaryTask.id) ?? null
+        : null;
+
+      const practicalsProgress = tasks.map((t) => {
+        const sub = submissionByTask.get(t.id);
+        return {
+          taskId: t.id,
+          taskTitle: t.title,
+          submission: sub
+            ? {
+                id: sub.id,
+                attemptNumber: sub.attemptNumber,
+                submittedAt: sub.submittedAt.toISOString(),
+                language: sub.language,
+                passedTests: sub.resultSnapshot.passedTests,
+                totalTests: sub.resultSnapshot.totalTests,
+              }
+            : null,
+        };
+      });
+
+      return {
+        ...user,
+        latestSubmission: primarySubmission
+          ? {
+              id: primarySubmission.id,
+              attemptNumber: primarySubmission.attemptNumber,
+              submittedAt: primarySubmission.submittedAt.toISOString(),
+              language: primarySubmission.language,
+              resultSnapshot: primarySubmission.resultSnapshot,
+            }
+          : null,
+        practicals: practicalsProgress,
+        submittedCount: practicalsProgress.filter((p) => p.submission !== null).length,
+        totalPracticalsCount: tasks.length,
+      };
+    }),
   );
+
   return {
     classroom: { id: classroom.id, name: classroom.name },
-    task,
-    students: students.map((student) => ({
-      ...student,
-      latestSubmission: student.latestSubmission
-        ? {
-            ...student.latestSubmission,
-            submittedAt: student.latestSubmission.submittedAt.toISOString(),
-          }
-        : null,
-    })),
+    task: primaryTask,
+    tasks,
+    students,
   };
 }

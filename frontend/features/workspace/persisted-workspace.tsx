@@ -484,6 +484,15 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
                     syncedWithServer: false,
                   });
                 }}
+                onMount={(editor) => {
+                  editor.onDidPaste((e) => {
+                    const lineSpan = e.range.endLineNumber - e.range.startLineNumber + 1;
+                    if (lineSpan > 10) {
+                      setSaveMessage(`Large code block (${lineSpan} lines) inserted — recorded in session telemetry.`);
+                      setTimeout(() => setSaveMessage(undefined), 3500);
+                    }
+                  });
+                }}
                 theme="vs-dark"
                 options={{
                   minimap: { enabled: false },

@@ -18,7 +18,7 @@ import { StudentSubmissionResult } from "@/features/student/submission-result";
 import { FastGraderNavigator, type FastGraderItem } from "@/features/submission-review/fast-grader-navigator";
 import { DEFAULT_STARTER_CODES } from "@/domain/tasks/starter-code";
 import { analyzeAttemptProcess } from "@/server/evidence/integrity-engine";
-import { generateVivaDefense } from "@/server/evidence/viva-generator";
+import { generateVivaDefenseWithAI } from "@/server/evidence/ai-evidence-provider";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import {
   getSubmissionForStudent,
@@ -108,7 +108,7 @@ export default async function SubmissionReviewPage({
     submittedAt: review.submittedAt,
   });
 
-  const vivaDefense = generateVivaDefense({
+  const vivaDefense = await generateVivaDefenseWithAI({
     sourceCode: review.sourceCode,
     language: review.language,
     taskTitle: review.task.title,
@@ -117,6 +117,7 @@ export default async function SubmissionReviewPage({
       passed: review.result.passedTests,
       total: review.result.totalTests,
     },
+    topSimilarity: review.cohortSimilarity,
   });
 
   const fastGraderItems: FastGraderItem[] = queue.map((item) => ({
@@ -211,6 +212,8 @@ export default async function SubmissionReviewPage({
               submittedAt={review.submittedAt}
               sourceCode={review.sourceCode}
               language={review.language}
+              cohortSimilarity={review.cohortSimilarity}
+              peerComparisons={review.peerComparisons}
             />
             <details className="border-y border-[var(--border)] py-4">
               <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Activity and attempt context · {review.events.length} events</summary>

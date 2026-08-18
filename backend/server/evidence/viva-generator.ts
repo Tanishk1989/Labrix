@@ -38,6 +38,12 @@ export interface GenerateVivaInput {
   taskTitle: string;
   processAnalysis?: AttemptProcessAnalysis;
   testPassRatio?: { passed: number; total: number };
+  topSimilarity?: {
+    structuralSimilarityPercentage: number;
+    verdict: string;
+    variableRenamingDetected: boolean;
+    studentBName?: string;
+  } | null;
 }
 
 /**
@@ -153,8 +159,17 @@ export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationRes
     },
   ];
 
-  // Question 4: Process-Tied Question
-  if (input.processAnalysis && input.processAnalysis.draftCount <= 1) {
+  // Question 4: Process / Authorial Verification Probe
+  if (input.topSimilarity && (input.topSimilarity.structuralSimilarityPercentage >= 75 || input.topSimilarity.variableRenamingDetected)) {
+    questions.push({
+      id: "viva-q4-authorial-probe",
+      category: "PROCESS_GROUNDED_PROBE",
+      title: "Authorial Verification & Code Defense",
+      question: `Explain the exact sequence of state transformations in \`${primaryFunction}\`. If you had to rewrite this function live on the whiteboard without using your current variable names, what algorithmic invariant would you preserve?`,
+      expectedAnswerHint: "Student must demonstrate spontaneous, fluent understanding of the underlying logic rather than memorized variable names.",
+      rubricFocus: "Authentic Code Authorship (2–3 marks)",
+    });
+  } else if (input.processAnalysis && input.processAnalysis.draftCount <= 1) {
     questions.push({
       id: "viva-q4-process",
       category: "PROCESS_GROUNDED_PROBE",

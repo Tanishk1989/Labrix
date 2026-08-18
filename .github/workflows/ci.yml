@@ -1,0 +1,45 @@
+name: TRACE CI Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate-and-build:
+    name: Lint, Test & Production Build
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/labrix_ci?schema=public"
+      LABRIX_IDENTITY_MODE: "demo"
+      LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD: "true"
+      LABRIX_EXECUTION_PROVIDER: "mock"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder_key_for_ci_build"
+      CLERK_SECRET_KEY: "sk_test_placeholder_secret_for_ci_build"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Next.js Production Build
+        run: npm run build
