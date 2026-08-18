@@ -43,12 +43,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {mode === "clerk" ? (
+        {mode === "clerk" && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
           <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
-            signInFallbackRedirectUrl="/classes"
-            signUpFallbackRedirectUrl="/classes"
+            signInFallbackRedirectUrl="/dashboard"
+            signUpFallbackRedirectUrl="/dashboard"
           >
             {content}
           </ClerkProvider>

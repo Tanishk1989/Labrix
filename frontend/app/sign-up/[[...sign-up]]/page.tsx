@@ -16,7 +16,7 @@ export default function SignUpPage() {
 
         {/* Right Side: Auth Form */}
         <div className="lg:col-span-5 flex items-center justify-center lg:justify-end">
-          {mode === "clerk" ? (
+          {mode === "clerk" && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
             <SignUp
               appearance={{
                 elements: {
