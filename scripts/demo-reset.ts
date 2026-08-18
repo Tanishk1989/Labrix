@@ -7,8 +7,8 @@ if (!databaseUrl) {
   process.exit(1);
 }
 const host = new URL(databaseUrl).hostname.toLowerCase();
-if (/(^|[-.])(prod|production)([-.]|$)/.test(host)) {
-  console.error("Demo reset refused: the configured database host appears to be production.");
+if (!["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)) {
+  console.error("Demo reset refused: only a loopback development database may be reset.");
   process.exit(1);
 }
 const result = spawnSync("cmd.exe", ["/d", "/s", "/c", "npm.cmd run db:seed"], { stdio: "inherit", env: { ...process.env, DATABASE_URL: databaseUrl } });

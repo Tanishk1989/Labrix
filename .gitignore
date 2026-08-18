@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+node_modules/
 /node_modules
 /.pnp
 .pnp.*
@@ -11,18 +12,29 @@
 !.yarn/versions
 
 # testing
+coverage/
 /coverage
+test-results/
 /test-results/
+playwright-report/
 /playwright-report/
+blob-report/
 /blob-report/
+.tmp-*.png
 /.tmp-*.png
 
-# next.js
+# next.js & turbo
+.next/
 /.next/
-/out/
+frontend/.next/
+out/
+/out
+.turbo/
 
 # production
+build/
 /build
+dist/
 
 # misc
 .DS_Store
@@ -37,6 +49,8 @@ yarn-error.log*
 # local environment and secrets
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
 !.env.test.example
 *.key

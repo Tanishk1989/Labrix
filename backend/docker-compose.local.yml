@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    container_name: labrix-postgres-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: labrix
+      POSTGRES_USER: labrix
+      POSTGRES_PASSWORD: labrix-local-only
+    ports:
+      - "127.0.0.1:54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labrix -d labrix"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - labrix_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  labrix_postgres_data:

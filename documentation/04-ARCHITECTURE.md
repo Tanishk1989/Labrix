@@ -1,0 +1,90 @@
+# Architecture
+
+## Current vertical slice
+
+Labrix uses Next.js 16.3 App Router, React 19.2, strict TypeScript, Prisma 6/PostgreSQL, Monaco, Zod, Vitest, and Playwright.
+
+```mermaid
+flowchart TB
+  UI["Workspace and review UI"] --> A["Server actions / server pages"]
+  A --> ID["Explicit demo or Clerk identity adapter"]
+  ID -->|"Clerk"| MAP["ExternalIdentity to local User"]
+  MAP --> AUTHZ
+  ID -->|"Demo"| AUTHZ["Membership and teacher-ownership checks"]
+  AUTHZ --> SVC["Attempt service"]
+  SVC --> DB[("PostgreSQL via Prisma")]
+  SVC --> EP["ServerExecutionProvider"]
+  EP --> MOCK["Deterministic mock; no code execution"]
+  EP -. "explicit local opt-in" .-> JHTTP["Loopback Java HTTP adapter"]
+  JHTTP --> WORKER["Separate single-flight Java worker"]
+  WORKER --> DOCKER["Fresh locked-down Docker container per request"]
+  DB --> REVIEW["Persisted teacher progress and review"]
+```
+
+The browser sends resource IDs and source input, never a trusted user ID, provider subject, role, or account status. Every persisted page/action resolves its actor server-side, and services re-check membership/ownership with the requested resource.
+
+Clerk is integrated behind a provider-neutral adapter. The identity foundation stores local `User.accountStatus` and optional `ExternalIdentity` records. Existing demo users require no external identity. The implemented Clerk resolver is:
+
+```mermaid
+flowchart LR
+  C["Clerk-validated server session"] --> S["Provider subject"]
+  S --> E["ExternalIdentity"]
+  E --> U["Labrix User"]
+  U --> P["Local account status, role, ownership, membership, and permissions"]
+```
+
+Clerk establishes identity and session validity only. PostgreSQL remains authoritative for authorization. Email, browser-selected roles, and provider metadata are not identity-linking or authorization inputs. Missing, malformed, unlinked, disabled, or unavailable Clerk identity fails closed.
+
+`src/proxy.ts` performs an optimistic signed-in check and keeps authentication/static routes reachable. It is not the authorization boundary. `resolveCurrentActor()` runs again beside every protected database read or mutation. `demo` mode is local/test-only and production rejects it; `clerk` mode never falls back.
+
+The supervised professor-demo launcher may serve an optimized production build on loopback while retaining seeded demo actors. That narrow path requires the exact `LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD=true` acknowledgement set by the launcher, binds Next.js to `127.0.0.1`, and displays a local-demo runtime label. The exception is for production-build presentation quality, not for deployed production identity or authorization.
+
+Teacher classroom queries are owner-scoped. Latest-practical completion is derived from active student memberships and distinct submission student IDs. Client autosave compares source/language with the last successfully persisted version; the server repeats that comparison transactionally before changing a draft, timestamp, revision, or event timeline.
+
+Progress presentation treats that derived percentage strictly as submission coverage. The latest immutable attempt for each student-practical pair independently supplies its provided-test outcome, and the attempt review independently supplies draft/published teacher-review state. A compilation error may therefore be submitted while remaining not passed and not reviewed; the UI never collapses those dimensions into a single completion verdict.
+
+Each `Task` may store nullable Java and C++ starter-code fields. Null keeps legacy practicals readable through built-in defaults. A new coding session copies only the selected language template into its mutable `Draft`; later authoring edits never rewrite an existing draft. The workspace swaps templates on language change only while the browser still holds an untouched, never-persisted default.
+
+The teacher review-queue DTO is also classroom-owner scoped. It returns submission metadata, aggregate result status, suggested score, teacher marks, and a derived review status without returning draft feedback text. Student DTOs remain separate and expose only published reviews belonging to that student.
+
+The practical-analytics DTO is classroom-owner scoped and read-only. It selects active student memberships and reduces only each student's latest immutable attempt for the selected published practical. It returns aggregate counters, pass rates, review state, and deterministic attention-reason codes; it does not return test-case contents, hidden result details, source code, or draft feedback.
+
+Roster reads and mutations use a server-only classroom service. Deactivation and owner-only reactivation atomically update only the existing membership `active` flag and append a `MembershipAuditEntry` after role and classroom-owner checks; the `(classroomId, userId)` uniqueness constraint prevents duplicate memberships and historical coding/review relations remain untouched. Owner-scoped roster reads return the recent audit trail, while student DTOs do not include it. An inactive member cannot self-reactivate through the join-code action. Join-code regeneration updates the existing unique classroom code, so no invitation record is required for these MVP controls.
+
+## Persisted model
+
+- `CodingSession`: one numbered practical attempt; a partial unique database index permits only one active session per student/practical.
+- `Draft`: the one mutable source buffer for a session.
+- `RunAttempt`: immutable source used for one server-owned provider request.
+- `ResultSnapshot`: provider outcome, per-test JSON, nullable visible/hidden counters, nullable suggested score, and nullable execution mode; updates are rejected by a database trigger. Nullable additions keep legacy snapshots readable without rewriting them.
+- `SubmissionAttempt`: numbered exact source plus associated result; updates are rejected by a database trigger.
+- `RubricCriterion`: optional ordered 2–5 criterion task-owned grading contract whose marks total the practical maximum.
+- `SubmissionReview`: current teacher-authored marks/feedback attached one-to-one to an immutable attempt; only the current published review and criterion scores are returned to the owning student.
+- `SubmissionReviewRevision`: append-only snapshot created for every draft or publish save, retained for teacher audit without exposing historical drafts to students.
+- `CodeEvent`: ordered, server-timestamped foundation events with relevant run/submission IDs.
+- `User.accountStatus`: local `ACTIVE`/`DISABLED` lifecycle policy; existing users default to `ACTIVE`.
+- `ExternalIdentity`: optional provider/subject link to an existing local user. Composite uniqueness prevents a provider subject from mapping twice and prevents duplicate same-provider identities for one local user.
+- `MembershipAuditEntry`: append-only record of owner-authorized membership deactivation/reactivation with classroom, membership, student, acting teacher, optional reason, and server timestamp. Restrictive foreign keys preserve its references.
+
+Submission creation uses a serializable transaction to create the attempt, close the active session, and append its event. Unique constraints enforce attempt numbering, one submission per session, one result per submission, and student-scoped idempotency.
+
+## Route boundary
+
+- **Database-backed:** `/dashboard`, `/classes`, `/classes/[classroomId]`, `/classes/[classroomId]/tasks/new`, `/classes/[classroomId]/tasks/[taskId]/edit`, `/practicals`, `/practicals/[taskId]`, `/progress`, `/tasks/[taskId]`, `/classes/[classroomId]/students`, `/submissions`, and `/submissions/[submissionId]`. Teacher queries are ownership-scoped; student queries are active-membership and resource-ownership scoped.
+- **Retired legacy aliases:** `/` redirects to `/dashboard`, `/classes/[classroomId]/tasks` redirects to the filtered persisted `/practicals` route, and `/tasks/[taskId]/my-submissions` redirects to filtered persisted `/submissions`.
+
+`src/app/[[...slug]]/page.tsx` is now a redirect/404 quarantine only. It contains no product UI or mock data: known aliases redirect, while all other unmatched paths call `notFound()`. New product behavior must use explicit routes and server services.
+
+## Execution and evidence boundaries
+
+No student source runs in Next.js. The default server provider only simulates deterministic feedback. The supervised local `local-docker` mode resolves the submitted language server-side and selects the corresponding Java or C++ loopback adapter; it never falls back to simulation. Each adapter has an HTTP deadline, bounded response parsing, language enforcement, and fail-closed response validation, and never invokes a compiler, Docker, a shell, or child process inside Next.js. The separate workers create disposable constrained containers per request. They remain local single-flight proofs only; a production adapter still requires an accepted provider decision, durable queueing, retry/outage policy, image lifecycle, observability, concurrency targets, and abuse testing.
+
+Before provider dispatch, a process-local execution guard serializes work by student and coding session. It rejects overlapping Run or Submit requests, applies a one-second cooldown between Run starts, and leaves Submit retries governed by the existing idempotency key once no execution is active. Rejections happen before a `RunAttempt` or `ResultSnapshot` is created. This is a single-instance abuse and double-click guard, not a distributed production queue; multi-instance deployment still requires shared coordination and rate limiting.
+
+Each server execution provider exposes a runtime descriptor: the default mock is `simulated`, the opt-in loopback Java provider is `java-docker-local`, and the opt-in loopback C++ provider is `cpp-docker-local`. New `ResultSnapshot` rows persist that mode as a nullable enum, so fresh responses and reloaded student/teacher details use the same **Simulated execution**, **Java Docker runner**, or **C++ Docker runner** label. Historical snapshots remain null and disclose **Execution mode unavailable**; provider identity is never inferred from language or the current environment.
+
+The local worker supplies source and one test input at a time over `docker exec` standard input. It does not mount the repository, Docker socket, application environment, or database credentials into the sandbox. The container uses a pinned Java 21 image, a non-root user, a read-only root filesystem, bounded temporary filesystems, no network, no Linux capabilities, and forced cleanup. Hidden expected outputs stay in the worker process and are never written into the container.
+
+Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
+
+Only five foundation events are captured. No raw keystrokes, clipboard contents, tab tracking, screen/webcam recording, suspicion signal, cheating score, or AI output exists in this slice.

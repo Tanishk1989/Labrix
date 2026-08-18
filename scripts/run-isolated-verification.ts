@@ -67,6 +67,7 @@ if (target === "read-only") {
         resolve(process.cwd(), "node_modules/prisma/build/index.js"),
         "migrate",
         "deploy",
+        "--schema=backend/prisma/schema.prisma",
         ...forwardedArguments,
       ]
     : target === "integration"
@@ -74,12 +75,14 @@ if (target === "read-only") {
           resolve(process.cwd(), "node_modules/vitest/vitest.mjs"),
           "run",
           "--config",
-          "vitest.integration.config.ts",
+          "tests/vitest.integration.config.ts",
           ...forwardedArguments,
         ]
       : [
           resolve(process.cwd(), "node_modules/@playwright/test/cli.js"),
           "test",
+          "--config",
+          "tests/playwright.config.ts",
           ...forwardedArguments,
         ];
 }
@@ -96,6 +99,6 @@ if (status !== 0 || target !== "prepare") process.exit(status);
 
 const seedStatus = run([
   resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs"),
-  resolve(process.cwd(), "prisma/seed.ts"),
+  resolve(process.cwd(), "backend/prisma/seed.ts"),
 ]);
 process.exit(seedStatus);

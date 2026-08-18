@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "incremental": true,
+    "module": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/server/*": ["../backend/server/*"],
+      "@/data/*": ["../backend/data/*"],
+      "@/domain/*": ["../backend/domain/*"],
+      "@/lib/*": ["../backend/lib/*"],
+      "@/runner/*": ["../backend/runner/*"],
+      "@/prisma/*": ["../backend/prisma/*"],
+      "@/components/*": ["./components/*"],
+      "@/features/*": ["./features/*"],
+      "@/app/*": ["./app/*"],
+      "@/proxy": ["./proxy"],
+      "@/*": ["./*", "../backend/*"],
+      "@frontend/*": ["./*"],
+      "@backend/*": ["../backend/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

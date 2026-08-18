@@ -29,6 +29,8 @@ describe("create practical validation", () => {
   });
   it("allows empty stdin", () =>
     expect(createPracticalPublishSchema.safeParse(valid).success).toBe(true));
+  it("allows publishing without test cases", () =>
+    expect(createPracticalPublishSchema.safeParse({ ...valid, testCases: [] }).success).toBe(true));
   it("rejects a past publish deadline", () =>
     expect(
       createPracticalPublishSchema.safeParse({

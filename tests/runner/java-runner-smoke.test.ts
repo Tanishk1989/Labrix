@@ -1,13 +1,13 @@
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createJavaRunnerServer } from "../../runner/java/server";
+import { createJavaRunnerServer } from "../../backend/runner/java/server";
 import {
   JAVA_RUNNER_OUTPUT_BYTES,
   JAVA_RUNNER_WALL_TIME_MS,
   javaRunnerResponseSchema,
   type JavaRunnerRequest,
   type JavaRunnerResponse,
-} from "../../src/server/execution/java-runner-protocol";
+} from "../../backend/server/execution/java-runner-protocol";
 
 const server = createJavaRunnerServer();
 let endpoint = "";

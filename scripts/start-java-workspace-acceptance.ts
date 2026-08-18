@@ -1,7 +1,7 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { JAVA_RUNNER_IMAGE } from "../runner/java/docker-executor";
+import { JAVA_RUNNER_IMAGE } from "../backend/runner/java/docker-executor";
 import {
   configuredDevelopmentDatabaseUrl,
   verificationValue,
@@ -102,7 +102,7 @@ async function main() {
     process.execPath,
     [
       resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs"),
-      resolve(process.cwd(), "runner/java/server.ts"),
+      resolve(process.cwd(), "backend/runner/java/server.ts"),
     ],
     { env: runnerEnvironment(), stdio: "inherit" },
   );
@@ -127,6 +127,7 @@ async function main() {
     [
       resolve(process.cwd(), "node_modules/next/dist/bin/next"),
       "dev",
+      "frontend",
       "--hostname",
       "127.0.0.1",
       "--port",

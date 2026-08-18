@@ -1,13 +1,13 @@
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCppRunnerServer } from "../../runner/cpp/server";
+import { createCppRunnerServer } from "../../backend/runner/cpp/server";
 import {
   CPP_RUNNER_OUTPUT_BYTES,
   CPP_RUNNER_WALL_TIME_MS,
   cppRunnerResponseSchema,
   type CppRunnerRequest,
   type CppRunnerResponse,
-} from "../../src/server/execution/cpp-runner-protocol";
+} from "../../backend/server/execution/cpp-runner-protocol";
 
 const server = createCppRunnerServer();
 let endpoint = "";

@@ -1,7 +1,7 @@
 import { loadEnvConfig } from "@next/env";
 import { z } from "zod";
-import { prisma } from "../src/lib/db/prisma";
-import { linkExternalIdentity } from "../src/server/actors/link-external-identity";
+import { prisma } from "../backend/lib/db/prisma";
+import { linkExternalIdentity } from "../backend/server/actors/link-external-identity";
 
 loadEnvConfig(process.cwd());
 

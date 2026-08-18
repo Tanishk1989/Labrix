@@ -1,0 +1,40 @@
+<svg width="180" height="180" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Cyan to Electric Indigo/Magenta Laser Gradient -->
+    <linearGradient id="trace-apple-beam" x1="6" y1="8" x2="42" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="45%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+    <linearGradient id="trace-apple-stem" x1="20" y1="14" x2="28" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="55%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#00F0FF" />
+    </linearGradient>
+    <linearGradient id="trace-apple-sheen" x1="6" y1="8" x2="42" y2="8" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Glow Underlay -->
+  <path d="M 8 10 H 40 V 17 H 28 V 40 H 20 V 17 H 8 Z" fill="url(#trace-apple-beam)" opacity="0.35" />
+
+  <!-- Top Crossbar - Precision Beveled Facet -->
+  <path d="M 7 9 C 7 7.895 7.895 7 9 7 H 39 C 40.105 7 41 7.895 41 9 V 15 C 41 16.105 40.105 17 39 17 H 9 C 7.895 17 7 16.105 7 15 V 9 Z" fill="url(#trace-apple-beam)" />
+  <path d="M 9 8.5 H 39 C 39.55 8.5 40 8.95 40 9.5 V 10.5 C 40 11.05 39.55 11.5 39 11.5 H 9 C 8.45 11.5 8 11.05 8 10.5 V 9.5 C 8 8.95 8.45 8.5 9 8.5 Z" fill="url(#trace-apple-sheen)" opacity="0.8" />
+
+  <!-- Vertical Core Column -->
+  <path d="M 20.5 15 H 27.5 V 39 C 27.5 40.657 26.157 42 24.5 42 H 23.5 C 21.843 42 20.5 40.657 20.5 39 V 15 Z" fill="url(#trace-apple-stem)" />
+
+  <!-- Central Laser Track Line -->
+  <path d="M 24 12 V 38" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity="0.9" />
+
+  <!-- Kinetic Telemetry Node Accents -->
+  <circle cx="24" cy="12" r="2.2" fill="#FFFFFF" />
+  <circle cx="24" cy="25" r="1.8" fill="#00F0FF" />
+  <circle cx="24" cy="38" r="2.2" fill="#00F0FF" />
+  <circle cx="9" cy="12" r="1.5" fill="#00F0FF" />
+  <circle cx="39" cy="12" r="1.5" fill="#EC4899" />
+</svg>

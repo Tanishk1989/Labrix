@@ -235,6 +235,19 @@ describe.sequential("teacher practical authoring lifecycle", () => {
     });
   });
 
+  it("allows a practical without test cases before student activity", async () => {
+    const result = await saveTeacherPractical(
+      practicalInput(draftTaskId, { testCases: [] }),
+    );
+    const task = await prisma.task.findUniqueOrThrow({
+      where: { id: draftTaskId },
+      include: { testCases: true },
+    });
+
+    expect(result).toMatchObject({ status: "DRAFT", testsChanged: true });
+    expect(task.testCases).toEqual([]);
+  });
+
   it("allows test replacement on a published practical before student activity", async () => {
     const result = await saveTeacherPractical(
       practicalInput(freshPublishedTaskId, {

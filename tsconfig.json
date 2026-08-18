@@ -18,14 +18,30 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/server/*": ["backend/server/*"],
+      "@/data/*": ["backend/data/*"],
+      "@/domain/*": ["backend/domain/*"],
+      "@/lib/*": ["backend/lib/*"],
+      "@/runner/*": ["backend/runner/*"],
+      "@/prisma/*": ["backend/prisma/*"],
+      "@/components/*": ["frontend/components/*"],
+      "@/features/*": ["frontend/features/*"],
+      "@/app/*": ["frontend/app/*"],
+      "@/proxy": ["frontend/proxy"],
+      "@/*": ["frontend/*", "backend/*"],
+      "@frontend/*": ["frontend/*"],
+      "@backend/*": ["backend/*"]
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "frontend/next-env.d.ts",
+    "frontend/**/*.ts",
+    "frontend/**/*.tsx",
+    "backend/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"

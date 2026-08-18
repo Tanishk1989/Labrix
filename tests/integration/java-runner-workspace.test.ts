@@ -10,7 +10,7 @@ import {
 import { getServerExecutionProvider } from "@/server/execution";
 import { JavaHttpExecutionProvider } from "@/server/execution/java-http-provider";
 import { ServerMockExecutionProvider } from "@/server/execution/mock-provider";
-import { createJavaRunnerServer } from "../../runner/java/server";
+import { createJavaRunnerServer } from "../../backend/runner/java/server";
 
 const suffix = randomUUID().slice(0, 8);
 const taskId = `java-workspace-acceptance-${suffix}`;

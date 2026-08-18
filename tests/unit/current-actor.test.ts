@@ -171,4 +171,21 @@ describe("authenticated current actor resolution", () => {
       }),
     ).rejects.toBeInstanceOf(IdentityConfigurationError);
   });
+
+  it("permits the exact supervised local production-build demo acknowledgement", async () => {
+    expect(
+      resolveIdentityMode({
+        mode: "demo",
+        nodeEnv: "production",
+        allowProductionBuildDemo: "true",
+      }),
+    ).toBe("demo");
+    expect(() =>
+      resolveIdentityMode({
+        mode: "demo",
+        nodeEnv: "production",
+        allowProductionBuildDemo: "TRUE",
+      }),
+    ).toThrow(IdentityConfigurationError);
+  });
 });

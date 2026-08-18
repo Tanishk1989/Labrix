@@ -10,7 +10,7 @@ import {
 import { getServerExecutionProvider } from "@/server/execution";
 import { CppHttpExecutionProvider } from "@/server/execution/cpp-http-provider";
 import { ServerMockExecutionProvider } from "@/server/execution/mock-provider";
-import { createCppRunnerServer } from "../../runner/cpp/server";
+import { createCppRunnerServer } from "../../backend/runner/cpp/server";
 
 const suffix = randomUUID().slice(0, 8);
 const taskId = `cpp-workspace-acceptance-${suffix}`;

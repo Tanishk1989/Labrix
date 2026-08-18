@@ -14,6 +14,8 @@ const validPractical = {
   testCases: [
     { clientId: "visible-1", input: "1", expectedOutput: "1", visible: true },
   ],
+  maximumMarks: 10,
+  rubricCriteria: [],
 };
 
 describe("practical publish validation", () => {
@@ -23,18 +25,19 @@ describe("practical publish validation", () => {
     );
   });
 
+  it("accepts a practical without test cases", () => {
+    expect(
+      createPracticalPublishSchema.safeParse({
+        ...validPractical,
+        testCases: [],
+      }).success,
+    ).toBe(true);
+  });
+
   it.each([
     ["title", { title: "   " }],
     ["instructions", { instructions: "   " }],
     ["allowed language", { allowedLanguages: [] }],
-    [
-      "visible test",
-      {
-        testCases: [
-          { clientId: "hidden-1", input: "2", expectedOutput: "2", visible: false },
-        ],
-      },
-    ],
     [
       "expected output",
       {
@@ -62,5 +65,20 @@ describe("practical publish validation", () => {
         ],
       }).success,
     ).toBe(true);
+  });
+
+  it("accepts a bounded rubric whose criteria total the practical maximum", () => {
+    expect(createPracticalPublishSchema.safeParse({ ...validPractical, maximumMarks: 20, rubricCriteria: [
+      { clientId: "correctness", title: "Correctness", maximumMarks: 12 },
+      { clientId: "quality", title: "Code quality", maximumMarks: 8 },
+    ] }).success).toBe(true);
+  });
+
+  it("rejects a one-item rubric or a mismatched criterion total", () => {
+    expect(createPracticalPublishSchema.safeParse({ ...validPractical, rubricCriteria: [{ clientId: "only", title: "Correctness", maximumMarks: 10 }] }).success).toBe(false);
+    expect(createPracticalPublishSchema.safeParse({ ...validPractical, rubricCriteria: [
+      { clientId: "one", title: "Correctness", maximumMarks: 5 },
+      { clientId: "two", title: "Quality", maximumMarks: 4 },
+    ] }).success).toBe(false);
   });
 });

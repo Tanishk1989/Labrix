@@ -85,6 +85,36 @@ describe("execution provider production safety configuration", () => {
     },
   );
 
+  it.each(["development", "test"])(
+    "routes local-docker by the server-resolved language in %s",
+    (nodeEnvironment) => {
+      const environment = {
+        NODE_ENV: nodeEnvironment,
+        LABRIX_EXECUTION_PROVIDER: "local-docker",
+        LABRIX_JAVA_RUNNER_URL: "http://127.0.0.1:4010/v1/execute/java",
+        LABRIX_CPP_RUNNER_URL: "http://127.0.0.1:4020/v1/execute/cpp",
+      };
+      expect(getServerExecutionProvider(environment, "JAVA")).toBeInstanceOf(
+        JavaHttpExecutionProvider,
+      );
+      expect(getServerExecutionProvider(environment, "CPP")).toBeInstanceOf(
+        CppHttpExecutionProvider,
+      );
+      expect(() => getServerExecutionProvider(environment)).toThrow(
+        /requires a server-resolved execution language/,
+      );
+    },
+  );
+
+  it("rejects local-docker in production without explicit acknowledgement", () => {
+    expect(() => getServerExecutionProvider({
+      NODE_ENV: "production",
+      LABRIX_EXECUTION_PROVIDER: "local-docker",
+      LABRIX_JAVA_RUNNER_URL: "http://127.0.0.1:4010/v1/execute/java",
+      LABRIX_CPP_RUNNER_URL: "http://127.0.0.1:4020/v1/execute/cpp",
+    }, "CPP")).toThrow(/not production-ready/);
+  });
+
   it.each([
     "not-a-url",
     "https://127.0.0.1:4010/v1/execute/java",

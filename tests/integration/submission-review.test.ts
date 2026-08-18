@@ -116,6 +116,8 @@ describe.sequential("teacher submission reviews", () => {
   });
 
   afterAll(async () => {
+    const reviews = await prisma.submissionReview.findMany({ where: { submissionAttemptId: { in: submissionIds } }, select: { id: true } });
+    await prisma.submissionReviewRevision.deleteMany({ where: { reviewId: { in: reviews.map((review) => review.id) } } });
     await prisma.submissionReview.deleteMany({ where: { submissionAttemptId: { in: submissionIds } } });
     await prisma.submissionAttempt.deleteMany({ where: { id: { in: submissionIds } } });
     await prisma.resultSnapshot.deleteMany({ where: { id: { in: resultIds } } });
