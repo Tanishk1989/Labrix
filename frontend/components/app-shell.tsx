@@ -270,10 +270,15 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
       <div className="editorial-shell" onClickCapture={showPendingForInternalLink} onSubmitCapture={showPendingForGetForm}>
         {navigationPending ? <div className="shell-navigation-progress" role="status" aria-label="Opening page"><span /></div> : null}
         <header className="editorial-app-header">
-          <div className="editorial-header-inner">
-            <Wordmark />
-            <DesktopNavigation role={effectiveRole} />
-            <div className="editorial-header-actions">
+          <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-10">
+            {/* Left Cluster: Logo + Clean Text Nav */}
+            <div className="flex items-center gap-7">
+              <Wordmark />
+              <DesktopNavigation role={effectiveRole} />
+            </div>
+
+            {/* Right Cluster: Balanced Search, Theme, Profile, and Sign In */}
+            <div className="flex items-center gap-3">
               <CommandPalette />
               <ThemeSelector />
               <DemoRuntimeBadge />
@@ -287,12 +292,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               />
               <Link
                 href="/sign-in"
-                className="hidden sm:inline-flex items-center rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:bg-white/10 hover:border-white/25 active:scale-95 shrink-0"
+                className="hidden sm:inline-flex items-center rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0"
               >
                 <span>Sign In</span>
               </Link>
             </div>
-            <button type="button" aria-label="Open navigation" className="icon-button editorial-menu-button" onClick={() => setDrawerOpen(true)}><Menu size={18} strokeWidth={1.75} aria-hidden="true" /></button>
+            <button type="button" aria-label="Open navigation" className="icon-button editorial-menu-button md:hidden" onClick={() => setDrawerOpen(true)}><Menu size={18} strokeWidth={1.75} aria-hidden="true" /></button>
           </div>
         </header>
         <main className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>

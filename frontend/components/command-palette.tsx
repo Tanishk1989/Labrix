@@ -154,11 +154,11 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="group relative flex size-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition-all hover:scale-110 hover:border-white/25 hover:bg-white/[0.08]"
+        className="flex size-7 items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-colors"
         aria-label="Open Command Search"
-        title="Search or jump to... (⌘K)"
+        title="Search (⌘K)"
       >
-        <Search size={14} className="text-white/70 transition-transform group-hover:scale-110 group-hover:text-emerald-400" />
+        <Search size={15} />
       </button>
 
       {isOpen && (
