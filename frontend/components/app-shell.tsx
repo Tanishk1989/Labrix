@@ -10,6 +10,7 @@ import { ThemeSelector } from "@/components/theme-selector";
 import { CommandPalette } from "@/components/command-palette";
 import { TraceLogo, TraceMark } from "@/components/trace-logo";
 import { AccountDropdown } from "@/components/account-dropdown";
+import { AuthModal } from "@/components/auth-modal";
 import type { DemoRole } from "@/domain/tasks/models";
 
 type ShellActor = { name: string; role: "TEACHER" | "STUDENT" };
@@ -199,6 +200,7 @@ function DemoPreviewBadge({ interactive }: { interactive: boolean }) {
 
 export function AppShell({ role, setRole, actor, children }: { role: DemoRole; setRole: (role: DemoRole) => void; actor?: ShellActor; children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [navigationPending, setNavigationPending] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const pathname = usePathname() ?? "/";
@@ -291,12 +293,13 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                     setRole={setRole}
                     identityMode={identityMode}
                   />
-                  <Link
-                    href="/sign-in"
-                    className="inline-flex items-center rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0"
+                  <button
+                    type="button"
+                    onClick={() => setAuthModalOpen(true)}
+                    className="inline-flex items-center rounded-lg bg-white px-3.5 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0 cursor-pointer"
                   >
                     <span>Sign In</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -312,6 +315,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
             </button>
           </div>
         </header>
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
         <main className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>
         {drawerOpen ? (
           <div className="shell-drawer-layer">
