@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { X, ArrowRight, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { TraceMark } from "@/components/trace-logo";
 
@@ -12,7 +11,6 @@ export function AuthModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,23 +35,43 @@ export function AuthModal({
 
   function handleSocialLogin(provider: "google" | "github") {
     setLoadingType(provider);
+
+    const width = 520;
+    const height = 620;
+    const left = typeof window !== "undefined" ? window.screenX + (window.outerWidth - width) / 2 : 100;
+    const top = typeof window !== "undefined" ? window.screenY + (window.outerHeight - height) / 2 : 100;
     
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        const userName = provider === "google" ? "Google Student" : "GitHub Developer";
+    const authUrl =
+      provider === "google"
+        ? "https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin"
+        : "https://github.com/login";
+
+    let popup: Window | null = null;
+    if (typeof window !== "undefined") {
+      popup = window.open(
+        authUrl,
+        `${provider}Auth`,
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=yes`
+      );
+    }
+
+    // Monitor popup window closure
+    const pollTimer = window.setInterval(() => {
+      if (!popup || popup.closed) {
+        window.clearInterval(pollTimer);
+        const userName = provider === "google" ? "Google User" : "GitHub Developer";
         window.sessionStorage.setItem("trace:user-name", userName);
         window.sessionStorage.setItem("trace:demo-role", "student");
         window.sessionStorage.setItem("trace:auth-provider", provider);
+        setSuccessMsg(`Signed in with ${provider === "google" ? "Google" : "GitHub"}!`);
+        setTimeout(() => {
+          setLoadingType(null);
+          setSuccessMsg(null);
+          onClose();
+          window.location.reload();
+        }, 500);
       }
-      setSuccessMsg(`Signed in with ${provider === "google" ? "Google" : "GitHub"}!`);
-      setTimeout(() => {
-        setLoadingType(null);
-        setSuccessMsg(null);
-        onClose();
-        // Refresh page state
-        window.location.reload();
-      }, 500);
-    }, 600);
+    }, 800);
   }
 
   function handleCredentialsSubmit(e: React.FormEvent) {
