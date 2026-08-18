@@ -9,6 +9,7 @@ import { useIdentityMode } from "@/components/identity-mode-provider";
 import { ThemeSelector } from "@/components/theme-selector";
 import { CommandPalette } from "@/components/command-palette";
 import { TraceLogo } from "@/components/trace-logo";
+import { AccountDropdown } from "@/components/account-dropdown";
 import type { DemoRole } from "@/domain/tasks/models";
 
 type ShellActor = { name: string; role: "TEACHER" | "STUDENT" };
@@ -253,9 +254,14 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               <CommandPalette />
               <ThemeSelector />
               <DemoRuntimeBadge />
-              {identityMode === "demo" ? <DemoPreviewBadge interactive={rolePreviewAvailable} /> : null}
-              {rolePreviewAvailable ? <DemoRoleControl role={role} setRole={setRole} compact /> : null}
-              <CompactAccount name={profileName} roleLabel={profileLabel} avatar={avatar} showClerk={identityMode === "clerk"} />
+              <AccountDropdown
+                name={profileName}
+                roleLabel={profileLabel}
+                avatar={avatar}
+                currentRole={role}
+                setRole={setRole}
+                identityMode={identityMode}
+              />
             </div>
             <button type="button" aria-label="Open navigation" className="icon-button editorial-menu-button" onClick={() => setDrawerOpen(true)}><Menu size={18} strokeWidth={1.75} aria-hidden="true" /></button>
           </div>
@@ -270,9 +276,14 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               <div className="editorial-drawer-footer">
                 <ThemeSelector />
                 <DemoRuntimeBadge />
-                {identityMode === "demo" ? <DemoPreviewBadge interactive={rolePreviewAvailable} /> : null}
-                {rolePreviewAvailable ? <DemoRoleControl role={role} setRole={setRole} /> : null}
-                <CompactAccount name={profileName} roleLabel={profileLabel} avatar={avatar} showClerk={identityMode === "clerk"} />
+                <AccountDropdown
+                  name={profileName}
+                  roleLabel={profileLabel}
+                  avatar={avatar}
+                  currentRole={role}
+                  setRole={setRole}
+                  identityMode={identityMode}
+                />
               </div>
             </aside>
           </div>
