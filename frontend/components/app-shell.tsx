@@ -271,33 +271,45 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
         {navigationPending ? <div className="shell-navigation-progress" role="status" aria-label="Opening page"><span /></div> : null}
         <header className="editorial-app-header">
           <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-10">
-            {/* Left Cluster: Logo + Clean Text Nav */}
-            <div className="flex items-center gap-7">
+            {/* Unified Left Navigation Cluster */}
+            <div className="flex items-center gap-5">
               <Wordmark />
-              <DesktopNavigation role={effectiveRole} />
+              
+              <div className="hidden md:flex items-center gap-4">
+                <div className="h-4 w-px bg-white/10" />
+                <DesktopNavigation role={effectiveRole} />
+                <div className="h-4 w-px bg-white/10" />
+                <div className="flex items-center gap-3">
+                  <CommandPalette />
+                  <ThemeSelector />
+                  <DemoRuntimeBadge />
+                  <AccountDropdown
+                    name={profileName}
+                    roleLabel={profileLabel}
+                    avatar={avatar}
+                    currentRole={role}
+                    setRole={setRole}
+                    identityMode={identityMode}
+                  />
+                  <Link
+                    href="/sign-in"
+                    className="inline-flex items-center rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0"
+                  >
+                    <span>Sign In</span>
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            {/* Right Cluster: Balanced Search, Theme, Profile, and Sign In */}
-            <div className="flex items-center gap-3">
-              <CommandPalette />
-              <ThemeSelector />
-              <DemoRuntimeBadge />
-              <AccountDropdown
-                name={profileName}
-                roleLabel={profileLabel}
-                avatar={avatar}
-                currentRole={role}
-                setRole={setRole}
-                identityMode={identityMode}
-              />
-              <Link
-                href="/sign-in"
-                className="hidden sm:inline-flex items-center rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0"
-              >
-                <span>Sign In</span>
-              </Link>
-            </div>
-            <button type="button" aria-label="Open navigation" className="icon-button editorial-menu-button md:hidden" onClick={() => setDrawerOpen(true)}><Menu size={18} strokeWidth={1.75} aria-hidden="true" /></button>
+            {/* Mobile Only Hamburger */}
+            <button
+              type="button"
+              aria-label="Open navigation"
+              className="icon-button editorial-menu-button md:hidden"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <Menu size={18} strokeWidth={1.75} aria-hidden="true" />
+            </button>
           </div>
         </header>
         <main className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>
