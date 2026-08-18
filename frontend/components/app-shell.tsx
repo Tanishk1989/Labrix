@@ -92,7 +92,7 @@ function Wordmark({ onNavigate }: { onNavigate?: () => void }) {
         <TraceMark size={18} />
       </div>
       <span className="text-sm font-bold tracking-tight text-white">
-        TRACE<span className="text-cyan-400 font-semibold ml-0.5">OS</span>
+        TRACE<span className="text-white/40 font-mono text-[11px] font-normal ml-1">OS</span>
       </span>
     </Link>
   );
