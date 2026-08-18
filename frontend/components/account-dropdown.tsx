@@ -83,28 +83,23 @@ export function AccountDropdown({
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Trigger Button - Borderless Premium Minimal Design */}
+      {/* Trigger Button - Clean Borderless Typography (No Avatar Circle) */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2.5 py-1 px-1 text-xs font-medium text-white/90 transition-all hover:text-white cursor-pointer group focus:outline-none"
+        className="flex items-center gap-2 py-1 px-1.5 text-xs font-medium text-white/90 transition-all hover:text-white cursor-pointer group focus:outline-none"
       >
-        {/* User Info on Medium/Large Screens */}
-        <div className="hidden sm:flex flex-col items-end text-right leading-none gap-1 mr-1">
-          <span className="truncate max-w-[140px] text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+        {/* User Info */}
+        <div className="flex flex-col items-end text-right leading-tight">
+          <span className="truncate max-w-[150px] text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
             {name}
           </span>
-          <span className="text-[9.5px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
             {roleLabel}
           </span>
         </div>
-
-        {/* Avatar Bubble */}
-        <span className="grid size-8 place-items-center rounded-full border border-emerald-400/40 bg-gradient-to-tr from-emerald-600/30 to-teal-500/20 text-xs font-bold text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
-          {avatar}
-        </span>
 
         {/* Subtle Chevron */}
         <ChevronDown
@@ -115,14 +110,19 @@ export function AccountDropdown({
         />
       </button>
 
-      {/* Floating Glassmorphism Popup Menu */}
+      {/* Floating Glassmorphism Popover Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2.5 w-64 origin-top-right rounded-2xl border border-white/10 bg-[#0d1017]/95 p-2 shadow-2xl backdrop-blur-2xl ring-1 ring-black/50 divide-y divide-white/[0.08] z-50 animate-in fade-in zoom-in-95 duration-150">
-          {/* Header Profile Section */}
-          <div className="p-2.5">
-            <p className="text-xs font-bold text-white truncate">{name}</p>
+        <div className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-2xl border border-white/[0.14] bg-[#0c0e15]/95 p-1.5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-100">
+          {/* Header Profile Info */}
+          <div className="px-3.5 py-3 border-b border-white/[0.08] mb-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold text-white truncate">{name}</p>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-mono font-bold text-emerald-300 uppercase shrink-0">
+                {roleLabel}
+              </span>
+            </div>
             {displayEmail && (
-              <p className="text-[11px] font-mono text-white/50 truncate mt-0.5">
+              <p className="text-[11px] text-white/40 font-mono truncate mt-0.5">
                 {displayEmail}
               </p>
             )}

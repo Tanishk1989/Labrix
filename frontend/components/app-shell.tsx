@@ -297,6 +297,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                 setRole={setRole}
                 identityMode={identityMode}
               />
+              <Link
+                href="/sign-in"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] transition-all hover:bg-emerald-500/20 hover:border-emerald-400 hover:text-white active:scale-95 shrink-0"
+              >
+                <span>Sign In</span>
+              </Link>
             </div>
             <button type="button" aria-label="Open navigation" className="icon-button editorial-menu-button" onClick={() => setDrawerOpen(true)}><Menu size={18} strokeWidth={1.75} aria-hidden="true" /></button>
           </div>
