@@ -29,7 +29,7 @@ async function resolveSeededActor(
   }
   return {
     id,
-    name: role === "TEACHER" ? "Dr. Meera Sharma" : "Demo Student",
+    name: role === "TEACHER" ? "Teacher" : "Student",
     role,
     source: "seeded-demo-session",
   };

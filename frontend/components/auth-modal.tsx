@@ -11,9 +11,12 @@ export function AuthModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [view, setView] = useState<"main" | "google-chooser">("main");
+  const [view, setView] = useState<"main" | "google-chooser" | "custom-user">("main");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customEmail, setCustomEmail] = useState("");
+  const [customRole, setCustomRole] = useState<"student" | "teacher">("teacher");
   const [showPassword, setShowPassword] = useState(false);
   const [loadingType, setLoadingType] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -25,6 +28,8 @@ export function AuthModal({
       setView("main");
       setSuccessMsg(null);
       setLoadingType(null);
+      setCustomName("");
+      setCustomEmail("");
     }
   }, [isOpen]);
 
@@ -43,12 +48,15 @@ export function AuthModal({
 
   if (!isOpen) return null;
 
-  function handleSelectGoogleAccount(accountName: string, role: "student" | "teacher") {
+  function handleSelectGoogleAccount(accountName: string, role: "student" | "teacher", userEmail?: string) {
     setLoadingType(accountName);
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("trace:user-name", accountName);
       window.sessionStorage.setItem("trace:demo-role", role);
       window.sessionStorage.setItem("trace:auth-provider", "google");
+      if (userEmail) {
+        window.sessionStorage.setItem("trace:user-email", userEmail);
+      }
     }
     setSuccessMsg(`Signed in as ${accountName}!`);
     setTimeout(() => {
@@ -59,10 +67,17 @@ export function AuthModal({
     }, 600);
   }
 
+  function handleCustomUserSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const finalName = customName.trim() || (customRole === "teacher" ? "Teacher" : "Student");
+    const finalEmail = customEmail.trim() || `${finalName.toLowerCase().replace(/\s+/g, ".")}@university.edu`;
+    handleSelectGoogleAccount(finalName, customRole, finalEmail);
+  }
+
   function handleGitHubLogin() {
     setLoadingType("github");
     if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("trace:user-name", "GitHub Developer");
+      window.sessionStorage.setItem("trace:user-name", "Developer");
       window.sessionStorage.setItem("trace:demo-role", "student");
       window.sessionStorage.setItem("trace:auth-provider", "github");
     }
@@ -81,9 +96,12 @@ export function AuthModal({
     
     setTimeout(() => {
       if (typeof window !== "undefined") {
-        const nameFromEmail = email.split("@")[0] || "Student";
-        window.sessionStorage.setItem("trace:user-name", nameFromEmail);
-        window.sessionStorage.setItem("trace:demo-role", "student");
+        const rawName = email.split("@")[0] || "User";
+        const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+        const isTeacher = email.toLowerCase().includes("teacher") || email.toLowerCase().includes("prof");
+        window.sessionStorage.setItem("trace:user-name", formattedName);
+        window.sessionStorage.setItem("trace:demo-role", isTeacher ? "teacher" : "student");
+        window.sessionStorage.setItem("trace:user-email", email);
       }
       setSuccessMsg("Logged in successfully!");
       setTimeout(() => {
@@ -143,60 +161,144 @@ export function AuthModal({
 
             {/* Accounts List */}
             <div className="space-y-2.5">
-              {/* Account 1: Tanishk */}
+              {/* Account 1: Teacher Account */}
               <button
                 type="button"
                 disabled={loadingType !== null}
-                onClick={() => handleSelectGoogleAccount("Tanishk (Student)", "student")}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-sm">
-                    T
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">Tanishk</p>
-                    <p className="text-[11px] text-white/50 font-mono">tanishk@gmail.com</p>
-                  </div>
-                </div>
-                {loadingType === "Tanishk (Student)" && <Loader2 size={16} className="animate-spin text-cyan-400" />}
-              </button>
-
-              {/* Account 2: Dr. Meera Sharma */}
-              <button
-                type="button"
-                disabled={loadingType !== null}
-                onClick={() => handleSelectGoogleAccount("Dr. Meera Sharma", "teacher")}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all text-left group"
+                onClick={() => handleSelectGoogleAccount("Teacher", "teacher", "teacher@university.edu")}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all text-left group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm">
-                    M
+                    T
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">Dr. Meera Sharma</p>
-                    <p className="text-[11px] text-white/50 font-mono">meera.sharma@university.edu</p>
+                    <p className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">Teacher / Instructor</p>
+                    <p className="text-[11px] text-white/50 font-mono">teacher@university.edu</p>
                   </div>
                 </div>
-                {loadingType === "Dr. Meera Sharma" && <Loader2 size={16} className="animate-spin text-cyan-400" />}
+                {loadingType === "Teacher" && <Loader2 size={16} className="animate-spin text-cyan-400" />}
               </button>
 
-              {/* Account 3: Custom Google Account */}
+              {/* Account 2: Student Account */}
               <button
                 type="button"
                 disabled={loadingType !== null}
-                onClick={() => handleSelectGoogleAccount("Google Student", "student")}
-                className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-dashed border-white/15 bg-transparent hover:bg-white/[0.04] transition-all text-left"
+                onClick={() => handleSelectGoogleAccount("Student", "student", "student@university.edu")}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20 transition-all text-left group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-sm">
+                    S
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">Student</p>
+                    <p className="text-[11px] text-white/50 font-mono">student@university.edu</p>
+                  </div>
+                </div>
+                {loadingType === "Student" && <Loader2 size={16} className="animate-spin text-cyan-400" />}
+              </button>
+
+              {/* Account 3: Custom Name / Profile */}
+              <button
+                type="button"
+                disabled={loadingType !== null}
+                onClick={() => setView("custom-user")}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-dashed border-white/15 bg-transparent hover:bg-white/[0.04] transition-all text-left cursor-pointer"
               >
                 <div className="grid size-9 place-items-center rounded-full border border-white/15 text-white/60">
                   <User size={16} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-white/80">Use another account</p>
-                  <p className="text-[11px] text-white/40">Sign in with a different email</p>
+                  <p className="text-xs font-semibold text-white/80">Enter your name &amp; role</p>
+                  <p className="text-[11px] text-white/40">Try out with your custom profile</p>
                 </div>
               </button>
             </div>
+          </div>
+        ) : view === "custom-user" ? (
+          /* VIEW 3: CUSTOM USER PROFILE INPUT */
+          <div className="animate-in fade-in zoom-in-95 duration-150">
+            <button
+              type="button"
+              onClick={() => setView("google-chooser")}
+              className="inline-flex items-center gap-1 text-xs text-white/60 hover:text-white mb-4 transition-colors"
+            >
+              <ChevronLeft size={15} />
+              <span>Back</span>
+            </button>
+
+            <div className="mb-5">
+              <h3 className="text-base font-bold text-white leading-tight">Create your profile</h3>
+              <p className="text-xs text-white/50">Enter your details to test TRACE</p>
+            </div>
+
+            <form onSubmit={handleCustomUserSubmit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="e.g. Professor Smith"
+                  className="w-full rounded-xl border border-white/10 bg-[#161a24] px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/50 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">
+                  Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  value={customEmail}
+                  onChange={(e) => setCustomEmail(e.target.value)}
+                  placeholder="name@university.edu"
+                  className="w-full rounded-xl border border-white/10 bg-[#161a24] px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/50 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-1">
+                  Select Role
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomRole("teacher")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      customRole === "teacher"
+                        ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
+                        : "border-white/10 bg-[#161a24] text-white/60 hover:text-white"
+                    }`}
+                  >
+                    Teacher / Instructor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomRole("student")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      customRole === "student"
+                        ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
+                        : "border-white/10 bg-[#161a24] text-white/60 hover:text-white"
+                    }`}
+                  >
+                    Student
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-md transition-all hover:bg-slate-100 active:scale-[0.99] cursor-pointer"
+              >
+                <span>Continue into Workspace</span>
+                <ArrowRight size={14} />
+              </button>
+            </form>
           </div>
         ) : (
           /* VIEW 2: MAIN AUTH MODAL */

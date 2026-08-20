@@ -69,12 +69,12 @@ export function CommandPalette() {
     { id: "nav-classes", title: "Classrooms & Batches", subtitle: "Manage student rosters & lab practicals", category: "Navigation", icon: GraduationCap, shortcut: "G C", action: () => router.push("/classes") },
     { id: "nav-practicals", title: "Lab Practicals Catalog", subtitle: "Browse, create, and author assignments", category: "Navigation", icon: Beaker, shortcut: "G P", action: () => router.push("/practicals") },
     { id: "nav-reviews", title: "Submissions & Viva Defense", subtitle: "Review code, test passes & oral defense", category: "Navigation", icon: CheckSquare, shortcut: "G R", action: () => router.push("/submissions") },
-    { id: "nav-progress", title: "Student Progress & Analytics", subtitle: "Class performance & completion velocity", category: "Navigation", icon: TrendingUp, shortcut: "G S", action: () => router.push("/progress") },
+    { id: "nav-progress", title: "Student Progress & Analytics", subtitle: "Class performance & cognitive weakness heatmap", category: "Navigation", icon: TrendingUp, shortcut: "G S", action: () => router.push("/progress") },
 
-    // Practicals
-    { id: "task-brackets", title: "Balanced Brackets Validator", subtitle: "Stack Data Structure · C++ & Java", category: "Practicals", icon: Code2, shortcut: "↵", action: () => router.push("/practicals/demo-task-brackets") },
-    { id: "task-twosum", title: "Two Sum Target Indices", subtitle: "HashMap / Two Pointers · C++ & Java", category: "Practicals", icon: Code2, shortcut: "↵", action: () => router.push("/practicals/demo-task-twosum") },
-    { id: "task-queue", title: "Queue using Two Stacks", subtitle: "Amortized O(1) Operations · C++ & Java", category: "Practicals", icon: Code2, shortcut: "↵", action: () => router.push("/practicals/demo-task-queue") },
+    // Actions
+    { id: "action-practicals", title: "Browse All Practicals", subtitle: "View and solve available lab practical problems", category: "Actions", icon: Code2, shortcut: "↵", action: () => router.push("/practicals") },
+    { id: "action-classes", title: "Manage Classrooms", subtitle: "View enrollments and active laboratory batches", category: "Actions", icon: GraduationCap, shortcut: "↵", action: () => router.push("/classes") },
+    { id: "action-reviews", title: "Code Reviews & Grading", subtitle: "Grade student attempts and leave rubric feedback", category: "Actions", icon: CheckSquare, shortcut: "↵", action: () => router.push("/submissions") },
 
     // Themes
     ...((Object.keys(themePresets) as ColorTheme[]).map((key) => {
@@ -92,7 +92,7 @@ export function CommandPalette() {
     })),
   ], [router, setTheme]);
 
-  const categories = ["All", "Navigation", "Practicals", "Themes"];
+  const categories = ["All", "Navigation", "Actions", "Themes"];
 
   const filteredItems = useMemo(() => {
     let items = allItems;

@@ -60,8 +60,16 @@ export function AccountDropdown({
     };
   }, [isOpen]);
 
+  const [storedEmail, setStoredEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setStoredEmail(window.sessionStorage.getItem("trace:user-email"));
+    }
+  }, [isOpen]);
+
   const displayEmail =
-    identityMode === "demo" ? `${currentRole.toLowerCase()}@university.edu` : "";
+    storedEmail || (identityMode === "demo" ? `${currentRole.toLowerCase()}@university.edu` : "");
 
   function handleLogout() {
     setIsOpen(false);
