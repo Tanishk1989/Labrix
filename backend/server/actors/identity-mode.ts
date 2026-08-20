@@ -13,9 +13,17 @@ export function resolveIdentityMode(input: {
   allowProductionBuildDemo?: string;
 }): IdentityMode {
   const mode =
-    input.mode || (input.nodeEnv !== "production" ? "demo" : "demo");
+    input.mode || (input.nodeEnv === "production" ? "clerk" : "demo");
   if (mode === "clerk") {
     return "clerk";
+  }
+  if (
+    input.nodeEnv === "production" &&
+    input.allowProductionBuildDemo !== "true"
+  ) {
+    throw new IdentityConfigurationError(
+      "Demo identity mode is forbidden in production unless explicitly allowed.",
+    );
   }
   return "demo";
 }
