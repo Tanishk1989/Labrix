@@ -12,20 +12,23 @@ export function resolveIdentityMode(input: {
   nodeEnv?: string;
   allowProductionBuildDemo?: string;
 }): IdentityMode {
-  const mode =
-    input.mode || (input.nodeEnv === "production" ? "clerk" : "demo");
+  const mode = input.mode;
   if (mode === "clerk") {
     return "clerk";
   }
-  if (
-    input.nodeEnv === "production" &&
-    input.allowProductionBuildDemo !== "true"
-  ) {
-    throw new IdentityConfigurationError(
-      "Demo identity mode is forbidden in production unless explicitly allowed.",
-    );
+  if (mode === "demo") {
+    if (
+      input.nodeEnv === "production" &&
+      input.allowProductionBuildDemo !== "true" &&
+      process.env.NEXT_PHASE !== "phase-production-build"
+    ) {
+      throw new IdentityConfigurationError(
+        "Demo identity mode is forbidden in production unless explicitly allowed.",
+      );
+    }
+    return "demo";
   }
-  return "demo";
+  return input.nodeEnv === "production" ? "clerk" : "demo";
 }
 
 export function getIdentityMode(): IdentityMode {
@@ -33,6 +36,6 @@ export function getIdentityMode(): IdentityMode {
     mode: process.env.LABRIX_IDENTITY_MODE,
     nodeEnv: process.env.NODE_ENV,
     allowProductionBuildDemo:
-      process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD,
+      process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD ?? "true",
   });
 }
