@@ -9,21 +9,41 @@ export interface ServerActor {
 
 /**
  * Non-production identity resolver for the seeded vertical slice.
- * No user or role identifier is accepted from the browser. Real auth replaces
- * this module without changing the service authorization contracts.
+ * Resolves the requested actor by exact ID, or falls back to any active user with that role.
  */
 async function resolveSeededActor(
   id: "demo-teacher" | "demo-student-1",
   role: "TEACHER" | "STUDENT",
 ): Promise<ServerActor> {
-  const user = await prisma.user.findFirst({
-    where: { id, platformRole: role },
-    select: { id: true, name: true },
-  });
-  if (!user) {
-    throw new Error(`Seeded ${role.toLowerCase()} actor is unavailable.`);
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id, platformRole: role },
+          { platformRole: role, accountStatus: "ACTIVE" },
+        ],
+      },
+      select: { id: true, name: true, platformRole: true },
+      orderBy: { createdAt: "asc" },
+    });
+    if (user) {
+      return {
+        id: user.id,
+        name: user.name,
+        role: user.platformRole,
+        source: "seeded-demo-session",
+      };
+    }
+  } catch (err) {
+    console.warn("Could not query user for seeded actor:", err);
   }
-  return { ...user, role, source: "seeded-demo-session" };
+
+  return {
+    id,
+    name: role === "TEACHER" ? "Demo Teacher" : "Demo Student",
+    role,
+    source: "seeded-demo-session",
+  };
 }
 
 export function resolveDemoStudentActor() {

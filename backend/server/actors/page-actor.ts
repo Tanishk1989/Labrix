@@ -9,7 +9,9 @@ import {
   UnlinkedActorError,
   type CurrentActor,
 } from "./current-actor";
+import { resolveDemoStudentActor, resolveDemoTeacherActor } from "./demo-session";
 import { InvalidExternalIdentityError } from "./external-identity-source";
+import { getIdentityMode } from "./identity-mode";
 
 export function actorErrorDestination(error: unknown): string | null {
   if (error instanceof UnauthenticatedActorError) return "/sign-in";
@@ -28,6 +30,18 @@ export async function resolveCurrentActorForPage(options: {
   demoActor?: "student" | "teacher";
   requiredRole?: PlatformRole;
 } = {}): Promise<CurrentActor> {
+  const mode = getIdentityMode();
+
+  if (mode === "demo") {
+    const actor =
+      options.demoActor === "student"
+        ? await resolveDemoStudentActor()
+        : await resolveDemoTeacherActor();
+    return options.requiredRole
+      ? requireActorRole(actor, options.requiredRole)
+      : actor;
+  }
+
   try {
     const actor = await resolveCurrentActor({ demoActor: options.demoActor });
     return options.requiredRole
