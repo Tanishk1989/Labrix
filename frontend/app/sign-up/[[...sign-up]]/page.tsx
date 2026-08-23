@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ArrowRight, GraduationCap, ShieldCheck, UserCheck } from "lucide-react";
 import { AuthVisualSide } from "@/features/auth/auth-visual-side";
+import { RoleLoginCard } from "@/features/auth/role-login-card";
 
 export default function SignUpPage() {
   return (
@@ -11,63 +10,10 @@ export default function SignUpPage() {
           <AuthVisualSide />
         </div>
 
-        {/* Right Side (Desktop) / Top Side (Mobile): Auth Form */}
+        {/* Right Side (Desktop) / Top Side (Mobile): Workspace Selection Form */}
         <div className="order-1 lg:order-2 lg:col-span-5 flex items-center justify-center lg:justify-end">
-          <div className="w-full max-w-[440px]">
-            <div className="w-full rounded-3xl border border-white/[0.09] bg-[#0b0e17]/95 p-7 sm:p-9 shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl text-white">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                  Create your TRACE account
-                </h2>
-                <p className="mt-1.5 text-xs sm:text-sm text-white/70">
-                  Register as an instructor or student for your university courses.
-                </p>
-              </div>
-
-              <div className="mt-7 space-y-3">
-                <Link
-                  href="/dashboard"
-                  className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4 transition-all hover:bg-indigo-500/20 hover:border-indigo-400"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-indigo-500/20 text-indigo-300">
-                      <GraduationCap size={20} />
-                    </span>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-white">Register as Instructor</p>
-                      <p className="text-[11px] text-white/60">Create labs & manage rosters</p>
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-indigo-400 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-
-                <Link
-                  href="/dashboard"
-                  className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 transition-all hover:bg-cyan-500/10 hover:border-cyan-400"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-cyan-500/20 text-cyan-300">
-                      <UserCheck size={20} />
-                    </span>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-white">Register as Student</p>
-                      <p className="text-[11px] text-white/60">Join classroom with class code</p>
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-cyan-400 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-
-              <div className="mt-6 pt-5 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/50">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck size={13} className="text-emerald-400" />
-                  Encrypted authentication
-                </span>
-                <Link href="/sign-in" className="text-indigo-400 font-semibold hover:text-indigo-300">
-                  Already have an account? Sign in &rarr;
-                </Link>
-              </div>
-            </div>
+          <div className="w-full max-w-[460px]">
+            <RoleLoginCard />
           </div>
         </div>
       </div>
