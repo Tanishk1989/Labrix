@@ -12,11 +12,13 @@ import {
   cleanupActiveJavaContainers,
   executeJavaInDocker,
 } from "./docker-executor";
-import { boundedPositiveInteger } from "../config";
+import { boundedPositiveInteger, configuredRunnerHost } from "../config";
 import { configuredRunnerBearerToken, runnerRequestIsAuthorized } from "../auth";
 
-const RUNNER_HOST = "127.0.0.1";
-const RUNNER_PORT = 4_010;
+const RUNNER_HOST = configuredRunnerHost();
+const RUNNER_PORT = boundedPositiveInteger(process.env.JAVA_RUNNER_PORT, 4_010, {
+  max: 65_535,
+});
 const EXECUTION_PATH = "/v1/execute/java";
 
 type JavaExecutor = (

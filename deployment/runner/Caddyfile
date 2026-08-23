@@ -1,0 +1,21 @@
+{$JAVA_RUNNER_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy java-runner:4010
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+    -Server
+  }
+}
+
+{$CPP_RUNNER_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy cpp-runner:4020
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+    -Server
+  }
+}

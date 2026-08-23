@@ -1,0 +1,87 @@
+services:
+  java-runner:
+    build:
+      context: ../..
+      dockerfile: deployment/runner/Dockerfile
+    command: ["node_modules/.bin/tsx", "backend/runner/java/server.ts"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      RUNNER_HOST: 0.0.0.0
+      JAVA_RUNNER_PORT: 4010
+      LABRIX_RUNNER_BEARER_TOKEN: ${LABRIX_RUNNER_BEARER_TOKEN:?Set a 32+ character runner token}
+      RUNNER_MAX_CONCURRENCY: ${RUNNER_MAX_CONCURRENCY:-4}
+      RUNNER_MAX_QUEUE_SIZE: ${RUNNER_MAX_QUEUE_SIZE:-64}
+      RUNNER_QUEUE_TIMEOUT_MS: ${RUNNER_QUEUE_TIMEOUT_MS:-60000}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4010/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [runner-internal]
+
+  cpp-runner:
+    build:
+      context: ../..
+      dockerfile: deployment/runner/Dockerfile
+    command: ["node_modules/.bin/tsx", "backend/runner/cpp/server.ts"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      RUNNER_HOST: 0.0.0.0
+      CPP_RUNNER_PORT: 4020
+      LABRIX_RUNNER_BEARER_TOKEN: ${LABRIX_RUNNER_BEARER_TOKEN:?Set a 32+ character runner token}
+      RUNNER_MAX_CONCURRENCY: ${RUNNER_MAX_CONCURRENCY:-4}
+      RUNNER_MAX_QUEUE_SIZE: ${RUNNER_MAX_QUEUE_SIZE:-64}
+      RUNNER_QUEUE_TIMEOUT_MS: ${RUNNER_QUEUE_TIMEOUT_MS:-60000}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4020/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [runner-internal]
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      java-runner:
+        condition: service_healthy
+      cpp-runner:
+        condition: service_healthy
+    environment:
+      JAVA_RUNNER_DOMAIN: ${JAVA_RUNNER_DOMAIN:?Set the Java runner hostname}
+      CPP_RUNNER_DOMAIN: ${CPP_RUNNER_DOMAIN:?Set the C++ runner hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [runner-internal]
+
+networks:
+  runner-internal:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

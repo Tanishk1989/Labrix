@@ -60,7 +60,7 @@ flowchart TD
 3. Set Root Directory to `./` (repository root).
 4. In **Build & Development Settings**:
    - Build Command: `npm run build`
-   - Install Command: `npm install`
+   - Install Command: `npm ci`
 5. In **Environment Variables**, add the following keys from `.env.production.example`:
 
 | Environment Variable | Value / Description |
@@ -88,14 +88,16 @@ flowchart TD
 ## 🛡️ Step 5: Untrusted Code Runner Worker (For Real Execution)
 
 For executing untrusted student C++ and Java code in isolated containers:
-1. Provision a small compute instance (e.g. AWS EC2 `t4g.small` or Hetzner VPS `CX22` ~$4/mo).
-2. Install Docker & gVisor (`runsc`).
-3. Run the container worker service:
+
+1. Provision a dedicated Linux Docker host. Do not colocate the runners with business data or the database.
+2. Follow the versioned deployment bundle in `deployment/runner/README.md`. It starts both workers behind automatic HTTPS and applies container resource limits.
+3. Set Vercel's `LABRIX_EXECUTION_PROVIDER` to `remote-docker`, point both runner URL variables at their HTTPS origins, and use the same random 32+ character bearer token on Vercel and the runner host.
+4. Verify the public boundary before enabling a class:
    ```bash
-   npm run runner:java
-   npm run runner:cpp
+   npm run verify:runners:remote
    ```
-4. Put the worker services behind HTTPS and set `LABRIX_RUNNER_BEARER_TOKEN` on both workers to the same random 32+ character value used by the web app. Do not expose the worker's unauthenticated Docker host or daemon socket.
+
+Never expose the Docker daemon or either runner execution endpoint without bearer authentication.
 
 ---
 
@@ -131,3 +133,11 @@ Expected output:
 ```
 
 Complete the release gate and the pre-class checklist in `documentation/12-OPERATIONS-RUNBOOK.md` before opening enrollment. A successful deployment alone is not evidence that authentication, email delivery, runner capacity, backups, and role-specific classroom flows work in the target environment.
+
+Run the repository release gate before every production push:
+
+```bash
+npm run release:gate
+```
+
+Do not add `LABRIX_TEST_DATABASE_URL` to Vercel. That variable is only for isolated local/CI verification and must never point production runtime at a test database.
