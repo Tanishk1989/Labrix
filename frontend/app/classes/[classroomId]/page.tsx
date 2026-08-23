@@ -4,6 +4,7 @@ import { ClassroomOverviewBridge } from "@/features/classes/classroom-overview-b
 import { ClassroomOverviewPage } from "@/features/classes/classroom-overview-page";
 import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
 import { StudentClassroomCompatibilityPage } from "@/features/student/student-classroom-compatibility-page";
+import { resolveDemoStudentActor } from "@/server/actors/demo-session";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import { getStudentOverview } from "@/server/student/overview";
 
@@ -15,9 +16,10 @@ export default async function ClassroomPage({
   const { classroomId } = await params;
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   if (actor.source === "seeded-demo-session") {
+    const studentActor = await resolveDemoStudentActor();
     const [classroom, studentOverview] = await Promise.all([
       getClassroomOverviewViewModel(actor.id, classroomId, "TEACHER"),
-      getStudentOverview("demo-student-1"),
+      getStudentOverview(studentActor.id),
     ]);
     if (!classroom) notFound();
     return (

@@ -309,18 +309,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
 
 export function DemoShell({ children, actor }: { children: ReactNode; actor?: ShellActor }) {
   const identityMode = useIdentityMode();
-  const [role, setRole] = useState<DemoRole>(() => {
-    if (typeof window !== "undefined") {
-      return getStoredDemoRole();
-    }
-    return actor?.role === "STUDENT" ? "student" : "teacher";
-  });
+  const [role, setRole] = useState<DemoRole>(
+    actor?.role === "STUDENT" ? "student" : "teacher",
+  );
 
   useEffect(() => {
-    const stored = getStoredDemoRole();
-    if (stored) {
-      setRole(stored);
-    }
+    setRole(getStoredDemoRole());
   }, [actor?.role, identityMode]);
 
   return <AppShell role={role} setRole={setRole} actor={actor}>{children}</AppShell>;

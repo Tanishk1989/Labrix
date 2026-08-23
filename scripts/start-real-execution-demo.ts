@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { CPP_RUNNER_IMAGE } from "../backend/runner/cpp/docker-executor";
 import { JAVA_RUNNER_IMAGE } from "../backend/runner/java/docker-executor";
+import { getDemoDatabaseUrl } from "./demo-env";
 
 const services = [
   {
@@ -66,9 +67,10 @@ function restrictedRunnerEnvironment() {
   return environment;
 }
 
-function professorDemoEnvironment(): NodeJS.ProcessEnv {
+function professorDemoEnvironment(databaseUrl: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
+    DATABASE_URL: databaseUrl,
     LABRIX_EXECUTION_PROVIDER: "local-docker",
     LABRIX_IDENTITY_MODE: "demo",
     LABRIX_JAVA_RUNNER_URL: services[0].executionUrl,
@@ -125,7 +127,11 @@ async function main() {
 
   const tsxCli = resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs");
   const nextCli = resolve(process.cwd(), "node_modules/next/dist/bin/next");
-  const appEnvironment = professorDemoEnvironment();
+  const databaseUrl = getDemoDatabaseUrl();
+  if (!databaseUrl) {
+    throw new Error("Professor demo DATABASE_URL is not configured.");
+  }
+  const appEnvironment = professorDemoEnvironment(databaseUrl);
 
   runPreparation(
     "database readiness check",

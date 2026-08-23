@@ -12,6 +12,7 @@ import {
 import { RoleContentBridge } from "@/features/student/role-content-bridge";
 import { StudentPracticalsPage } from "@/features/student/student-practicals-page";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
+import { resolveDemoStudentActor } from "@/server/actors/demo-session";
 import { getStudentOverview } from "@/server/student/overview";
 import {
   getTeacherOverview,
@@ -368,7 +369,9 @@ export default async function PracticalsOverviewPage({
 }) {
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   const params = await searchParams;
-  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
+  const studentTargetId = actor.source === "seeded-demo-session"
+    ? (await resolveDemoStudentActor()).id
+    : actor.id;
 
   const [teacherOverview, studentOverview] = await Promise.all([
     getTeacherOverview(actor.id),

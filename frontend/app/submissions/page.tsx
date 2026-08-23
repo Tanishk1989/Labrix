@@ -13,6 +13,7 @@ import { CohortPlagiarismAudit } from "@/features/submission-review/cohort-plagi
 import { RoleContentBridge } from "@/features/student/role-content-bridge";
 import { StudentSubmissionsPage } from "@/features/student/student-submissions-page";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
+import { resolveDemoStudentActor } from "@/server/actors/demo-session";
 import { getStudentOverview } from "@/server/student/overview";
 import { getTeacherOverview, type TeacherOverview } from "@/server/teacher/overview";
 import { getCohortPlagiarismReport, type CohortPlagiarismReport } from "@/server/evidence/cohort-service";
@@ -322,7 +323,9 @@ export default async function SubmissionsPage({
   const params = await searchParams;
   const classroomId = firstValue(params.classroom);
   const practicalId = firstValue(params.practical);
-  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
+  const studentTargetId = actor.source === "seeded-demo-session"
+    ? (await resolveDemoStudentActor()).id
+    : actor.id;
 
   const [teacherOverview, studentOverview, plagiarismReport] = await Promise.all([
     getTeacherOverview(actor.id),

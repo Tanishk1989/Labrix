@@ -2,6 +2,7 @@
   "name": "trace",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "tsx scripts/start-development.ts",
     "build": "prisma generate --schema=backend/prisma/schema.prisma && next build frontend",
@@ -42,9 +43,6 @@
     "runner:cpp:pull": "docker pull gcc@sha256:b99b86a28812b1e6453a231a947dc43d76fe192788a12f344a9b568bf9f5d24c",
     "runner:cpp": "tsx backend/runner/cpp/server.ts",
     "acceptance:java-workspace:dev": "tsx scripts/start-java-workspace-acceptance.ts"
-  },
-  "prisma": {
-    "schema": "backend/prisma/schema.prisma"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.1",

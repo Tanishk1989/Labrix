@@ -48,19 +48,6 @@ export async function resolveCurrentActorForPage(options: {
       ? requireActorRole(actor, options.requiredRole)
       : actor;
   } catch (error) {
-    if (
-      error instanceof UnauthenticatedActorError ||
-      error instanceof UnlinkedActorError ||
-      error instanceof InvalidExternalIdentityError
-    ) {
-      const fallbackActor =
-        options.demoActor === "student"
-          ? await resolveDemoStudentActor()
-          : await resolveDemoTeacherActor();
-      return options.requiredRole
-        ? requireActorRole(fallbackActor, options.requiredRole)
-        : fallbackActor;
-    }
     const destination = actorErrorDestination(error);
     if (destination) redirect(destination);
     throw error;
