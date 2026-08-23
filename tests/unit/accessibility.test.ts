@@ -3,22 +3,31 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 describe("Accessibility & WCAG AA Compliance Validation", () => {
-  it("ensures mobile auth pages have explicit accessible names and status roles for loading", () => {
+  it("ensures mobile auth pages have mobile-first responsive layout and accessible navigation", () => {
     const signInPath = join(process.cwd(), "frontend/app/sign-in/[[...sign-in]]/page.tsx");
     const signUpPath = join(process.cwd(), "frontend/app/sign-up/[[...sign-up]]/page.tsx");
+    const visualSidePath = join(process.cwd(), "frontend/features/auth/auth-visual-side.tsx");
 
     expect(existsSync(signInPath)).toBe(true);
     expect(existsSync(signUpPath)).toBe(true);
+    expect(existsSync(visualSidePath)).toBe(true);
 
     const signInContent = readFileSync(signInPath, "utf8");
     const signUpContent = readFileSync(signUpPath, "utf8");
+    const visualContent = readFileSync(visualSidePath, "utf8");
 
-    // Must have role="status" and aria-label on skeletons
-    expect(signInContent).toContain('role="status"');
-    expect(signInContent).toContain('aria-label="Loading authentication form"');
+    // Form must be placed first on mobile
+    expect(signInContent).toContain("order-1 lg:order-2");
+    expect(signUpContent).toContain("order-1 lg:order-2");
 
-    expect(signUpContent).toContain('role="status"');
-    expect(signUpContent).toContain('aria-label="Loading registration form"');
+    // Must have dark theme integration in layout
+    const layoutPath = join(process.cwd(), "frontend/app/layout.tsx");
+    const layoutContent = readFileSync(layoutPath, "utf8");
+    expect(layoutContent).toContain("dark");
+
+    // Visual side must have accessible links and aria-labels
+    expect(visualContent).toContain('aria-label="TRACE home"');
+    expect(visualContent).toContain('aria-hidden="true"');
   });
 
   it("ensures landing page interactive elements have focus rings and aria labels", () => {

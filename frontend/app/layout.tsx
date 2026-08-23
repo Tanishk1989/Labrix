@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { IdentityModeProvider } from "@/components/identity-mode-provider";
@@ -55,6 +56,7 @@ export default function RootLayout({
             signUpUrl="/sign-up"
             signInFallbackRedirectUrl="/dashboard"
             signUpFallbackRedirectUrl="/dashboard"
+            appearance={dark as never}
           >
             {content}
           </ClerkProvider>
