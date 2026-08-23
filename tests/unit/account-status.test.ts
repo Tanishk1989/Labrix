@@ -2,6 +2,7 @@ import { AccountStatus } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import {
   DisabledAccountError,
+  PendingTeacherApprovalError,
   requireActiveAccount,
 } from "@/server/actors/account-status";
 
@@ -14,5 +15,11 @@ describe("local account-status policy", () => {
     expect(() => requireActiveAccount(AccountStatus.DISABLED)).toThrow(
       DisabledAccountError,
     );
+  });
+
+  it("routes a pending teacher to the verification state", () => {
+    expect(() =>
+      requireActiveAccount(AccountStatus.PENDING_TEACHER_APPROVAL),
+    ).toThrow(PendingTeacherApprovalError);
   });
 });

@@ -1,21 +1,48 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import type { NotificationEvent } from "@/lib/notification-bus";
+
+const PUBLIC_PATHS = [
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/unauthorized",
+  "/unlinked-account",
+  "/disabled-account",
+  "/pending-teacher-approval",
+  "/teacher-approvals",
+];
+
+function isPublicPath(pathname: string | null): boolean {
+  if (!pathname) return true;
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 /**
  * Hook that opens an SSE connection to /api/notifications and
  * calls `onEvent` whenever a real-time notification arrives.
  *
- * Automatically reconnects on disconnect (exponential backoff, max 30s).
+ * Excludes unauthenticated public pages.
+ * Automatically reconnects on network drop with exponential backoff (max 30s).
  */
 export function useRealtimeNotifications(
   onEvent: (event: NotificationEvent) => void,
 ) {
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent; // always latest without re-connecting
+  const pathname = usePathname();
 
   useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
+
+  useEffect(() => {
+    // Do not open notification streams on public/auth pages
+    if (isPublicPath(pathname)) {
+      return;
+    }
+
     let es: EventSource | null = null;
     let retryDelay = 1_000; // start at 1s
     let destroyed = false;
@@ -54,5 +81,5 @@ export function useRealtimeNotifications(
       destroyed = true;
       es?.close();
     };
-  }, []); // only runs once per mount
+  }, [pathname]);
 }

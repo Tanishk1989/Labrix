@@ -1,6 +1,9 @@
 import type { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { DisabledAccountError } from "./account-status";
+import {
+  DisabledAccountError,
+  PendingTeacherApprovalError,
+} from "./account-status";
 import {
   ActorRoleDeniedError,
   requireActorRole,
@@ -23,6 +26,9 @@ export async function resolveCurrentActorForPage(options: {
   } catch (error) {
     if (error instanceof UnauthenticatedActorError) redirect("/sign-in");
     if (error instanceof UnlinkedActorError) redirect("/unlinked-account");
+    if (error instanceof PendingTeacherApprovalError) {
+      redirect("/pending-teacher-approval");
+    }
     if (error instanceof DisabledAccountError) redirect("/disabled-account");
     if (
       error instanceof InvalidExternalIdentityError ||

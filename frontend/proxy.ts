@@ -7,8 +7,11 @@ const publicPaths = [
   "/sign-in",
   "/sign-up",
   "/unlinked-account",
+  "/pending-teacher-approval",
+  "/teacher-approvals",
   "/disabled-account",
   "/unauthorized",
+  "/api/webhooks/clerk",
 ];
 
 const persistedRoutePrefixes = [
