@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { validateEnvironment } from "@/server/config/env-validator";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +12,7 @@ export async function GET() {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
     dbLatencyMs = Date.now() - dbStart;
-  } catch (error) {
+  } catch {
     dbStatus = "error";
     return NextResponse.json(
       {
@@ -22,26 +21,31 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         database: {
           status: "error",
-          message: error instanceof Error ? error.message : "Database connection failed",
         },
       },
       { status: 503 },
     );
   }
 
+  const memory = process.memoryUsage();
+
   return NextResponse.json(
     {
       status: "healthy",
       version: "0.1.0",
-      uptime: process.uptime(),
+      uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
       latencyMs: Date.now() - startTime,
       database: {
         status: dbStatus,
         latencyMs: dbLatencyMs,
       },
+      memory: {
+        rssMb: Math.round(memory.rss / (1024 * 1024)),
+        heapUsedMb: Math.round(memory.heapUsed / (1024 * 1024)),
+        heapTotalMb: Math.round(memory.heapTotal / (1024 * 1024)),
+      },
       environment: process.env.NODE_ENV ?? "development",
-      systemConfig: validateEnvironment(),
     },
     {
       status: 200,

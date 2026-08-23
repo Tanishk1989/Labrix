@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getIdentityMode } from "@/server/actors/identity-mode";
 
 const publicPaths = [
+  "/",
   "/sign-in",
   "/sign-up",
   "/unlinked-account",
@@ -11,6 +12,7 @@ const publicPaths = [
   "/teacher-approvals",
   "/disabled-account",
   "/unauthorized",
+  "/api/health",
   "/api/webhooks/clerk",
 ];
 
@@ -57,6 +59,5 @@ export const config = {
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
-    "/__clerk/(.*)",
   ],
 };

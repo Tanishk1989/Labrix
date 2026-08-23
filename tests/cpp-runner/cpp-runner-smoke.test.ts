@@ -165,30 +165,38 @@ int main() {
     expect(response.status).toBe(400);
   });
 
-  it("rejects a concurrent execution instead of queueing it", async () => {
+  it("queues concurrent execution requests and executes them in sequence", async () => {
     let releaseExecution = () => {};
     let markStarted = () => {};
+    let activeExecutions = 0;
+    let maxObservedConcurrency = 0;
     const executionStarted = new Promise<void>((resolve) => {
       markStarted = resolve;
     });
     const executionGate = new Promise<void>((resolve) => {
       releaseExecution = resolve;
     });
-    const concurrentServer = createCppRunnerServer(async (request) => {
-      markStarted();
-      await executionGate;
-      return {
-        state: "completed",
-        passedTests: 0,
-        totalTests: request.tests.length,
-        testResults: request.tests.map((test) => ({
-          testId: test.id,
-          passed: false,
-          actualOutput: "",
-          visibility: test.visibility,
-        })),
-      };
-    });
+    const concurrentServer = createCppRunnerServer(
+      async (request) => {
+        activeExecutions++;
+        maxObservedConcurrency = Math.max(maxObservedConcurrency, activeExecutions);
+        markStarted();
+        await executionGate;
+        activeExecutions--;
+        return {
+          state: "completed",
+          passedTests: 0,
+          totalTests: request.tests.length,
+          testResults: request.tests.map((test) => ({
+            testId: test.id,
+            passed: false,
+            actualOutput: "",
+            visibility: test.visibility,
+          })),
+        };
+      },
+      { maxConcurrency: 1, maxQueueSize: 10 },
+    );
 
     await new Promise<void>((resolve, reject) => {
       concurrentServer.once("error", reject);
@@ -204,15 +212,18 @@ int main() {
     });
     await executionStarted;
 
-    const secondResponse = await fetch(concurrentEndpoint, {
+    const secondRequest = fetch(concurrentEndpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload("int main() { return 0; }")),
     });
-    expect(secondResponse.status).toBe(503);
 
     releaseExecution();
-    expect((await firstRequest).status).toBe(200);
+    const [firstResponse, secondResponse] = await Promise.all([firstRequest, secondRequest]);
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(maxObservedConcurrency).toBe(1);
+
     await new Promise<void>((resolve, reject) => {
       concurrentServer.close((error) =>
         error ? reject(error) : resolve(),

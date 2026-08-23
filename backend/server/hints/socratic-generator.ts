@@ -35,7 +35,7 @@ export interface AiHintProvider {
  */
 export class DeterministicSocraticHintProvider implements AiHintProvider {
   async generateHint(context: HintContext): Promise<SocraticHintOutput> {
-    const { task, language, currentSourceCode, latestRun, failedVisibleTests, requestedLevel } = context;
+    const { task, latestRun, failedVisibleTests, requestedLevel } = context;
 
     // Detect error signals
     const isCompilerError = latestRun?.state === "COMPILATION_ERROR";
@@ -93,6 +93,16 @@ export class DeterministicSocraticHintProvider implements AiHintProvider {
           hintText: `The compiler reported: "${firstError.slice(0, 140)}". Check line boundaries and method signatures carefully.`,
           nextQuestion: "Are all referenced types and headers properly imported?",
           focusLines: [2, 6],
+        };
+      }
+
+      if (isRuntimeError && latestRun?.errorText) {
+        return {
+          level: 2,
+          category: "runtime-error",
+          hintText: "Your code encountered a runtime fault or exceeded execution time limits. Inspect memory allocations, recursion depth, and loop termination conditions.",
+          nextQuestion: "Is there a base case in your recursion or a valid increment in your loop?",
+          focusLines: [1, 10],
         };
       }
 

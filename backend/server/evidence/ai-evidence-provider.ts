@@ -5,6 +5,9 @@ import {
   type GenerateVivaInput,
   type VivaGenerationResult,
 } from "./viva-generator";
+import { computeSourceCodeHash, logAiGeneration } from "./ai-audit";
+import { globalRateLimiter } from "@/server/security/rate-limiter";
+import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_MODEL = process.env.GROQ_AI_REVIEW_MODEL || "openai/gpt-oss-20b";
@@ -14,6 +17,8 @@ const GEMINI_API_KEY =
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+const AI_CACHE = new Map<string, { result: VivaGenerationResult; expiresAt: number }>();
 
 function buildPrompt(input: GenerateVivaInput): string {
   const isAnomalous =
@@ -106,25 +111,18 @@ async function callGroqAI(
   input: GenerateVivaInput,
 ): Promise<VivaGenerationResult | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(GROQ_API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert computer science professor generating structured JSON viva questions and constructive feedback.",
-          },
-          { role: "user", content: prompt },
-        ],
+        messages: [{ role: "user", content: prompt }],
         temperature: 0.2,
         response_format: { type: "json_object" },
       }),
@@ -139,7 +137,7 @@ async function callGroqAI(
     }
 
     const data = await response.json();
-    const rawContent = data?.choices?.[0]?.message?.content;
+    const rawContent = data.choices?.[0]?.message?.content;
     if (!rawContent) return null;
 
     const parsed = JSON.parse(rawContent);
@@ -174,7 +172,7 @@ async function callGeminiAI(
   input: GenerateVivaInput,
 ): Promise<VivaGenerationResult | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -228,28 +226,98 @@ async function callGeminiAI(
   }
 }
 
+export interface ExplicitAiRequestOptions {
+  teacherId?: string;
+  submissionAttemptId?: string;
+  allowAiAssistance?: boolean;
+}
+
 /**
  * Generates viva oral defense questions and constructive teacher feedback.
- * Supports Groq API (ultra-fast LPU) and Google Gemini with automatic
- * zero-downtime fallback to the deterministic AST Code Engine.
+ * When requested explicitly by a teacher, supports Groq/Gemini with
+ * caching, audit logging, rate limiting, and zero-downtime deterministic fallback.
  */
 export async function generateVivaDefenseWithAI(
   input: GenerateVivaInput,
+  options: ExplicitAiRequestOptions = {},
 ): Promise<VivaGenerationResult> {
+  const startTime = Date.now();
+  const codeHash = computeSourceCodeHash(input.sourceCode);
+  const cacheKey = `${codeHash}:${input.language}:${input.taskTitle}`;
+
+  // 1. Check in-memory cache
+  const cached = AI_CACHE.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    if (options.teacherId) {
+      await logAiGeneration({
+        teacherId: options.teacherId,
+        submissionAttemptId: options.submissionAttemptId,
+        kind: "VIVA_DEFENSE",
+        modelUsed: cached.result.provenance.model,
+        sourceCode: input.sourceCode,
+        promptTokenEstimate: Math.ceil(input.sourceCode.length / 4),
+        cachedResult: true,
+        durationMs: Date.now() - startTime,
+        status: "SUCCESS",
+      });
+    }
+    return cached.result;
+  }
+
+  // 2. Check if AI assistance is blocked by classroom/institutional policy
+  if (options.allowAiAssistance === false) {
+    return generateVivaDefense(input);
+  }
+
+  // 3. Check teacher AI rate limiting if teacherId is provided
+  if (options.teacherId) {
+    const rl = await globalRateLimiter.check(options.teacherId, RATE_LIMIT_CONFIGS.AI_GENERATION);
+    if (!rl.success) {
+      return generateVivaDefense(input);
+    }
+  }
+
   const prompt = buildPrompt(input);
+  let result: VivaGenerationResult | null = null;
+  let modelUsed = "Deterministic AST Engine";
 
-  // 1. Try Groq (ultra-fast Llama 3.3 70B)
+  // Try Groq
   if (GROQ_API_KEY) {
-    const groqResult = await callGroqAI(prompt, input);
-    if (groqResult) return groqResult;
+    result = await callGroqAI(prompt, input);
+    if (result) modelUsed = `Groq (${GROQ_MODEL})`;
   }
 
-  // 2. Try Gemini
-  if (GEMINI_API_KEY) {
-    const geminiResult = await callGeminiAI(prompt, input);
-    if (geminiResult) return geminiResult;
+  // Try Gemini if Groq failed or unconfigured
+  if (!result && GEMINI_API_KEY) {
+    result = await callGeminiAI(prompt, input);
+    if (result) modelUsed = "Google Gemini 1.5 Flash";
   }
 
-  // 3. Deterministic AST fallback (zero downtime)
-  return generateVivaDefense(input);
+  // Fall back to deterministic AST parser
+  if (!result) {
+    result = generateVivaDefense(input);
+  } else {
+    // Cache valid AI result for 1 hour
+    AI_CACHE.set(cacheKey, {
+      result,
+      expiresAt: Date.now() + 3_600_000,
+    });
+  }
+
+  // Audit log the generation
+  if (options.teacherId) {
+    await logAiGeneration({
+      teacherId: options.teacherId,
+      submissionAttemptId: options.submissionAttemptId,
+      kind: "VIVA_DEFENSE",
+      modelUsed,
+      sourceCode: input.sourceCode,
+      promptTokenEstimate: Math.ceil(input.sourceCode.length / 4),
+      cachedResult: false,
+      durationMs: Date.now() - startTime,
+      status: "SUCCESS",
+    });
+  }
+
+  return result;
 }

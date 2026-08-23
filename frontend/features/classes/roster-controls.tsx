@@ -150,14 +150,13 @@ export function StudentHintToggle({
   studentId,
   studentName,
   effectiveAllowed,
-  overrideState,
   hintsUsedCount = 0,
 }: {
   classroomId: string;
   studentId: string;
   studentName: string;
   effectiveAllowed: boolean;
-  overrideState: boolean | null;
+  overrideState?: boolean | null;
   hintsUsedCount?: number;
 }) {
   const nextTarget = !effectiveAllowed;

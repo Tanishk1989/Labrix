@@ -156,7 +156,9 @@ export async function saveTeacherPractical(input: TeacherPracticalInput) {
       if (input.publish) {
         status = "PUBLISHED";
       } else if (current?.status === "PUBLISHED") {
-        status = hasStudentActivity ? "PUBLISHED" : "DRAFT";
+        // Saving edits must never silently unpublish a practical. A separate,
+        // explicit unpublish workflow can enforce its own classroom rules.
+        status = "PUBLISHED";
       }
       const publishedAt =
         status === "PUBLISHED"

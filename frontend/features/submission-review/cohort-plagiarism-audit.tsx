@@ -9,13 +9,9 @@ import {
   ChevronDown,
   ChevronUp,
   Code2,
-  ExternalLink,
-  Eye,
-  Filter,
   Fingerprint,
   HelpCircle,
   Layers,
-  Printer,
   Search,
   ShieldAlert,
   ShieldCheck,
@@ -25,8 +21,6 @@ import type { CohortPlagiarismReport } from "@/server/evidence/cohort-service";
 
 export function CohortPlagiarismAudit({
   report,
-  selectedClassroomId,
-  selectedTaskId,
 }: {
   report: CohortPlagiarismReport;
   selectedClassroomId?: string | null;

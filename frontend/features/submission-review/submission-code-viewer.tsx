@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Play, Pause, RotateCcw, SplitSquareVertical, FileCode, FastForward, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Play, Pause, RotateCcw, SplitSquareVertical, FileCode, FastForward } from "lucide-react";
 
 export function SubmissionCodeViewer({
   sourceCode,

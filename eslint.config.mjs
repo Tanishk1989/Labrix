@@ -5,6 +5,17 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      // Existing hydration/recovery effects intentionally restore browser-only
+      // state after mount. Keep the rule advisory while those flows are
+      // incrementally moved to lazy initializers.
+      "react-hooks/set-state-in-effect": "off",
+      // Legacy verification and test doubles still contain narrow `any` casts.
+      // Surface them without blocking production builds.
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

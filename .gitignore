@@ -22,6 +22,11 @@ blob-report/
 /blob-report/
 .tmp-*.png
 /.tmp-*.png
+*.png
+!frontend/public/**/*.png
+!audit-evidence/**/*.png
+.codex-*/
+design-qa.md
 
 # next.js & turbo
 .next/

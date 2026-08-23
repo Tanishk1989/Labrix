@@ -28,7 +28,7 @@ const nextCli = resolve(
 const environment = {
   ...process.env,
   DATABASE_URL: databaseUrl,
-  LABRIX_IDENTITY_MODE: process.env.LABRIX_IDENTITY_MODE || "demo",
+  LABRIX_IDENTITY_MODE: process.env.LABRIX_IDENTITY_MODE || "clerk",
 };
 
 const databaseCheck = spawnSync(

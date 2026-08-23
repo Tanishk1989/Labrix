@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   ArrowDown,
   BrainCircuit,
-  Fingerprint,
-  Sparkles,
   Target,
   Terminal,
 } from "lucide-react";
@@ -45,9 +43,9 @@ export function AuthVisualSide() {
         </h1>
 
         <div className="mt-7 space-y-2.5 text-base sm:text-lg text-white/70 font-medium max-w-lg">
-          <p>Capture keystrokes &amp; real-time session telemetry.</p>
-          <p>Understand structural AST invariants.</p>
-          <p>Master oral viva code defense.</p>
+          <p>Preserve evidence from runs, revisions, and submissions.</p>
+          <p>Understand structural solution signals.</p>
+          <p>Support oral code defense with teacher-owned context.</p>
           <p className="text-lime-400 font-semibold pt-1 text-base sm:text-lg">
             AI-powered academic integrity built for CS labs.
           </p>
@@ -57,16 +55,16 @@ export function AuthVisualSide() {
         <div className="mt-12 relative max-w-2xl">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
             
-            {/* Card 1 (Left Top): Live Telemetry */}
+            {/* Card 1 (Left Top): Review evidence */}
             <div className="sm:col-span-7 rounded-2xl border border-white/10 bg-[#0d1017]/90 p-5 shadow-2xl backdrop-blur-2xl transition-all hover:border-lime-500/30 hover:shadow-lime-500/5">
               <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 text-white font-semibold">
                   <Terminal size={16} className="text-lime-400" />
-                  <span>Live Telemetry</span>
+                  <span>Submission Evidence</span>
                 </div>
                 <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-rose-400 uppercase tracking-wider">
                   <span className="size-2 rounded-full bg-rose-500 animate-ping" />
-                  LIVE
+                  READY
                 </span>
               </div>
               {/* Waveform graphic */}
@@ -80,7 +78,7 @@ export function AuthVisualSide() {
                 ))}
               </div>
               <p className="mt-3 text-xs font-mono text-white/60 truncate">
-                &quot;The AST invariant &lambda; satisfies O(1) amortized...&quot;
+                Tests, structure, and revision history are ready to review.
               </p>
             </div>
 
@@ -106,25 +104,25 @@ export function AuthVisualSide() {
               </div>
             </div>
 
-            {/* Card 3 (Bottom Spanning): Integrity & Grade Forecast */}
+            {/* Card 3 (Bottom Spanning): Integrity review */}
             <div className="sm:col-span-9 rounded-2xl border border-white/10 bg-[#0d1017]/90 p-5 shadow-2xl backdrop-blur-2xl transition-all hover:border-lime-500/30">
               <div className="flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-2 text-white font-semibold">
                   <Target size={16} className="text-rose-400" />
-                  <span>Integrity &amp; Grade Forecast</span>
+                  <span>Integrity Review</span>
                 </div>
-                <span className="text-xs font-mono font-bold text-lime-400">94%</span>
+                <span className="text-xs font-mono font-bold text-lime-400">READY</span>
               </div>
-              <p className="mt-2 text-sm font-bold text-white">Data Structures Lab (CS201)</p>
+              <p className="mt-2 text-sm font-bold text-white">Teacher-owned evidence</p>
               
               {/* Progress bar */}
               <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-[94%] rounded-full bg-lime-400 shadow-[0_0_15px_rgba(163,230,53,0.9)]" />
+                <div className="h-full w-full rounded-full bg-lime-400 shadow-[0_0_15px_rgba(163,230,53,0.9)]" />
               </div>
               
               <div className="mt-2.5 flex items-center justify-between text-xs font-mono">
-                <span className="text-lime-300 font-bold">A+ Predicted</span>
-                <span className="text-white/50">Zero Plagiarism Invariant</span>
+                <span className="text-lime-300 font-bold">Review context prepared</span>
+                <span className="text-white/50">Evidence, not surveillance</span>
               </div>
             </div>
 

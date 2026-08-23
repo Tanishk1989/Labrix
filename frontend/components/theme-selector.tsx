@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Palette, Check, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { useColorTheme, themePresets, type ColorTheme } from "./theme-provider";
 
 export function ThemeSelector() {

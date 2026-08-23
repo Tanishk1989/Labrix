@@ -10,28 +10,19 @@ import { getStudentOverview } from "@/server/student/overview";
 export default async function ClassesPage() {
   await connection();
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
-  if (actor.source === "seeded-demo-session") {
-    const [teacherViewModel, studentOverview] = await Promise.all([
-      getMyClassesViewModel(actor.id, "TEACHER"),
-      getStudentOverview("demo-student-1"),
-    ]);
-    return (
-      <DemoShell actor={actor}>
-        <MyClassesBridge
-          teacherContent={<MyClassesPage viewModel={teacherViewModel} />}
-          studentContent={<StudentClassesPage overview={studentOverview} allowJoin />}
-        />
-      </DemoShell>
-    );
-  }
-  if (actor.role === "STUDENT") {
-    const overview = await getStudentOverview(actor.id);
-    return <DemoShell actor={actor}><StudentClassesPage overview={overview} allowJoin={false} /></DemoShell>;
-  }
-  const viewModel = await getMyClassesViewModel(actor.id, "TEACHER");
+  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
+
+  const [teacherViewModel, studentOverview] = await Promise.all([
+    getMyClassesViewModel(actor.id, "TEACHER"),
+    getStudentOverview(studentTargetId),
+  ]);
+
   return (
     <DemoShell actor={actor}>
-      <MyClassesPage viewModel={viewModel} />
+      <MyClassesBridge
+        teacherContent={<MyClassesPage viewModel={teacherViewModel} />}
+        studentContent={<StudentClassesPage overview={studentOverview} allowJoin />}
+      />
     </DemoShell>
   );
 }

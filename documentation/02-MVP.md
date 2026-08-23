@@ -30,7 +30,7 @@ Status reflects repository behavior as of 2026-08-15.
 
 ## Partial
 
-- Production authentication remains incomplete until a security acceptance pass and administrator-controlled teacher provisioning. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
+- Production authentication remains incomplete until a security acceptance pass. Clerk teacher identities are now provisioned as pending, notify the configured administrator by email, and remain inaccessible until approval through the signed request link. An unlinked Clerk student can create a local STUDENT account only by presenting a valid classroom join code.
 - Resolver mode is explicit: `demo` retains fixed actors for local/test use and is rejected in deployed production; the supervised loopback-only professor-demo launcher may acknowledge it solely to serve an optimized local build. `clerk` never falls back to demo.
 - Practical authoring lacks complete editing/list management and release/version semantics.
 - Draft conflict handling is server-last-write-wins; offline and multi-device recovery are not implemented.
@@ -44,7 +44,7 @@ Status reflects repository behavior as of 2026-08-15.
 ## Planned
 
 - Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
-- Administrator-controlled teacher provisioning. Email invitations, webhooks, MFA, and social login remain outside this slice.
+- Clerk email invitations, MFA, and social-login acceptance remain outside this slice. Signed Clerk lifecycle webhooks and administrator email approval are implemented for teacher provisioning.
 - Isolated production execution with queues, limits, retries, and observability.
 - Versioned deterministic evidence signals beyond the five foundation events.
 - AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.

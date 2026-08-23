@@ -3,6 +3,8 @@ import { getEffectiveStudentHintPermission } from "@/server/hints/permissions";
 
 vi.mock("server-only", () => ({}));
 
+type MockHintDb = Parameters<typeof getEffectiveStudentHintPermission>[0];
+
 describe("getEffectiveStudentHintPermission", () => {
   it("defaults to strictly LOCKED when no policy or override exists", async () => {
     const mockDb = {
@@ -12,7 +14,7 @@ describe("getEffectiveStudentHintPermission", () => {
       classroomHintPolicy: {
         findUnique: async () => null,
       },
-    } as any;
+    } as unknown as MockHintDb;
 
     const result = await getEffectiveStudentHintPermission(mockDb, "class-1", "student-1");
     expect(result.allowed).toBe(false);
@@ -29,7 +31,7 @@ describe("getEffectiveStudentHintPermission", () => {
       classroomHintPolicy: {
         findUnique: async () => ({ enabledForAll: true }),
       },
-    } as any;
+    } as unknown as MockHintDb;
 
     const result = await getEffectiveStudentHintPermission(mockDb, "class-1", "student-1");
     expect(result.allowed).toBe(true);
@@ -47,7 +49,7 @@ describe("getEffectiveStudentHintPermission", () => {
       classroomHintPolicy: {
         findUnique: async () => ({ enabledForAll: true }),
       },
-    } as any;
+    } as unknown as MockHintDb;
 
     const result1 = await getEffectiveStudentHintPermission(mockDb1, "class-1", "student-1");
     expect(result1.allowed).toBe(false);
@@ -62,7 +64,7 @@ describe("getEffectiveStudentHintPermission", () => {
       classroomHintPolicy: {
         findUnique: async () => ({ enabledForAll: false }),
       },
-    } as any;
+    } as unknown as MockHintDb;
 
     const result2 = await getEffectiveStudentHintPermission(mockDb2, "class-1", "student-2");
     expect(result2.allowed).toBe(true);

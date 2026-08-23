@@ -37,6 +37,10 @@ function fakeDb(
 }
 
 describe("authenticated current actor resolution", () => {
+  it("defaults to Clerk when identity mode is omitted", () => {
+    expect(resolveIdentityMode({ nodeEnv: "development" })).toBe("clerk");
+  });
+
   it("rejects a missing Clerk session", async () => {
     await expect(
       resolveCurrentActor({

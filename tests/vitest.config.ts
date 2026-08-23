@@ -23,5 +23,15 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      thresholds: {
+        lines: 75,
+        functions: 70,
+        branches: 70,
+        statements: 75,
+      },
+    },
   },
 });

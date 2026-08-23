@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Fingerprint, Search, ShieldAlert } from "lucide-react";
+import { ArrowRight, Fingerprint, Search } from "lucide-react";
 import { DemoShell } from "@/components/app-shell";
 import { Button, Input, PageHeader, Select } from "@/components/design-system";
 import {
@@ -322,43 +322,11 @@ export default async function SubmissionsQueuePage({
   const params = await searchParams;
   const classroomId = firstValue(params.classroom);
   const practicalId = firstValue(params.practical);
+  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
 
-  if (actor.source === "seeded-demo-session") {
-    const [teacherOverview, studentOverview, plagiarismReport] = await Promise.all([
-      getTeacherOverview(actor.id),
-      getStudentOverview("demo-student-1"),
-      getCohortPlagiarismReport(actor.id, {
-        classroomId,
-        taskId: practicalId,
-      }),
-    ]);
-    return (
-      <DemoShell actor={actor}>
-        <RoleContentBridge
-          teacher={
-            <TeacherSubmissionsContent
-              overview={teacherOverview}
-              params={params}
-              plagiarismReport={plagiarismReport}
-            />
-          }
-          student={<StudentSubmissionsPage overview={studentOverview} classroomId={classroomId} />}
-        />
-      </DemoShell>
-    );
-  }
-
-  if (actor.role === "STUDENT") {
-    const overview = await getStudentOverview(actor.id);
-    return (
-      <DemoShell actor={actor}>
-        <StudentSubmissionsPage overview={overview} classroomId={classroomId} />
-      </DemoShell>
-    );
-  }
-
-  const [overview, plagiarismReport] = await Promise.all([
+  const [teacherOverview, studentOverview, plagiarismReport] = await Promise.all([
     getTeacherOverview(actor.id),
+    getStudentOverview(studentTargetId),
     getCohortPlagiarismReport(actor.id, {
       classroomId,
       taskId: practicalId,
@@ -367,10 +335,15 @@ export default async function SubmissionsQueuePage({
 
   return (
     <DemoShell actor={actor}>
-      <TeacherSubmissionsContent
-        overview={overview}
-        params={params}
-        plagiarismReport={plagiarismReport}
+      <RoleContentBridge
+        teacher={
+          <TeacherSubmissionsContent
+            overview={teacherOverview}
+            params={params}
+            plagiarismReport={plagiarismReport}
+          />
+        }
+        student={<StudentSubmissionsPage overview={studentOverview} classroomId={classroomId} />}
       />
     </DemoShell>
   );

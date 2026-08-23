@@ -75,7 +75,14 @@ export function getServerExecutionProvider(
   language?: AllowedLanguage,
 ): ServerExecutionProvider {
   const mode = environment.LABRIX_EXECUTION_PROVIDER ?? "mock";
-  if (mode === "mock") return mockProvider;
+  if (mode === "mock") {
+    if (environment.NODE_ENV === "production") {
+      throw new Error(
+        "Invalid execution provider configuration: mock execution is forbidden in production.",
+      );
+    }
+    return mockProvider;
+  }
   if (mode === "java-http") {
     requireLocalRunnerProductionAllowance(mode, environment);
     return new JavaHttpExecutionProvider({

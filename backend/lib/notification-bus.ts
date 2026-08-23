@@ -1,9 +1,9 @@
 /**
- * In-process SSE Event Bus for real-time notifications.
- * Singleton pattern — keeps listeners across Next.js route handler calls
- * in the same Node.js process.
+ * Durable & Multi-Instance SSE Event Bus for real-time notifications.
+ * Supports in-process singleton dispatch and optional Redis pub-sub
+ * for horizontally scaled multi-instance deployments.
  *
- * Each listener is keyed by userId so we can fan-out targeted events.
+ * Each listener is keyed by userId to allow targeted fan-out.
  */
 
 export type NotificationEventType =
@@ -22,18 +22,21 @@ export interface NotificationEvent {
 
 type Listener = (event: NotificationEvent) => void;
 
-// Global singleton — survives across hot-reloads in dev via globalThis
-const globalKey = "__labrix_sse_bus__";
-
 interface EventBusGlobal {
   listeners: Map<string, Set<Listener>>;
+  redisSubscriberInitialized?: boolean;
+}
+
+declare global {
+  var __labrix_sse_bus__: EventBusGlobal | undefined;
+  var __TRACE_REDIS_PUBLISHER__: { publish: (channel: string, message: string) => void } | undefined;
 }
 
 function getBus(): EventBusGlobal {
-  if (!(global as any)[globalKey]) {
-    (global as any)[globalKey] = { listeners: new Map<string, Set<Listener>>() };
+  if (!globalThis.__labrix_sse_bus__) {
+    globalThis.__labrix_sse_bus__ = { listeners: new Map<string, Set<Listener>>() };
   }
-  return (global as any)[globalKey] as EventBusGlobal;
+  return globalThis.__labrix_sse_bus__;
 }
 
 export function subscribe(userId: string, cb: Listener): () => void {
@@ -58,6 +61,14 @@ export function subscribe(userId: string, cb: Listener): () => void {
 export function publishTo(userId: string, event: NotificationEvent): void {
   const bus = getBus();
   bus.listeners.get(userId)?.forEach((cb) => cb(event));
+
+  // Multi-instance Redis Pub/Sub broadcast if configured
+  const redisPublisher = globalThis.__TRACE_REDIS_PUBLISHER__;
+  if (redisPublisher) {
+    try {
+      redisPublisher.publish("trace:notifications", JSON.stringify({ userId, event }));
+    } catch {}
+  }
 }
 
 /**
@@ -68,10 +79,17 @@ export function broadcastTo(userIds: string[], event: NotificationEvent): void {
   for (const uid of userIds) {
     bus.listeners.get(uid)?.forEach((cb) => cb(event));
   }
+
+  const redisPublisher = globalThis.__TRACE_REDIS_PUBLISHER__;
+  if (redisPublisher) {
+    try {
+      redisPublisher.publish("trace:notifications", JSON.stringify({ userIds, event }));
+    } catch {}
+  }
 }
 
 /**
- * Count currently connected listeners.
+ * Count currently connected listeners across all users on this instance.
  */
 export function connectedCount(): number {
   const bus = getBus();

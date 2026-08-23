@@ -78,12 +78,12 @@ async function runAllTests() {
   // 1. Health Endpoint Verification
   try {
     const res = await fetchUrl("/api/health");
-    let json: any = null;
+    let json: Record<string, unknown> | null = null;
     try {
       json = JSON.parse(res.body);
     } catch {}
 
-    const isOk = res.statusCode === 200 && json?.status;
+    const isOk = res.statusCode === 200 && Boolean(json?.status);
     results.push({
       category: "API & Backend Health",
       name: "GET /api/health Endpoint Check",
@@ -92,17 +92,18 @@ async function runAllTests() {
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
       details: json
-        ? `Status: ${json.status} | DB: ${json.database || json.db || "connected"} | Env: ${json.environment || "production"}`
+        ? `Status: ${String(json.status)} | DB: ${String(json.database || json.db || "connected")} | Env: ${String(json.environment || "production")}`
         : `Body: ${res.body.slice(0, 80)}`,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "API & Backend Health",
       name: "GET /api/health Endpoint Check",
       url: `${BASE_URL}/api/health`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -119,14 +120,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: res.headers.location ? `Redirects to ${res.headers.location}` : "Loaded successfully directly",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Routing & Core Pages",
       name: "Root URL (/) Redirect",
       url: `${BASE_URL}/`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -145,14 +147,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Rendered complete page with navbar, metrics, and cards" : "Missing key elements in HTML",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Routing & Core Pages",
       name: "Dashboard Page (/dashboard)",
       url: `${BASE_URL}/dashboard`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -169,14 +172,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Classroom management and enrolled student cards accessible" : "Failed to load classes",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Teacher & Student Flows",
       name: "Classes List (/classes)",
       url: `${BASE_URL}/classes`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -193,14 +197,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "All laboratory programming tasks and practicals listed" : "Failed to load practicals",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Teacher & Student Flows",
       name: "Practicals Directory (/practicals)",
       url: `${BASE_URL}/practicals`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -217,14 +222,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Evaluation queue, AI interview review cards & grading loaded" : "Failed to load submissions",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Teacher & Student Flows",
       name: "Submissions (/submissions)",
       url: `${BASE_URL}/submissions`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -241,14 +247,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Student competency metrics, integrity ratings, and completion tracks verified" : "Failed to load progress",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Analytics & Defense Progress",
       name: "Progress Page (/progress)",
       url: `${BASE_URL}/progress`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -265,14 +272,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Zero 500 crashes; Glassmorphism Auth form and social options rendered" : "Error loading sign-in",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Authentication & Identity",
       name: "Sign In Route (/sign-in)",
       url: `${BASE_URL}/sign-in`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -289,14 +297,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "PWA metadata and icons valid" : "Manifest missing",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "PWA & Brand Assets",
       name: "Manifest Check",
       url: `${BASE_URL}/manifest.webmanifest`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -313,14 +322,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Valid SVG vector graphic rendered" : "Icon missing or invalid",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "PWA & Brand Assets",
       name: "SVG Icon Check",
       url: `${BASE_URL}/icon.svg`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 
@@ -337,14 +347,15 @@ async function runAllTests() {
       latencyMs: res.latencyMs,
       details: isOk ? "Graceful not-found state without server crash" : "Unhandled 500 error on unknown route",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Resilience & Security",
       name: "404 Error Boundary",
       url: `${BASE_URL}/some-non-existent-slug-xyz`,
       status: "FAILED",
       latencyMs: 0,
-      details: err.message,
+      details: message,
     });
   }
 

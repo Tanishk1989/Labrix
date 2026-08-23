@@ -73,6 +73,11 @@ flowchart TD
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
 | `CLERK_SECRET_KEY` | `sk_live_...` |
 | `CLERK_WEBHOOK_SECRET` | `whsec_...` |
+| `LABRIX_APP_URL` | Public HTTPS origin used in approval links |
+| `RESEND_API_KEY` | Resend API key for administrator notifications |
+| `TEACHER_APPROVAL_EMAIL` | `tanishk1976@gmail.com` |
+| `TEACHER_APPROVAL_FROM_EMAIL` | Sender on a domain verified in Resend |
+| `TEACHER_APPROVAL_SECRET` | Random secret containing at least 32 characters |
 | `GROQ_API_KEY` | `gsk_...` |
 | `GROQ_AI_REVIEW_MODEL` | `openai/gpt-oss-20b` |
 | `LABRIX_EXECUTION_PROVIDER` | `mock` (or `sandbox` with remote runner) |

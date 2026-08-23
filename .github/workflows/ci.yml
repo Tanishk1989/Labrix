@@ -11,8 +11,25 @@ jobs:
     name: Lint, Test & Production Build
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: labrix
+          POSTGRES_PASSWORD: labrix-ci-password
+          POSTGRES_DB: labrix_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/labrix_ci?schema=public"
+      DATABASE_URL: "postgresql://labrix:labrix-ci-password@localhost:5432/labrix_ci?schema=public"
+      LABRIX_TEST_DATABASE_URL: "postgresql://labrix:labrix-ci-password@localhost:5432/labrix_ci?schema=public"
+      LABRIX_ALLOW_TEST_DATABASE_MUTATION: "true"
       LABRIX_IDENTITY_MODE: "demo"
       LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD: "true"
       LABRIX_EXECUTION_PROVIDER: "mock"
@@ -38,8 +55,18 @@ jobs:
       - name: TypeScript Typecheck
         run: npm run typecheck
 
-      - name: Run Unit Tests
+      - name: ESLint Check
+        run: npm run lint
+
+      - name: Run Unit & Accessibility Tests
         run: npm run test:unit
+
+      - name: Prepare Test Database
+        run: npm run test:db:prepare
+
+      - name: Run Integration Tests
+        run: npm run test:integration
 
       - name: Next.js Production Build
         run: npm run build
+

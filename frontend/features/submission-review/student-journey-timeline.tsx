@@ -80,8 +80,6 @@ export function StudentJourneyTimeline({
   runCount = 0,
   passedTests,
   totalTests,
-  studentName,
-  compact = false,
 }: StudentJourneyTimelineProps) {
   const sortedEvents = [...events].sort(
     (a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime(),

@@ -3,37 +3,68 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: labrix-postgres
+    container_name: trace-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: labrix_user
-      POSTGRES_PASSWORD: labrix_secure_password
-      POSTGRES_DB: labrix_db
+      POSTGRES_USER: ${POSTGRES_USER:-trace_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trace_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-trace_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U labrix_user -d labrix_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trace_user} -d ${POSTGRES_DB:-trace_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - trace-network
+
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trace-migration
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:-trace_secure_password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
+    command: ["npx", "prisma", "migrate", "deploy", "--schema=backend/prisma/schema.prisma"]
+    networks:
+      - trace-network
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: labrix-app
+    container_name: trace-app
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://labrix_user:labrix_secure_password@postgres:5432/labrix_db?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:-trace_secure_password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
       PORT: 3000
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET}
+      RUNNER_BEARER_TOKEN: ${RUNNER_BEARER_TOKEN}
+      RUNNER_MAX_CONCURRENCY: ${RUNNER_MAX_CONCURRENCY:-4}
+      RUNNER_MAX_QUEUE_SIZE: ${RUNNER_MAX_QUEUE_SIZE:-64}
     ports:
       - "3000:3000"
+    networks:
+      - trace-network
+
+networks:
+  trace-network:
+    driver: bridge
 
 volumes:
   postgres_data:

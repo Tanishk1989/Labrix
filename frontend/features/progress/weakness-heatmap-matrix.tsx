@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronRight, Filter, HelpCircle, Lightbulb, Sparkles, TrendingDown, Users, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Filter, Lightbulb, Sparkles, TrendingDown, X } from "lucide-react";
 import {
   CORE_CONCEPTS,
   type ClassWeaknessSummary,
-  type ConceptCategory,
   type StudentConceptScore,
   type StudentWeaknessProfile,
 } from "./weakness-heatmap";

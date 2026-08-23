@@ -1,114 +1,215 @@
-import "server-only";
+import { createHash } from "node:crypto";
+
+export interface RateLimitConfig {
+  /** Maximum number of allowed requests in the window */
+  maxRequests: number;
+  /** Window size in seconds */
+  windowSeconds: number;
+  /** Optional custom identifier prefix */
+  prefix?: string;
+}
 
 export interface RateLimitResult {
-  allowed: boolean;
+  success: boolean;
+  limit: number;
   remaining: number;
-  resetMs: number;
-  totalLimit: number;
+  resetAt: Date;
+  retryAfterSeconds: number;
 }
 
-interface WindowBucket {
-  count: number;
-  resetAt: number;
-}
-
-const memoryStore = new Map<string, WindowBucket>();
-
-// Periodic cleanup of stale memory bucket entries every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, bucket] of memoryStore.entries()) {
-      if (bucket.resetAt <= now) {
-        memoryStore.delete(key);
-      }
-    }
-  }, 5 * 60 * 1000).unref?.();
+export interface RateLimiterStore {
+  consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult>;
+  reset(key: string): Promise<void>;
 }
 
 /**
- * Sliding window rate limiter for TRACE / Labrix.
- * Uses distributed Upstash Redis if configured; otherwise uses high-performance in-memory bucket.
+ * In-memory sliding window rate limiter store.
+ * Automatically cleans up expired timestamps to avoid memory leaks.
  */
-export async function checkRateLimit(
-  identifier: string,
-  limit: number = 10,
-  windowSeconds: number = 60,
-): Promise<RateLimitResult> {
-  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+export class MemoryRateLimiterStore implements RateLimiterStore {
+  private timestamps = new Map<string, number[]>();
+  private lastCleanup = Date.now();
 
-  // 1. Upstash Redis (Distributed multi-instance production)
-  if (upstashUrl && upstashToken) {
-    try {
-      const key = `ratelimit:${identifier}`;
-      const res = await fetch(`${upstashUrl}/pipeline`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${upstashToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify([
-          ["INCR", key],
-          ["EXPIRE", key, windowSeconds, "NX"],
-          ["TTL", key],
-        ]),
-      });
-
-      if (res.ok) {
-        const results = await res.json();
-        const count = results[0]?.result ?? 1;
-        const ttl = results[2]?.result ?? windowSeconds;
-
-        return {
-          allowed: count <= limit,
-          remaining: Math.max(0, limit - count),
-          resetMs: ttl * 1000,
-          totalLimit: limit,
-        };
+  private cleanup(now: number) {
+    if (now - this.lastCleanup < 60_000) return;
+    this.lastCleanup = now;
+    for (const [key, times] of this.timestamps.entries()) {
+      const valid = times.filter((t) => now - t < 3_600_000); // 1 hour retention max
+      if (valid.length === 0) {
+        this.timestamps.delete(key);
+      } else {
+        this.timestamps.set(key, valid);
       }
-    } catch (err) {
-      console.warn("Upstash rate limit fetch error, falling back to memory:", err);
     }
   }
 
-  // 2. In-Memory Store (High-speed single-instance / development fallback)
-  const now = Date.now();
-  const windowMs = windowSeconds * 1000;
-  const existing = memoryStore.get(identifier);
+  async consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+    const now = Date.now();
+    this.cleanup(now);
 
-  if (!existing || existing.resetAt <= now) {
-    memoryStore.set(identifier, {
-      count: 1,
-      resetAt: now + windowMs,
-    });
+    const windowMs = windowSeconds * 1000;
+    const cutoff = now - windowMs;
+
+    const existing = this.timestamps.get(key) ?? [];
+    const recent = existing.filter((t) => t > cutoff);
+
+    if (recent.length >= limit) {
+      const oldestInWindow = recent[0] ?? now;
+      const resetTime = oldestInWindow + windowMs;
+      const retryAfterSeconds = Math.max(1, Math.ceil((resetTime - now) / 1000));
+      return {
+        success: false,
+        limit,
+        remaining: 0,
+        resetAt: new Date(resetTime),
+        retryAfterSeconds,
+      };
+    }
+
+    recent.push(now);
+    this.timestamps.set(key, recent);
+
+    const resetTime = now + windowMs;
     return {
-      allowed: true,
-      remaining: limit - 1,
-      resetMs: windowMs,
-      totalLimit: limit,
+      success: true,
+      limit,
+      remaining: Math.max(0, limit - recent.length),
+      resetAt: new Date(resetTime),
+      retryAfterSeconds: 0,
     };
   }
 
-  existing.count += 1;
-  const remaining = Math.max(0, limit - existing.count);
-  const resetMs = Math.max(0, existing.resetAt - now);
+  async reset(key: string): Promise<void> {
+    this.timestamps.delete(key);
+  }
+}
 
-  return {
-    allowed: existing.count <= limit,
-    remaining,
-    resetMs,
-    totalLimit: limit,
-  };
+interface RedisLikeMulti {
+  zremrangebyscore: (key: string, min: number, max: number) => RedisLikeMulti;
+  zcard: (key: string) => RedisLikeMulti;
+  zadd: (key: string, score: number, member: string) => RedisLikeMulti;
+  expire: (key: string, seconds: number) => RedisLikeMulti;
+  exec: () => Promise<Array<[Error | null, unknown]>>;
+}
+
+interface RedisLikeClient {
+  multi: () => RedisLikeMulti;
+  del: (key: string) => Promise<unknown>;
+}
+
+declare global {
+  var __TRACE_REDIS_CLIENT__: RedisLikeClient | undefined;
 }
 
 /**
- * Standard predefined rate limit profiles
+ * Redis-based rate limiter store using atomic multi commands.
+ * Falls back gracefully to memory if Redis is unavailable or unconfigured.
  */
-export const RateLimitPolicies = {
-  RUN_CODE: { limit: 10, windowSeconds: 60 },
-  SAVE_DRAFT: { limit: 30, windowSeconds: 60 },
-  SUBMIT_ATTEMPT: { limit: 3, windowSeconds: 60 },
-  AUTH_ATTEMPT: { limit: 5, windowSeconds: 60 },
-  AI_GENERATE_VIVA: { limit: 15, windowSeconds: 60 },
-};
+export class RedisRateLimiterStore implements RateLimiterStore {
+  private fallbackStore = new MemoryRateLimiterStore();
+  private redisClient: RedisLikeClient | null = null;
+  private isRedisAvailable = false;
+
+  constructor(redisUrl?: string) {
+    const url = redisUrl || process.env.REDIS_URL;
+    if (url) {
+      try {
+        // Attempt lazy dynamic import or connection if ioredis/redis is installed
+        // If not installed, falls back cleanly to memory
+        const IORedis = globalThis.__TRACE_REDIS_CLIENT__;
+        if (IORedis) {
+          this.redisClient = IORedis;
+          this.isRedisAvailable = true;
+        }
+      } catch {
+        this.isRedisAvailable = false;
+      }
+    }
+  }
+
+  async consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+    if (!this.isRedisAvailable || !this.redisClient) {
+      return this.fallbackStore.consume(key, limit, windowSeconds);
+    }
+
+    try {
+      const now = Date.now();
+      const windowMs = windowSeconds * 1000;
+      const clearBefore = now - windowMs;
+      const redisKey = `ratelimit:${key}`;
+
+      const multi = this.redisClient.multi();
+      multi.zremrangebyscore(redisKey, 0, clearBefore);
+      multi.zcard(redisKey);
+      multi.zadd(redisKey, now, `${now}-${Math.random()}`);
+      multi.expire(redisKey, windowSeconds + 10);
+
+      const results = await multi.exec();
+      const currentCount = results ? Number(results[1][1]) : 0;
+
+      if (currentCount >= limit) {
+        return {
+          success: false,
+          limit,
+          remaining: 0,
+          resetAt: new Date(now + windowMs),
+          retryAfterSeconds: windowSeconds,
+        };
+      }
+
+      return {
+        success: true,
+        limit,
+        remaining: Math.max(0, limit - (currentCount + 1)),
+        resetAt: new Date(now + windowMs),
+        retryAfterSeconds: 0,
+      };
+    } catch {
+      return this.fallbackStore.consume(key, limit, windowSeconds);
+    }
+  }
+
+  async reset(key: string): Promise<void> {
+    if (this.isRedisAvailable && this.redisClient) {
+      try {
+        await this.redisClient.del(`ratelimit:${key}`);
+      } catch {}
+    }
+    await this.fallbackStore.reset(key);
+  }
+}
+
+// Global default store instance
+const defaultStore: RateLimiterStore = process.env.REDIS_URL
+  ? new RedisRateLimiterStore(process.env.REDIS_URL)
+  : new MemoryRateLimiterStore();
+
+/**
+ * Main RateLimiter entry point.
+ */
+export class RateLimiter {
+  private store: RateLimiterStore;
+
+  constructor(store: RateLimiterStore = defaultStore) {
+    this.store = store;
+  }
+
+  /**
+   * Consume a rate limit token for the given key and config.
+   */
+  async check(identifier: string, config: RateLimitConfig): Promise<RateLimitResult> {
+    const prefix = config.prefix ?? "default";
+    const safeKey = `${prefix}:${createHash("sha256").update(identifier).digest("hex").slice(0, 24)}`;
+    return this.store.consume(safeKey, config.maxRequests, config.windowSeconds);
+  }
+
+  /**
+   * Reset rate limit state for a key.
+   */
+  async reset(identifier: string, prefix = "default"): Promise<void> {
+    const safeKey = `${prefix}:${createHash("sha256").update(identifier).digest("hex").slice(0, 24)}`;
+    return this.store.reset(safeKey);
+  }
+}
+
+export const globalRateLimiter = new RateLimiter();

@@ -18,7 +18,7 @@ import { StudentSubmissionResult } from "@/features/student/submission-result";
 import { FastGraderNavigator, type FastGraderItem } from "@/features/submission-review/fast-grader-navigator";
 import { DEFAULT_STARTER_CODES } from "@/domain/tasks/starter-code";
 import { analyzeAttemptProcess } from "@/server/evidence/integrity-engine";
-import { generateVivaDefenseWithAI } from "@/server/evidence/ai-evidence-provider";
+import { generateVivaDefense } from "@/server/evidence/viva-generator";
 import { resolveCurrentActorForPage } from "@/server/actors/page-actor";
 import {
   getSubmissionForStudent,
@@ -108,7 +108,7 @@ export default async function SubmissionReviewPage({
     submittedAt: review.submittedAt,
   });
 
-  const vivaDefense = await generateVivaDefenseWithAI({
+  const vivaDefense = generateVivaDefense({
     sourceCode: review.sourceCode,
     language: review.language,
     taskTitle: review.task.title,

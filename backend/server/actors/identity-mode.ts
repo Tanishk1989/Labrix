@@ -28,7 +28,7 @@ export function resolveIdentityMode(input: {
     }
     return "demo";
   }
-  return input.nodeEnv === "production" ? "clerk" : "demo";
+  return "clerk";
 }
 
 export function getIdentityMode(): IdentityMode {
@@ -36,6 +36,6 @@ export function getIdentityMode(): IdentityMode {
     mode: process.env.LABRIX_IDENTITY_MODE,
     nodeEnv: process.env.NODE_ENV,
     allowProductionBuildDemo:
-      process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD ?? "true",
+      process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD ?? "false",
   });
 }

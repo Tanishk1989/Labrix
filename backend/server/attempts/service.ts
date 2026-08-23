@@ -35,6 +35,17 @@ import {
   computeStructuralSimilarity,
   type PairwiseStructuralSimilarity,
 } from "@/server/evidence/structural-ast-comparator";
+import { globalRateLimiter } from "@/server/security/rate-limiter";
+import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
+
+export class RateLimitExceededError extends Error {
+  readonly retryAfterSeconds: number;
+  constructor(message = "Rate limit exceeded. Please wait before retrying.", retryAfterSeconds = 1) {
+    super(message);
+    this.name = "RateLimitExceededError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 export class SubmissionDeadlineError extends Error {
   constructor(message = "The deadline for this practical has passed. New submissions are no longer accepted.") {
@@ -292,6 +303,10 @@ export async function saveStudentDraft(input: {
   language: AllowedLanguage;
   sourceCode: string;
 }) {
+  const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.AUTOSAVE);
+  if (!rl.success) {
+    throw new RateLimitExceededError("Autosave rate limit exceeded. Please wait.", rl.retryAfterSeconds);
+  }
   return prisma.$transaction(async (tx) => {
     const session = await requireActiveStudentSession(
       tx,
@@ -582,6 +597,13 @@ export async function runStudentDraft(
   },
   provider: ServerExecutionProvider = getServerExecutionProvider(),
 ) {
+  const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.CODE_RUN);
+  if (!rl.success) {
+    throw new RateLimitExceededError(
+      "Code run rate limit exceeded. Please wait before executing again.",
+      rl.retryAfterSeconds,
+    );
+  }
   return executionRequestGuard.execute(
     {
       studentId: input.studentId,
@@ -740,6 +762,13 @@ export async function submitStudentDraft(
   },
   provider: ServerExecutionProvider = getServerExecutionProvider(),
 ): Promise<PersistedSubmission> {
+  const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.SUBMISSION);
+  if (!rl.success) {
+    throw new RateLimitExceededError(
+      "Submission rate limit exceeded. Please wait before submitting again.",
+      rl.retryAfterSeconds,
+    );
+  }
   return executionRequestGuard.execute(
     {
       studentId: input.studentId,

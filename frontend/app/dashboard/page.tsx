@@ -8,22 +8,19 @@ import { RoleContentBridge } from "@/features/student/role-content-bridge";
 
 export default async function DashboardPage() {
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
-  if (actor.source === "seeded-demo-session") {
-    const [teacherOverview, studentOverview] = await Promise.all([
-      getTeacherOverview(actor.id),
-      getStudentOverview("demo-student-1"),
-    ]);
-    return <DemoShell actor={actor}><RoleContentBridge teacher={<TeacherDashboardPage overview={teacherOverview} />} student={<StudentDashboard overview={studentOverview} />} /></DemoShell>;
-  }
-  if (actor.role === "STUDENT") {
-    const overview = await getStudentOverview(actor.id);
-    return <DemoShell actor={actor}><StudentDashboard overview={overview} /></DemoShell>;
-  }
-  const overview = await getTeacherOverview(actor.id);
+  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
+
+  const [teacherOverview, studentOverview] = await Promise.all([
+    getTeacherOverview(actor.id),
+    getStudentOverview(studentTargetId),
+  ]);
 
   return (
     <DemoShell actor={actor}>
-      <TeacherDashboardPage overview={overview} />
+      <RoleContentBridge
+        teacher={<TeacherDashboardPage overview={teacherOverview} />}
+        student={<StudentDashboard overview={studentOverview} />}
+      />
     </DemoShell>
   );
 }

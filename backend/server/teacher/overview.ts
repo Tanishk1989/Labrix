@@ -352,5 +352,6 @@ const getCachedTeacherOverview = unstable_cache(
 );
 
 export function getTeacherOverview(teacherId: string): Promise<TeacherOverview> {
+  if (process.env.NODE_ENV === "test") return loadTeacherOverview(teacherId);
   return getCachedTeacherOverview(teacherId);
 }

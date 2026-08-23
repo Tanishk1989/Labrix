@@ -10,7 +10,6 @@ import {
   GraduationCap,
   BookOpen,
   User,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { TraceMark } from "@/components/trace-logo";

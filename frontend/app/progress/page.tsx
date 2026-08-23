@@ -14,25 +14,19 @@ export default async function TeacherProgressPage({
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   const params = await searchParams;
   const classroomId = Array.isArray(params.classroom) ? params.classroom[0] : params.classroom;
-  if (actor.source === "seeded-demo-session") {
-    const [teacherOverview, studentOverview] = await Promise.all([
-      getTeacherOverview(actor.id),
-      getStudentOverview("demo-student-1"),
-    ]);
-    return (
-      <DemoShell actor={actor}>
-        <RoleContentBridge
-          teacher={<TeacherProgress overview={teacherOverview} classroomId={classroomId} />}
-          student={<StudentProgressPage overview={studentOverview} classroomId={classroomId} />}
-        />
-      </DemoShell>
-    );
-  }
-  if (actor.role === "STUDENT") {
-    const overview = await getStudentOverview(actor.id);
-    return <DemoShell actor={actor}><StudentProgressPage overview={overview} classroomId={classroomId} /></DemoShell>;
-  }
+  const studentTargetId = actor.source === "seeded-demo-session" ? "demo-student-1" : actor.id;
 
-  const overview = await getTeacherOverview(actor.id);
-  return <DemoShell actor={actor}><TeacherProgress overview={overview} classroomId={classroomId} /></DemoShell>;
+  const [teacherOverview, studentOverview] = await Promise.all([
+    getTeacherOverview(actor.id),
+    getStudentOverview(studentTargetId),
+  ]);
+
+  return (
+    <DemoShell actor={actor}>
+      <RoleContentBridge
+        teacher={<TeacherProgress overview={teacherOverview} classroomId={classroomId} />}
+        student={<StudentProgressPage overview={studentOverview} classroomId={classroomId} />}
+      />
+    </DemoShell>
+  );
 }

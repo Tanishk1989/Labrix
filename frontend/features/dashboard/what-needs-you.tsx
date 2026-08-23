@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SpotlightCard } from "@/components/spotlight-card";
 import type { DashboardAttentionRow } from "./dashboard-view-model";
 

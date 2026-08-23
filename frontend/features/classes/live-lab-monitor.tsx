@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Activity, CheckCircle2, AlertTriangle, Clock, Terminal, User, Sparkles } from "lucide-react";
+import { Activity, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import { SpotlightCard } from "@/components/spotlight-card";
 
 export interface LiveStudentSession {
@@ -18,11 +18,10 @@ export interface LiveStudentSession {
 
 export function LiveLabMonitor({
   taskTitle,
-  classroomId,
   sessions = [],
 }: {
   taskTitle: string;
-  classroomId: string;
+  classroomId?: string;
   sessions?: LiveStudentSession[];
 }) {
   const [filter, setFilter] = useState<"ALL" | "ACTIVE" | "PASSED" | "ANOMALY">("ALL");

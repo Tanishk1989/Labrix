@@ -7,7 +7,6 @@ export const localDatabaseUrl =
 const command = process.argv[2] ?? "up";
 const executable = process.platform === "win32" ? "docker.exe" : "docker";
 const prismaCli = resolve(process.cwd(), "node_modules", "prisma", "build", "index.js");
-const tsxCli = resolve(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
 const nextCli = resolve(process.cwd(), "node_modules", "next", "dist", "bin", "next");
 
 function run(
@@ -56,22 +55,6 @@ function prepareSchema() {
   run(process.execPath, [prismaCli, "generate", "--schema=backend/prisma/schema.prisma"], true);
 }
 
-function verifyDemoFixtures({ seedFreshDatabase }: { seedFreshDatabase: boolean }) {
-  const readiness = run(
-    process.execPath,
-    [tsxCli, "scripts/local-database-readiness.ts"],
-    true,
-    false,
-  );
-  if (readiness === 2 && seedFreshDatabase) {
-    console.log("Seeding the fresh local TRACE database.");
-    run(process.execPath, [tsxCli, "backend/prisma/seed.ts"], true);
-  } else if (readiness !== 0) {
-    process.exit(readiness);
-  }
-  run(process.execPath, [tsxCli, "scripts/demo-check.ts"], true);
-}
-
 if (command === "up") {
   startDatabase();
 } else if (command === "down") {
@@ -84,12 +67,10 @@ if (command === "up") {
 } else if (command === "prepare") {
   startDatabase();
   prepareSchema();
-  run(process.execPath, [tsxCli, "backend/prisma/seed.ts"], true);
-  verifyDemoFixtures({ seedFreshDatabase: false });
+  console.log("Local TRACE database is migrated and ready for real classroom data.");
 } else if (command === "dev") {
   startDatabase();
   prepareSchema();
-  verifyDemoFixtures({ seedFreshDatabase: true });
   run(process.execPath, [nextCli, "dev", "frontend"], true);
 } else {
   console.error("Use up, down, prepare, or dev.");

@@ -8,9 +8,8 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type F
 import { useIdentityMode } from "@/components/identity-mode-provider";
 import { ThemeSelector } from "@/components/theme-selector";
 import { CommandPalette } from "@/components/command-palette";
-import { TraceLogo, TraceMark } from "@/components/trace-logo";
+import { TraceMark } from "@/components/trace-logo";
 import { AccountDropdown } from "@/components/account-dropdown";
-import { AuthModal } from "@/components/auth-modal";
 import type { DemoRole } from "@/domain/tasks/models";
 
 type ShellActor = { name: string; role: "TEACHER" | "STUDENT" };
@@ -61,7 +60,7 @@ function supportsDemoRolePreview(pathname: string) {
   return /^\/classes\/[^/]+\/?$/.test(pathname);
 }
 
-export function DemoRoleControl({ role, setRole, compact = false }: { role: DemoRole; setRole: (role: DemoRole) => void; compact?: boolean }) {
+export function DemoRoleControl({ role, setRole }: { role: DemoRole; setRole: (role: DemoRole) => void }) {
   return (
     <div className="inline-flex items-center shrink-0">
       <select
@@ -103,7 +102,7 @@ function DesktopNavigation({ role }: { role: DemoRole }) {
   const pathname = usePathname() ?? "/";
   const navigation = role === "teacher" ? teacherNavigation : studentNavigation;
   return (
-    <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-1">
+    <nav aria-label="Primary navigation" className="hidden lg:flex items-center gap-1">
       {navigation.map((item) => {
         const active = isActivePath(pathname, item.href);
         return (
@@ -144,34 +143,6 @@ function MobileNavigation({ role, onNavigate }: { role: DemoRole; onNavigate: ()
   );
 }
 
-function CompactAccount({ name, roleLabel, avatar, showClerk }: { name: string; roleLabel: string; avatar: string; showClerk: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5 shrink-0 pl-1">
-      <div className="hidden lg:flex flex-col items-end text-right leading-none gap-0.5">
-        <span className="truncate max-w-[120px] text-xs font-semibold text-[var(--text-primary)]">{name}</span>
-        <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-          {roleLabel}
-        </span>
-      </div>
-      {showClerk ? (
-        <UserButton />
-      ) : (
-        <div className="flex items-center gap-2">
-          <span className="grid size-8 place-items-center rounded-full border border-white/20 bg-white/[0.08] text-xs font-bold text-white shadow-sm" aria-label={`${name}, ${roleLabel}`}>
-            {avatar}
-          </span>
-          <Link
-            href="/sign-in"
-            className="hidden sm:inline-flex text-[11px] font-semibold text-cyan-300 hover:text-white px-2.5 py-1 rounded-lg border border-cyan-500/20 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
-          >
-            Sign In
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function DemoRuntimeBadge() {
   if (!isLocalRealExecutionDemo) return null;
   return (
@@ -185,39 +156,26 @@ function DemoRuntimeBadge() {
   );
 }
 
-function DemoPreviewBadge({ interactive }: { interactive: boolean }) {
-  return (
-    <span
-      className="hidden 2xl:inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-300 whitespace-nowrap shrink-0"
-      title={interactive
-        ? "This changes the demo presentation only. It does not sign in or change permissions."
-        : "This page uses a fixed demo account. The preview selector is unavailable on role-specific pages."}
-    >
-      {interactive ? "Demo preview" : "Demo mode"}
-    </span>
-  );
-}
-
 export function AppShell({ role, setRole, actor, children }: { role: DemoRole; setRole: (role: DemoRole) => void; actor?: ShellActor; children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [customUser, setCustomUser] = useState<string | null>(null);
   const [navigationPending, setNavigationPending] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const pathname = usePathname() ?? "/";
   const isCodingWorkspace = pathname.startsWith("/tasks/");
   const identityMode = useIdentityMode();
-  const rolePreviewAvailable = identityMode === "demo" && supportsDemoRolePreview(pathname);
+  const rolePreviewAvailable = supportsDemoRolePreview(pathname);
   const actorRole: DemoRole = actor?.role === "STUDENT" ? "student" : "teacher";
-  const effectiveRole: DemoRole = identityMode === "clerk" ? actorRole : rolePreviewAvailable ? role : (role ?? actorRole);
-  const profileName = customUser ?? (identityMode === "demo" ? effectiveRole === "teacher" ? actor?.name ?? "Teacher" : "Student" : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student"));
+  const effectiveRole: DemoRole = rolePreviewAvailable ? role : (role ?? actorRole);
+  const profileName = customUser ?? (actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student"));
   const profileLabel = effectiveRole === "teacher" ? "Teacher" : "Student";
   const avatar = useMemo(() => initials(profileName), [profileName]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const timer = window.setTimeout(() => {
       setCustomUser(window.sessionStorage.getItem("trace:user-name"));
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -284,7 +242,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
             <div className="flex items-center gap-5">
               <Wordmark />
               
-              <div className="hidden md:flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-4">
                 <div className="h-4 w-px bg-white/10" />
                 <DesktopNavigation role={effectiveRole} />
                 <div className="h-4 w-px bg-white/10" />
@@ -296,17 +254,11 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                     name={profileName}
                     roleLabel={profileLabel}
                     avatar={avatar}
-                    currentRole={role}
+                    currentRole={effectiveRole}
                     setRole={setRole}
                     identityMode={identityMode}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setAuthModalOpen(true)}
-                    className="inline-flex items-center rounded-lg bg-white px-3.5 py-1 text-xs font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-100 active:scale-95 shrink-0 cursor-pointer"
-                  >
-                    <span>Sign In</span>
-                  </button>
+                  {identityMode === "clerk" && <UserButton />}
                 </div>
               </div>
             </div>
@@ -315,14 +267,13 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
             <button
               type="button"
               aria-label="Open navigation"
-              className="icon-button editorial-menu-button md:hidden"
+              className="icon-button editorial-menu-button lg:hidden"
               onClick={() => setDrawerOpen(true)}
             >
               <Menu size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
         </header>
-        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
         <main className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>
         {drawerOpen ? (
           <div className="shell-drawer-layer">
@@ -337,10 +288,11 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                   name={profileName}
                   roleLabel={profileLabel}
                   avatar={avatar}
-                  currentRole={role}
+                  currentRole={effectiveRole}
                   setRole={setRole}
                   identityMode={identityMode}
                 />
+                {identityMode === "clerk" && <UserButton />}
               </div>
             </aside>
           </div>
@@ -352,6 +304,16 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
 
 export function DemoShell({ children, actor }: { children: ReactNode; actor?: ShellActor }) {
   const [role, setRole] = useState<DemoRole>(actor?.role === "STUDENT" ? "student" : "teacher");
-  useEffect(() => { const timer = window.setTimeout(() => setRole(getStoredDemoRole()), 0); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = getStoredDemoRole();
+      if (stored) {
+        setRole(stored);
+      } else if (actor?.role) {
+        setRole(actor.role === "STUDENT" ? "student" : "teacher");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [actor?.role]);
   return <AppShell role={role} setRole={setRole} actor={actor}>{children}</AppShell>;
 }

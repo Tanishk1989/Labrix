@@ -4,7 +4,6 @@ import type { AllowedLanguage } from "@prisma/client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-  Cloud,
   Play,
   Send,
 } from "lucide-react";
@@ -173,7 +172,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     return () => window.clearTimeout(timer);
   }, [language, source, workspace.session.id]);
 
-  async function runCode() {
+  const runCode = useCallback(async () => {
     if (!source.trim()) {
       setRunFailure("Write some code before running tests.");
       setActivePanel("results");
@@ -197,7 +196,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     }
     setRunning(false);
     setActivePanel("results");
-  }
+  }, [language, source, workspace.session.id]);
 
   // Keyboard shortcut listener for Ctrl+Enter / Cmd+Enter (Run code) & Ctrl+S (Save)
   useEffect(() => {
@@ -231,7 +230,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
 
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [source, language, running, submitting, submission, workspace.session.id]);
+  }, [source, language, running, submitting, submission, workspace.session.id, runCode]);
 
   async function submitCode() {
     setConfirmSubmit(false);

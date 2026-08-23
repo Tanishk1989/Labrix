@@ -10,13 +10,9 @@ import {
   CheckSquare,
   TrendingUp,
   Palette,
-  ArrowRight,
   X,
   Code2,
-  Sparkles,
-  Command,
   CornerDownLeft,
-  SlidersHorizontal,
 } from "lucide-react";
 import { useColorTheme, themePresets, type ColorTheme } from "./theme-provider";
 
@@ -37,7 +33,7 @@ export function CommandPalette() {
   const [activeTab, setActiveTab] = useState<string>("All");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
-  const { theme, setTheme } = useColorTheme();
+  const { setTheme } = useColorTheme();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Global Keyboard Listener for Cmd+K / Ctrl+K

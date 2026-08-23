@@ -1,22 +1,40 @@
-import { SignUp } from "@clerk/nextjs";
-import { getIdentityMode } from "@/server/actors/identity-mode";
+import { ClerkLoaded, ClerkLoading, SignUp } from "@clerk/nextjs";
 import { AuthVisualSide } from "@/features/auth/auth-visual-side";
-import { LandingAuthCard } from "@/features/auth/landing-auth-card";
+
+function AuthFormSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading registration form"
+      className="w-full max-w-[440px] rounded-3xl border border-white/10 bg-[#0f121a]/95 p-7 sm:p-9 shadow-2xl backdrop-blur-2xl text-white animate-pulse"
+    >
+      <div className="h-8 w-44 rounded-lg bg-white/10 mb-3" />
+      <div className="h-4 w-60 rounded-md bg-white/5 mb-8" />
+      <div className="h-12 w-full rounded-2xl bg-white/10 mb-6" />
+      <div className="h-4 w-full rounded-md bg-white/5 mb-6" />
+      <div className="space-y-4">
+        <div className="h-11 w-full rounded-2xl bg-white/10" />
+        <div className="h-11 w-full rounded-2xl bg-white/10" />
+      </div>
+    </div>
+  );
+}
 
 export default function SignUpPage() {
-  const mode = getIdentityMode();
-
   return (
     <main className="min-h-screen bg-[#070911] text-white flex items-center justify-center p-6 sm:p-10 lg:p-14 selection:bg-cyan-400 selection:text-black">
       <div className="w-full max-w-[1500px] mx-auto grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-        {/* Left Side: Brand Value Props & Floating Visual Cards */}
-        <div className="lg:col-span-7">
+        {/* Left Side (Desktop) / Bottom Side (Mobile): Brand Visual Side */}
+        <div className="order-2 lg:order-1 lg:col-span-7">
           <AuthVisualSide />
         </div>
 
-        {/* Right Side: Auth Form */}
-        <div className="lg:col-span-5 flex items-center justify-center lg:justify-end">
-          {mode === "clerk" && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+        {/* Right Side (Desktop) / Top Side (Mobile): Auth Form */}
+        <div className="order-1 lg:order-2 lg:col-span-5 flex items-center justify-center lg:justify-end">
+          <ClerkLoading>
+            <AuthFormSkeleton />
+          </ClerkLoading>
+          <ClerkLoaded>
             <SignUp
               appearance={{
                 elements: {
@@ -45,9 +63,7 @@ export default function SignUpPage() {
               signInUrl="/sign-in"
               fallbackRedirectUrl="/dashboard"
             />
-          ) : (
-            <LandingAuthCard />
-          )}
+          </ClerkLoaded>
         </div>
       </div>
     </main>

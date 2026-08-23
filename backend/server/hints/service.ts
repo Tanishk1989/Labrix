@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { requirePublishedTaskForStudent } from "@/server/authorization/classroom-access";
 import { getEffectiveStudentHintPermission } from "./permissions";
 import { buildHintContext } from "./context-builder";
-import { generateSocraticHint, type SocraticHintOutput } from "./socratic-generator";
+import { generateSocraticHint } from "./socratic-generator";
 
 export interface StudentHintSessionState {
   allowed: boolean;

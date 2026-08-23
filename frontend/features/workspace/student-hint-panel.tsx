@@ -5,15 +5,11 @@ import type { AllowedLanguage } from "@prisma/client";
 import {
   AlertCircle,
   ArrowRight,
-  Bot,
   CheckCircle2,
-  ChevronRight,
   HelpCircle,
   Lightbulb,
   Lock,
-  RotateCcw,
   Sparkles,
-  Zap,
 } from "lucide-react";
 import {
   fetchWorkspaceHintStateAction,

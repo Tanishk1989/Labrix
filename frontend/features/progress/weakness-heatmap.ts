@@ -125,7 +125,7 @@ export function buildClassWeaknessHeatmap(
 
   for (const st of studentList) {
     const studentSubs = submissionsByStudent.get(st.id) ?? [];
-    const conceptsRecord: Record<ConceptCategory, StudentConceptScore> = {} as any;
+    const conceptsRecord = {} as Record<ConceptCategory, StudentConceptScore>;
     let totalAssessedScore = 0;
     let assessedConceptCount = 0;
 

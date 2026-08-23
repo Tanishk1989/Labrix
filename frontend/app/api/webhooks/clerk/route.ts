@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { sendTeacherApprovalEmail } from "@/server/teacher-approval/notification";
+import { globalRateLimiter } from "@/server/security/rate-limiter";
+import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -93,6 +95,18 @@ function verifyClerkWebhookSignature(
 }
 
 export async function POST(req: NextRequest) {
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
+  const rl = await globalRateLimiter.check(clientIp, RATE_LIMIT_CONFIGS.WEBHOOK);
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Too many webhook requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfterSeconds) },
+      },
+    );
+  }
+
   const rawBody = await req.text();
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
@@ -260,6 +274,7 @@ export async function POST(req: NextRequest) {
             data: {
               name: fullName,
               email: primaryEmail,
+              ...(metadataRole ? { platformRole: metadataRole } : {}),
               ...(becameTeacher
                 ? {
                     platformRole: "TEACHER" as const,

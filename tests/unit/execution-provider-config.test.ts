@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { getServerExecutionProvider } from "@/server/execution";
 import { CppHttpExecutionProvider } from "@/server/execution/cpp-http-provider";
 import { JavaHttpExecutionProvider } from "@/server/execution/java-http-provider";
-import { ServerMockExecutionProvider } from "@/server/execution/mock-provider";
 
 const localProviders = [
   {
@@ -20,9 +19,9 @@ const localProviders = [
 ] as const;
 
 describe("execution provider production safety configuration", () => {
-  it("keeps mock as the production default", () => {
-    expect(getServerExecutionProvider({ NODE_ENV: "production" })).toBeInstanceOf(
-      ServerMockExecutionProvider,
+  it("fails closed when production has no real execution provider", () => {
+    expect(() => getServerExecutionProvider({ NODE_ENV: "production" })).toThrow(
+      /mock execution is forbidden in production/,
     );
   });
 

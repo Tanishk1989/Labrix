@@ -29,6 +29,11 @@ model User {
   submissionReviewRevisions      SubmissionReviewRevision[] @relation("TeacherSubmissionReviewRevisions")
   tasksAuthored                  Task[]                     @relation("TaskAuthor")
   studentHintPermissions         StudentHintPermission[]
+  hintPoliciesUpdated            ClassroomHintPolicy[]      @relation("TeacherHintPolicyUpdates")
+  hintPermissionsGranted         StudentHintPermission[]    @relation("TeacherHintPermissionsGranted")
+  hintInteractions               HintInteraction[]          @relation("StudentHintInteractions")
+  adminAuditLogsAdministered     AdminAuditLog[]            @relation("AdminAuditActor")
+  aiGenerationAuditLogs          AiGenerationAuditLog[]     @relation("TeacherAiGenerations")
 }
 
 model ExternalIdentity {
@@ -51,6 +56,13 @@ model Classroom {
   section                String
   ownerTeacherId         String
   joinCode               String                 @unique
+  joinCodeExpiresAt      DateTime?
+  joinCodeRotatedAt      DateTime?
+  enrollmentOpen         Boolean                @default(true)
+  enrollmentStartsAt     DateTime?
+  enrollmentEndsAt       DateTime?
+  requireTeacherApproval Boolean                @default(false)
+  aiAssistanceEnabled    Boolean                @default(true)
   status                 ClassroomStatus        @default(ACTIVE)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
@@ -60,6 +72,7 @@ model Classroom {
   tasks                  Task[]
   hintPolicy             ClassroomHintPolicy?
   studentHintPermissions StudentHintPermission[]
+  hintInteractions       HintInteraction[]
 }
 
 model ClassMembership {
@@ -110,12 +123,14 @@ model Task {
   cppStarterCode     String?
   javaStarterCode    String?
   maximumMarks       Int                 @default(10)
+  version            Int                 @default(1)
   codingSessions     CodingSession[]
   rubricCriteria     RubricCriterion[]
   submissionAttempts SubmissionAttempt[]
   authorTeacher      User                @relation("TaskAuthor", fields: [authorTeacherId], references: [id])
   classroom          Classroom           @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   testCases          TestCase[]
+  hintInteractions   HintInteraction[]
 }
 
 model RubricCriterion {
@@ -147,22 +162,22 @@ model TestCase {
 }
 
 model CodingSession {
-  id            String              @id @default(cuid())
-  taskId        String
-  studentId     String
-  attemptNumber Int
-  status        CodingSessionStatus @default(ACTIVE)
-  language      AllowedLanguage     @default(CPP)
-  startedAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  submittedAt   DateTime?
-  events        CodeEvent[]
-  student       User                @relation("StudentCodingSessions", fields: [studentId], references: [id])
-  task          Task                @relation(fields: [taskId], references: [id])
-  draft         Draft?
-  runs          RunAttempt[]
-  submission    SubmissionAttempt?
-  hintInteractions HintInteraction[]
+  id                 String              @id @default(cuid())
+  taskId             String
+  studentId          String
+  attemptNumber      Int
+  language           AllowedLanguage
+  status             CodingSessionStatus @default(ACTIVE)
+  startedAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  submittedAt        DateTime?
+  draft              Draft?
+  runs               RunAttempt[]
+  events             CodeEvent[]
+  student            User                @relation("StudentCodingSessions", fields: [studentId], references: [id])
+  task               Task                @relation(fields: [taskId], references: [id])
+  submission         SubmissionAttempt?
+  hintInteractions   HintInteraction[]
 
   @@unique([taskId, studentId, attemptNumber])
   @@index([taskId, studentId, status])
@@ -175,7 +190,7 @@ model Draft {
   revision        Int           @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  codingSession   CodingSession @relation(fields: [codingSessionId], references: [id], onDelete: Cascade)
+  codingSession   CodingSession @relation(fields: [codingSessionId], references: [id])
 }
 
 model RunAttempt {
@@ -213,22 +228,25 @@ model ResultSnapshot {
 }
 
 model SubmissionAttempt {
-  id                 String            @id @default(cuid())
-  taskId             String
-  studentId          String
-  codingSessionId    String            @unique
-  resultSnapshotId   String            @unique
-  attemptNumber      Int
-  idempotencyKey     String
-  language           AllowedLanguage
-  sourceCodeSnapshot String
-  submittedAt        DateTime          @default(now())
-  events             CodeEvent[]
-  codingSession      CodingSession     @relation(fields: [codingSessionId], references: [id])
-  resultSnapshot     ResultSnapshot    @relation(fields: [resultSnapshotId], references: [id])
-  student            User              @relation("StudentSubmissions", fields: [studentId], references: [id])
-  task               Task              @relation(fields: [taskId], references: [id])
-  review             SubmissionReview?
+  id                    String                 @id @default(cuid())
+  taskId                String
+  studentId             String
+  codingSessionId       String                 @unique
+  resultSnapshotId      String                 @unique
+  attemptNumber         Int
+  idempotencyKey        String
+  language              AllowedLanguage
+  sourceCodeSnapshot    String
+  submittedAt           DateTime               @default(now())
+  practicalVersion      Int?
+  timingStatus          SubmissionTimingStatus?
+  events                CodeEvent[]
+  codingSession         CodingSession          @relation(fields: [codingSessionId], references: [id])
+  resultSnapshot        ResultSnapshot         @relation(fields: [resultSnapshotId], references: [id])
+  student               User                   @relation("StudentSubmissions", fields: [studentId], references: [id])
+  task                  Task                   @relation(fields: [taskId], references: [id])
+  review                SubmissionReview?
+  aiGenerationAuditLogs AiGenerationAuditLog[]
 
   @@unique([taskId, studentId, attemptNumber])
   @@unique([studentId, idempotencyKey])
@@ -368,6 +386,11 @@ enum SubmissionReviewStatus {
   PUBLISHED
 }
 
+enum SubmissionTimingStatus {
+  ON_TIME
+  LATE
+}
+
 model ClassroomHintPolicy {
   id                 String    @id @default(cuid())
   classroomId        String    @unique
@@ -376,6 +399,7 @@ model ClassroomHintPolicy {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   classroom          Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  updatedByTeacher   User      @relation("TeacherHintPolicyUpdates", fields: [updatedByTeacherId], references: [id])
 }
 
 model StudentHintPermission {
@@ -388,28 +412,68 @@ model StudentHintPermission {
   updatedAt          DateTime  @updatedAt
   classroom          Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   student            User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grantedByTeacher   User      @relation("TeacherHintPermissionsGranted", fields: [grantedByTeacherId], references: [id])
 
   @@unique([classroomId, studentId])
   @@index([classroomId, studentId])
 }
 
 model HintInteraction {
-  id                 String        @id @default(cuid())
-  studentId          String
-  classroomId        String
-  taskId             String
-  codingSessionId    String
-  hintLevel          Int
-  category           String
-  hintText           String
-  nextQuestion       String
-  focusLines         Int[]
-  inputContextHash   String
-  createdAt          DateTime      @default(now())
-  codingSession      CodingSession @relation(fields: [codingSessionId], references: [id], onDelete: Cascade)
+  id               String        @id @default(cuid())
+  studentId        String
+  classroomId      String
+  taskId           String
+  codingSessionId  String
+  hintLevel        Int
+  category         String
+  hintText         String
+  nextQuestion     String
+  focusLines       Int[]
+  inputContextHash String
+  createdAt        DateTime      @default(now())
+  codingSession    CodingSession @relation(fields: [codingSessionId], references: [id], onDelete: Cascade)
+  student          User          @relation("StudentHintInteractions", fields: [studentId], references: [id], onDelete: Cascade)
+  classroom        Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  task             Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([codingSessionId, hintLevel])
   @@index([taskId, studentId])
   @@index([classroomId, studentId])
 }
 
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String
+  targetId    String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  actorUser   User     @relation("AdminAuditActor", fields: [actorUserId], references: [id])
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+}
+
+model AiGenerationAuditLog {
+  id                  String             @id @default(cuid())
+  teacherId           String
+  submissionAttemptId String?
+  kind                String
+  modelUsed           String
+  promptTokenEstimate Int
+  cachedResult        Boolean            @default(false)
+  durationMs          Int
+  status              String
+  sourceCodeHash      String
+  createdAt           DateTime           @default(now())
+  teacher             User               @relation("TeacherAiGenerations", fields: [teacherId], references: [id])
+  submissionAttempt   SubmissionAttempt? @relation(fields: [submissionAttemptId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId, createdAt])
+  @@index([sourceCodeHash])
+  @@index([submissionAttemptId])
+}

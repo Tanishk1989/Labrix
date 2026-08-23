@@ -19,7 +19,7 @@ flowchart LR
 2. The teacher creates a practical with student-facing instructions, available languages, per-language starter code, optional visible/hidden automated tests, a marking setup, and an optional deadline. The form explains that automated results may suggest a score while teachers award final marks, summarizes the device-local deadline in readable language, and serializes it as an absolute instant before the server action.
 3. Labrix validates teacher ownership before saving a draft or publishing.
 
-**Status:** persisted for the demo teacher and explicitly linked active teachers. Automatic teacher provisioning and complete practical management remain planned.
+**Status:** persisted for the demo teacher and approved Clerk teachers. A Clerk teacher role creates a pending local request, emails the configured administrator, and remains blocked until signed-link approval. Complete practical management remains planned.
 
 ## Student: resume, run, and submit
 
@@ -66,7 +66,7 @@ The Practicals page separates `To do`, `In progress`, `Submitted`, and `Feedback
 
 ## Identity transition
 
-**Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in deployed production. A supervised loopback-only professor-demo launcher may use the exact production-build acknowledgement solely to remove development UI from a local evaluation; it remains visibly labeled as a demo. **Preview as teacher/student** appears only on routes that render both seeded views and never changes authentication, authorization, or the actor used by role-specific actions. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, enforces local `ACTIVE` status and role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
+**Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in deployed production. A supervised loopback-only professor-demo launcher may use the exact production-build acknowledgement solely to remove development UI from a local evaluation; it remains visibly labeled as a demo. **Preview as teacher/student** appears only on routes that render both seeded views and never changes authentication, authorization, or the actor used by role-specific actions. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, denies disabled and pending-teacher accounts, enforces local role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
 
 **Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated Labrix user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
 

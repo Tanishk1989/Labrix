@@ -84,14 +84,73 @@ function boundedResponse(
   };
 }
 
+export type RunnerServerOptions = {
+  maxConcurrency?: number;
+  maxQueueSize?: number;
+  queueTimeoutMs?: number;
+};
+
 export function createCppRunnerServer(
   execute: CppExecutor = executeCppInDocker,
+  options?: RunnerServerOptions,
 ) {
-  let executionInProgress = false;
+  const maxConcurrency = options?.maxConcurrency ?? Math.max(1, parseInt(process.env.RUNNER_MAX_CONCURRENCY ?? "4", 10));
+  const maxQueueSize = options?.maxQueueSize ?? Math.max(1, parseInt(process.env.RUNNER_MAX_QUEUE_SIZE ?? "64", 10));
+  const queueTimeoutMs = options?.queueTimeoutMs ?? Math.max(1000, parseInt(process.env.RUNNER_QUEUE_TIMEOUT_MS ?? "60000", 10));
+
+  let activeWorkers = 0;
+  const queue: Array<() => Promise<void>> = [];
+
+  function processNext() {
+    if (activeWorkers >= maxConcurrency || queue.length === 0) return;
+    const nextTask = queue.shift();
+    if (nextTask) {
+      activeWorkers++;
+      nextTask().finally(() => {
+        activeWorkers--;
+        processNext();
+      });
+    }
+  }
+
+  function enqueue(task: () => Promise<void>): Promise<void> {
+    if (queue.length >= maxQueueSize) {
+      return Promise.reject(new Error("QUEUE_FULL"));
+    }
+    return new Promise<void>((resolve, reject) => {
+      let timer: NodeJS.Timeout | null = null;
+      let finished = false;
+
+      const wrappedTask = async () => {
+        if (finished) return;
+        if (timer) clearTimeout(timer);
+        try {
+          await task();
+          resolve();
+        } catch (err) {
+          reject(err);
+        } finally {
+          finished = true;
+        }
+      };
+
+      timer = setTimeout(() => {
+        if (!finished) {
+          finished = true;
+          const index = queue.indexOf(wrappedTask);
+          if (index !== -1) queue.splice(index, 1);
+          reject(new Error("QUEUE_TIMEOUT"));
+        }
+      }, queueTimeoutMs);
+
+      queue.push(wrappedTask);
+      processNext();
+    });
+  }
 
   return createServer(async (request, response) => {
     if (request.method === "GET" && request.url === "/healthz") {
-      writeJson(response, 200, { status: "ok" });
+      writeJson(response, 200, { status: "ok", activeWorkers, queueLength: queue.length });
       return;
     }
 
@@ -102,11 +161,6 @@ export function createCppRunnerServer(
 
     if (!request.headers["content-type"]?.startsWith("application/json")) {
       writeJson(response, 415, { error: "Content-Type must be application/json." });
-      return;
-    }
-
-    if (executionInProgress) {
-      writeJson(response, 503, { error: "The local C++ runner is busy." });
       return;
     }
 
@@ -125,11 +179,6 @@ export function createCppRunnerServer(
       return;
     }
 
-    if (executionInProgress) {
-      writeJson(response, 503, { error: "The local C++ runner is busy." });
-      return;
-    }
-    executionInProgress = true;
     const controller = new AbortController();
     let executionFinished = false;
     const abortExecution = () => {
@@ -139,26 +188,42 @@ export function createCppRunnerServer(
     response.once("close", abortExecution);
 
     try {
-      const result = await execute(parsedRequest, controller.signal);
+      await enqueue(async () => {
+        if (controller.signal.aborted || response.destroyed) return;
+        try {
+          const result = await execute(parsedRequest, controller.signal);
+          executionFinished = true;
+          if (!response.destroyed) {
+            writeJson(response, 200, boundedResponse(parsedRequest, result));
+          }
+        } catch {
+          executionFinished = true;
+          if (!response.destroyed) {
+            writeJson(response, 500, {
+              state: "internal_error",
+              passedTests: 0,
+              totalTests: parsedRequest.tests.length,
+              errorText: "The local C++ runner failed unexpectedly.",
+              testResults: [],
+            });
+          }
+        }
+      });
+    } catch (err: unknown) {
       executionFinished = true;
       if (!response.destroyed) {
-        writeJson(response, 200, boundedResponse(parsedRequest, result));
-      }
-    } catch {
-      executionFinished = true;
-      if (!response.destroyed) {
-        writeJson(response, 500, {
-          state: "internal_error",
-          passedTests: 0,
-          totalTests: parsedRequest.tests.length,
-          errorText: "The local C++ runner failed unexpectedly.",
-          testResults: [],
-        });
+        const error = err as { message?: string };
+        if (error?.message === "QUEUE_FULL") {
+          writeJson(response, 503, { error: "The local C++ runner queue is full. Try again shortly." });
+        } else if (error?.message === "QUEUE_TIMEOUT") {
+          writeJson(response, 504, { error: "Request timed out waiting for an available C++ runner." });
+        } else {
+          writeJson(response, 500, { error: "The local C++ runner failed unexpectedly." });
+        }
       }
     } finally {
       request.removeListener("aborted", abortExecution);
       response.removeListener("close", abortExecution);
-      executionInProgress = false;
     }
   });
 }

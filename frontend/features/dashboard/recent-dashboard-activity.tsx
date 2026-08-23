@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Code2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { StatusBadge } from "@/components/design-system";
 import { SpotlightCard } from "@/components/spotlight-card";
 import type { DashboardRecentSubmission } from "./dashboard-view-model";

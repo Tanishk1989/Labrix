@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Sparkles, GraduationCap } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap } from "lucide-react";
 import { EmptyState, ProgressBar } from "@/components/design-system";
 import { CreateClassroomButton } from "@/features/classes/classroom-setup-actions";
 import { SpotlightCard } from "@/components/spotlight-card";

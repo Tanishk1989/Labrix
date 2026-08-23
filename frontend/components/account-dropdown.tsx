@@ -17,7 +17,7 @@ import type { DemoRole } from "@/domain/tasks/models";
 interface AccountDropdownProps {
   name: string;
   roleLabel: string;
-  avatar: string;
+  avatar?: string;
   currentRole: DemoRole;
   setRole: (role: DemoRole) => void;
   identityMode: "demo" | "clerk";
@@ -26,7 +26,6 @@ interface AccountDropdownProps {
 export function AccountDropdown({
   name,
   roleLabel,
-  avatar,
   currentRole,
   setRole,
   identityMode,
@@ -76,8 +75,7 @@ export function AccountDropdown({
     if (typeof window !== "undefined") {
       window.sessionStorage.clear();
       window.localStorage.clear();
-      // Redirect to sign in or landing
-      window.location.href = "/sign-in";
+      router.push("/sign-in");
     }
   }
 

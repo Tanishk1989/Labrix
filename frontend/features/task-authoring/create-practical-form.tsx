@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
-import { ArrowRight, Plus, Trash2, Sparkles, BookOpen, Zap } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Sparkles } from "lucide-react";
 import { PublishingChecklist, Stepper, StatusBadge } from "@/components/design-system";
 import { DEFAULT_STARTER_CODES } from "@/domain/tasks/starter-code";
 import { type CreatePracticalFormValues } from "./schema";

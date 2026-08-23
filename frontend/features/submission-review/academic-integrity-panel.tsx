@@ -5,11 +5,8 @@ import {
   AlertTriangle,
   Bot,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Code2,
   Copy,
-  ExternalLink,
   Fingerprint,
   GraduationCap,
   HelpCircle,
@@ -53,7 +50,6 @@ export function AcademicIntegrityPanel({
   sourceCode = "",
   language = "CPP",
   cohortSimilarity = null,
-  peerComparisons = [],
 }: AcademicIntegrityPanelProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
@@ -293,7 +289,7 @@ export function AcademicIntegrityPanel({
             <div className="text-[11px] font-medium text-white/50">Normalized Syntax Tokens</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="font-mono text-xl font-bold text-white">{astTokens.length}</span>
-              <span className="text-[10px] text-white/50">({uniqueVarCount} vars · {keywordCount} keywords)</span>
+              <span className="text-[10px] text-white/50">({uniqueVarCount} vars · {keywordCount} keywords · {opCount} ops)</span>
             </div>
             <p className="mt-1 text-[10px] text-white/40 leading-relaxed">
               All variable names canonicalized into invariant symbol stream.

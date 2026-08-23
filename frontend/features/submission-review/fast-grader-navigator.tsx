@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Zap, CheckCircle, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, CheckCircle } from "lucide-react";
 
 export interface FastGraderItem {
   id: string;
