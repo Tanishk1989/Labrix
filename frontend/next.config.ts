@@ -59,6 +59,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/__clerk/npm/:path*",
+        destination: "https://cdn.jsdelivr.net/npm/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
