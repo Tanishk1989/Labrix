@@ -12,6 +12,7 @@ import {
   UnlinkedActorError,
   type CurrentActor,
 } from "./current-actor";
+import { resolveDemoStudentActor, resolveDemoTeacherActor } from "./demo-session";
 import { InvalidExternalIdentityError } from "./external-identity-source";
 
 export async function resolveCurrentActorForPage(options: {
@@ -24,8 +25,18 @@ export async function resolveCurrentActorForPage(options: {
       ? requireActorRole(actor, options.requiredRole)
       : actor;
   } catch (error) {
-    if (error instanceof UnauthenticatedActorError) redirect("/sign-in");
-    if (error instanceof UnlinkedActorError) redirect("/unlinked-account");
+    if (
+      error instanceof UnauthenticatedActorError ||
+      error instanceof UnlinkedActorError
+    ) {
+      const fallbackActor =
+        options.demoActor === "student"
+          ? await resolveDemoStudentActor()
+          : await resolveDemoTeacherActor();
+      return options.requiredRole
+        ? requireActorRole(fallbackActor, options.requiredRole)
+        : fallbackActor;
+    }
     if (error instanceof PendingTeacherApprovalError) {
       redirect("/pending-teacher-approval");
     }

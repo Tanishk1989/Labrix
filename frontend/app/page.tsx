@@ -1,12 +1,5 @@
-import type { Metadata } from "next";
-import { LandingPage } from "@/features/landing/landing-page";
-
-export const metadata: Metadata = {
-  title: "TRACE | Evidence-led coding practicals",
-  description:
-    "Create coding practicals, evaluate immutable submissions, and run evidence-led oral defenses without surveillance.",
-};
+import { redirect } from "next/navigation";
 
 export default function RootPage() {
-  return <LandingPage />;
+  redirect("/dashboard");
 }

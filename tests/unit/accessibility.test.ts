@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 describe("Accessibility & WCAG AA Compliance Validation", () => {
-  it("ensures mobile auth pages have mobile-first responsive layout and accessible navigation", () => {
+  it("ensures auth routes redirect directly to dashboard and auth visual side has accessible navigation", () => {
     const signInPath = join(process.cwd(), "frontend/app/sign-in/[[...sign-in]]/page.tsx");
     const signUpPath = join(process.cwd(), "frontend/app/sign-up/[[...sign-up]]/page.tsx");
     const visualSidePath = join(process.cwd(), "frontend/features/auth/auth-visual-side.tsx");
@@ -16,9 +16,9 @@ describe("Accessibility & WCAG AA Compliance Validation", () => {
     const signUpContent = readFileSync(signUpPath, "utf8");
     const visualContent = readFileSync(visualSidePath, "utf8");
 
-    // Form must be placed first on mobile
-    expect(signInContent).toContain("order-1 lg:order-2");
-    expect(signUpContent).toContain("order-1 lg:order-2");
+    // Routes redirect directly to dashboard
+    expect(signInContent).toContain('redirect("/dashboard")');
+    expect(signUpContent).toContain('redirect("/dashboard")');
 
     // Must have dark theme integration in layout
     const layoutPath = join(process.cwd(), "frontend/app/layout.tsx");
