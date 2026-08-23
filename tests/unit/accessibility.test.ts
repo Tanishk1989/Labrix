@@ -16,10 +16,8 @@ describe("Accessibility & WCAG AA Compliance Validation", () => {
     const signUpContent = readFileSync(signUpPath, "utf8");
     const visualContent = readFileSync(visualSidePath, "utf8");
 
-    expect(signInContent).toContain("AuthVisualSide");
-    expect(signUpContent).toContain("AuthVisualSide");
-    expect(signInContent).toContain("RoleLoginCard");
-    expect(signUpContent).toContain("RoleLoginCard");
+    expect(signInContent).toContain('redirect("/dashboard")');
+    expect(signUpContent).toContain('redirect("/dashboard")');
 
     // Must have dark theme integration in layout
     const layoutPath = join(process.cwd(), "frontend/app/layout.tsx");
