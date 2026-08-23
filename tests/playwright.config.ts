@@ -21,7 +21,10 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
   },
   webServer: {
-    command: "npm.cmd run dev",
+    // The isolated harness has already validated and seeded its database. Launch
+    // Next directly so Playwright can terminate the server process reliably on
+    // Windows instead of leaving a grandchild behind an npm/tsx wrapper.
+    command: "node ../node_modules/next/dist/bin/next dev ../frontend",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: false,
   },

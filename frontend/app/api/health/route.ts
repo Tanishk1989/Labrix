@@ -68,9 +68,14 @@ export async function GET() {
       ])
     : [{ status: "not-checked" as const }, { status: "not-checked" as const }];
 
+  const runnersHealthy =
+    !shouldCheckRunners ||
+    (javaRunner.status === "connected" && cppRunner.status === "connected");
+  const healthy = configuration.isValid && runnersHealthy;
+
   return NextResponse.json(
     {
-      status: "healthy",
+      status: healthy ? "healthy" : "degraded",
       version: "0.1.0",
       uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
@@ -90,7 +95,7 @@ export async function GET() {
       },
     },
     {
-      status: 200,
+      status: healthy ? 200 : 503,
       headers: {
         "Cache-Control": "no-store, max-age=0",
       },

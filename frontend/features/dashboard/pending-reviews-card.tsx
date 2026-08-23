@@ -122,7 +122,7 @@ export function PendingReviewsCard({ overview }: { overview: TeacherOverview }) 
             ) : null}
             <span className="inline-flex items-center gap-1.5 text-[var(--text-muted)]">
               <Sparkles size={13} className="text-cyan-400" aria-hidden="true" />
-              AI-assisted grading ready
+              Review tools ready
             </span>
           </div>
         </div>

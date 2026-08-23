@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("demo teacher creates a class and the demo student joins it by code", async ({ page }) => {
   const browserErrors: string[] = [];
+  const classroomName = `Join flow verification ${Date.now()}`;
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
   await page.goto("/classes");
@@ -9,12 +10,12 @@ test("demo teacher creates a class and the demo student joins it by code", async
   await page.getByRole("button", { name: "Create class" }).click();
 
   const createDialog = page.getByRole("dialog", { name: "Create classroom" });
-  await createDialog.getByLabel("Classroom name").fill("Join flow verification");
+  await createDialog.getByLabel("Classroom name").fill(classroomName);
   await createDialog.getByLabel("Subject").fill("Programming lab");
   await createDialog.getByLabel("Section").fill("Demo section");
   await createDialog.getByRole("button", { name: "Create classroom" }).click();
 
-  await expect(page.getByRole("heading", { name: "Join flow verification" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: classroomName, exact: true })).toBeVisible();
   const copyCode = page.getByRole("button", { name: /^Copy join code / });
   const copyLabel = await copyCode.getAttribute("aria-label");
   expect(copyLabel).toBeTruthy();
@@ -28,7 +29,7 @@ test("demo teacher creates a class and the demo student joins it by code", async
   await joinDialog.getByLabel("Class code").fill(joinCode);
   await joinDialog.getByRole("button", { name: "Join classroom" }).click();
 
-  await expect(page.getByRole("heading", { name: "Join flow verification" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: classroomName, exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No practicals published yet" })).toBeVisible();
   expect(browserErrors).toEqual([]);
 });

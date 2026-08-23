@@ -8,7 +8,6 @@ import {
   Code2,
   Copy,
   Fingerprint,
-  GraduationCap,
   HelpCircle,
   Info,
   Layers,
@@ -55,7 +54,6 @@ export function AcademicIntegrityPanel({
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [copiedAllQuestions, setCopiedAllQuestions] = useState(false);
   const [appliedFeedback, setAppliedFeedback] = useState(false);
-  const [simulatedQuestionId, setSimulatedQuestionId] = useState<string | null>(null);
   const [showAstTokens, setShowAstTokens] = useState(false);
   const [showMatchedBlocks, setShowMatchedBlocks] = useState(false);
   const [showExplainer, setShowExplainer] = useState(false);
@@ -129,7 +127,7 @@ export function AcademicIntegrityPanel({
 
   return (
     <div className="space-y-6">
-      {/* 1. Structural AST & Collusion Detection Inspector */}
+      {/* 1. Structural similarity context */}
       <section
         aria-labelledby="structural-ast-heading"
         className={`rounded-2xl border bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] sm:p-6 transition-all ${
@@ -156,7 +154,7 @@ export function AcademicIntegrityPanel({
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="structural-ast-heading" className="text-sm font-bold tracking-tight text-white">
-                  Structural AST Plagiarism &amp; Invariant Fingerprint
+                  Structural code similarity context
                 </h2>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider ${
@@ -167,11 +165,11 @@ export function AcademicIntegrityPanel({
                       : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
                   }`}
                 >
-                  {isCollusion ? "Collusion Flag" : isSuspicious ? "Suspicious Similarity" : "MOSS-Grade Invariants"}
+                  {isCollusion ? "High overlap" : isSuspicious ? "Moderate overlap" : "Low overlap"}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Lexical AST normalization — Variable renaming &amp; comment alterations have zero masking effect
+                Normalized syntax-token comparison. This is a review aid, not proof of authorship or misconduct.
               </p>
             </div>
           </div>
@@ -213,11 +211,11 @@ export function AcademicIntegrityPanel({
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-cyan-400" />
                 <h3 className="text-xs font-bold text-white tracking-wide">
-                  How MOSS-Grade Structural AST Invariants Work
+                  How normalized syntax comparison works
                 </h3>
               </div>
               <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                Plagiarism Protection Primer
+                Method guide
               </span>
             </div>
 
@@ -239,7 +237,7 @@ export function AcademicIntegrityPanel({
               <div className="rounded-lg bg-black/40 border border-white/5 p-3 space-y-1">
                 <span className="font-bold text-amber-300 block">3. Threshold Criteria</span>
                 <p className="text-[11px] text-white/60 leading-relaxed">
-                  <span className="text-rose-400 font-bold">&ge;78%</span>: Structural Collusion Flag &middot; <span className="text-amber-400 font-bold">48%–77%</span>: Suspicious Overlap &middot; <span className="text-emerald-400 font-bold">&lt;45%</span>: Authentic Divergence.
+                  <span className="text-rose-400 font-bold">&ge;78%</span>: High structural overlap &middot; <span className="text-amber-400 font-bold">48%–77%</span>: Moderate overlap &middot; <span className="text-emerald-400 font-bold">&lt;48%</span>: Low overlap. Common algorithms and starter code can raise overlap.
                 </p>
               </div>
             </div>
@@ -272,10 +270,10 @@ export function AcademicIntegrityPanel({
                 }`}
               >
                 {isCollusion
-                  ? "● Structural Collusion Flag"
+                  ? "● High overlap — review context"
                   : isSuspicious
                   ? "● Moderate Overlap"
-                  : "● Authentic Divergence"}
+                  : "● Low overlap"}
               </span>
             </div>
             <p className="mt-1 text-[10px] text-white/60 leading-relaxed">
@@ -302,8 +300,8 @@ export function AcademicIntegrityPanel({
               <ShieldCheck size={14} className="text-cyan-400" />
               <span>
                 {cohortSimilarity?.variableRenamingDetected
-                  ? "Variable Renaming Detected & Flagged"
-                  : "Variable Masking Immune"}
+                  ? "Identifier names differ"
+                  : "Identifier-normalized comparison"}
               </span>
             </div>
             <p className="mt-1 text-[10px] text-white/40 leading-relaxed">
@@ -456,7 +454,7 @@ export function AcademicIntegrityPanel({
         </div>
       </section>
 
-      {/* 3. AI Viva Oral Defense Assistant */}
+      {/* 3. Deterministic viva preparation */}
       <section
         aria-labelledby="viva-questions-heading"
         className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm sm:p-6"
@@ -469,10 +467,10 @@ export function AcademicIntegrityPanel({
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="viva-questions-heading" className="text-sm font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
-                  AST Invariant Oral Defense Questions
+                  Code-grounded oral defense questions
                 </h2>
                 <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-mono text-purple-300 border border-purple-500/20">
-                  Viva Assistant
+                  Deterministic assistant
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)]">
@@ -493,7 +491,6 @@ export function AcademicIntegrityPanel({
 
         <div className="mt-4 space-y-4">
           {vivaDefense.questions.map((q, idx) => {
-            const isSimulated = simulatedQuestionId === q.id;
             return (
               <div
                 key={q.id}
@@ -510,18 +507,6 @@ export function AcademicIntegrityPanel({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono text-[var(--text-muted)]">{q.rubricFocus}</span>
-                    <button
-                      type="button"
-                      onClick={() => setSimulatedQuestionId(isSimulated ? null : q.id)}
-                      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold transition-all ${
-                        isSimulated
-                          ? "border-[var(--color-brand)] bg-[var(--color-brand)]/20 text-white shadow-[0_0_10px_rgba(var(--spotlight-rgb),0.3)]"
-                          : "border-white/10 bg-white/5 text-cyan-400 hover:bg-white/10"
-                      }`}
-                    >
-                      <Sparkles size={10} />
-                      {isSimulated ? "Hide Simulated Answer" : "Simulate Answer"}
-                    </button>
                     <button
                       type="button"
                       onClick={() => copyText(q.question, q.id)}
@@ -541,27 +526,6 @@ export function AcademicIntegrityPanel({
                   {q.expectedAnswerHint}
                 </div>
 
-                {/* Simulated Student Defense Response */}
-                {isSimulated && (
-                  <div className="mt-3 ml-7 rounded-xl border border-[var(--color-brand)]/30 bg-gradient-to-br from-[var(--color-brand)]/10 via-black/40 to-transparent p-3.5 shadow-sm space-y-2 animate-in fade-in slide-in-from-top-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--color-brand)]">
-                        <GraduationCap size={13} />
-                        <span>Simulated High-Score Student Defense:</span>
-                      </div>
-                      <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[9px] font-mono font-semibold text-emerald-400">
-                        Concept Mastery: 95%
-                      </span>
-                    </div>
-                    <p className="text-xs text-white/90 leading-5 italic bg-black/30 rounded-lg p-2.5 border border-white/5 font-sans">
-                      &quot;In my solution, {q.expectedAnswerHint.toLowerCase()} I designed the flow so that state invariants remain consistent across all edge inputs, and every data mutation executes deterministically within O(N) constraints.&quot;
-                    </p>
-                    <div className="flex items-center gap-2 text-[10px] text-white/50 pt-1 border-t border-white/10">
-                      <span className="font-semibold text-white/70">Passing Criteria:</span>
-                      <span>Student mentions loop boundaries, pointer progression, and memory bounds.</span>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -572,7 +536,7 @@ export function AcademicIntegrityPanel({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-[var(--color-brand)]" />
-              <span className="text-xs font-semibold text-[var(--text-primary)]">AI Constructive Feedback Draft</span>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">Deterministic feedback draft</span>
             </div>
             <div className="flex items-center gap-2">
               <button

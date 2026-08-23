@@ -35,7 +35,14 @@ import {
   type WorkspacePanelNavigationKey,
 } from "./workspace-panels";
 
-const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+const Editor = dynamic(async () => {
+  const { default: MonacoEditor, loader } = await import("@monaco-editor/react");
+
+  // Serve the installed Monaco distribution from this application. The default
+  // CDN loader makes the coding workspace depend on third-party network access.
+  loader.config({ paths: { vs: "/monaco/vs" } });
+  return MonacoEditor;
+}, { ssr: false });
 
 type SaveState = "saving" | "saved" | "failed";
 const panelIds: Record<WorkspacePanel, string> = {

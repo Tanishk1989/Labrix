@@ -66,7 +66,7 @@ export function CohortPlagiarismAudit({
 
         <div className="rounded-2xl border border-rose-500/30 bg-rose-950/20 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-rose-300">
-            <span>Collusion Flags</span>
+            <span>High-overlap pairs</span>
             <ShieldAlert size={14} className="text-rose-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -75,12 +75,12 @@ export function CohortPlagiarismAudit({
             </span>
             <span className="text-xs text-rose-300/70">pairs (&ge;78% match)</span>
           </div>
-          <p className="mt-1 text-[11px] text-rose-300/60">High structural AST identity</p>
+          <p className="mt-1 text-[11px] text-rose-300/60">Review these comparisons in context</p>
         </div>
 
         <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-amber-300">
-            <span>Suspicious Overlaps</span>
+            <span>Moderate-overlap pairs</span>
             <AlertTriangle size={14} className="text-amber-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -94,11 +94,11 @@ export function CohortPlagiarismAudit({
 
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 shadow-sm">
           <div className="flex items-center justify-between text-xs text-emerald-300">
-            <span>Invariant Engine</span>
+            <span>Comparison method</span>
             <ShieldCheck size={14} className="text-emerald-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-sm font-bold text-emerald-400 font-mono">MOSS-Grade</span>
+            <span className="text-sm font-bold text-emerald-400 font-mono">Syntax tokens</span>
           </div>
           <p className="mt-1 text-[11px] text-emerald-300/60">Variable renaming immune</p>
         </div>
@@ -139,7 +139,7 @@ export function CohortPlagiarismAudit({
                   : "text-white/60 hover:text-rose-300"
               }`}
             >
-              Collusion Flags ({report.flaggedPairsCount})
+              High overlap ({report.flaggedPairsCount})
             </button>
             <button
               type="button"
@@ -164,7 +164,7 @@ export function CohortPlagiarismAudit({
             <div className="flex items-center gap-2">
               <ShieldCheck size={17} className="text-cyan-400" />
               <h3 className="text-sm font-bold text-white tracking-wide">
-                How TRACE Detects Plagiarism &amp; Structural Collusion
+                How TRACE compares normalized source structure
               </h3>
             </div>
             <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
@@ -193,10 +193,10 @@ export function CohortPlagiarismAudit({
 
             <div className="rounded-xl bg-black/40 border border-white/5 p-3.5 space-y-1.5">
               <span className="font-bold text-amber-300 flex items-center gap-1.5">
-                <ShieldAlert size={13} /> 3. Three-Tier Policy Verdicts
+                <ShieldAlert size={13} /> 3. Review bands
               </span>
               <p className="text-[11px] text-white/60 leading-relaxed">
-                <strong className="text-rose-400">&ge;78%</strong>: Structural Collusion Flag &middot; <strong className="text-amber-400">48%–77%</strong>: Suspicious Overlap &middot; <strong className="text-emerald-400">&lt;45%</strong>: Authentic Independent Divergence.
+                <strong className="text-rose-400">&ge;78%</strong>: High overlap &middot; <strong className="text-amber-400">48%–77%</strong>: Moderate overlap &middot; <strong className="text-emerald-400">&lt;48%</strong>: Low overlap. These bands prioritize review and never establish authorship or misconduct.
               </p>
             </div>
           </div>
@@ -211,12 +211,12 @@ export function CohortPlagiarismAudit({
           </div>
           <h3 className="mt-4 text-base font-semibold text-[var(--text-primary)]">
             {report.pairs.length === 0
-              ? "No Significant Structural Plagiarism Detected"
+              ? "No significant structural overlap found"
               : "No Pairs Match Selected Filters"}
           </h3>
           <p className="mt-1 text-xs text-[var(--text-secondary)] max-w-md mx-auto leading-5">
             {report.pairs.length === 0
-              ? "All submitted programs demonstrate authentic structural variance across AST control flow, nesting depth, and algorithmic tokens."
+              ? "No pair crossed the configured review threshold. This result does not establish authorship; it only summarizes normalized structural overlap."
               : "Try clearing search keywords or selecting 'All Pairs' to view other student comparisons."}
           </p>
         </div>
@@ -253,7 +253,7 @@ export function CohortPlagiarismAudit({
                             : "border border-amber-500/40 bg-amber-500/15 text-amber-300"
                         }`}
                       >
-                        {isFlagged ? "Structural Collusion Flag" : "Suspicious Overlap"}
+                        {isFlagged ? "High overlap" : "Moderate overlap"}
                       </span>
                     </div>
 
@@ -265,7 +265,7 @@ export function CohortPlagiarismAudit({
                         <>
                           <span>&middot;</span>
                           <span className="font-semibold text-amber-300 flex items-center gap-1">
-                            <Fingerprint size={12} /> Variable Renaming Masking Detected
+                            <Fingerprint size={12} /> Identifier names differ after normalization
                           </span>
                         </>
                       )}
@@ -318,7 +318,7 @@ export function CohortPlagiarismAudit({
                 </div>
 
                 <p className="mt-3 text-xs text-white/70 leading-relaxed border-t border-white/5 pt-2.5">
-                  <span className="font-semibold text-white/90">Audit Explanation: </span>
+                  <span className="font-semibold text-white/90">Comparison context: </span>
                   {pair.explanation}
                 </p>
 

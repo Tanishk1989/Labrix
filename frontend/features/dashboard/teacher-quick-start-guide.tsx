@@ -74,7 +74,7 @@ export function TeacherQuickStartGuide({
               </span>
             </div>
             <p className="mt-0.5 text-xs leading-5 text-[var(--text-muted)]">
-              Classroom, roster, and AI-assisted practical workflow
+              Classroom, roster, and practical review workflow
             </p>
           </div>
         </div>

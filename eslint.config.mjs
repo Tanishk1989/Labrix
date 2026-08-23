@@ -28,6 +28,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated from the pinned monaco-editor dependency by assets:prepare.
+    "frontend/public/monaco/**",
   ]),
 ]);
 

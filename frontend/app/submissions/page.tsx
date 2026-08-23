@@ -79,7 +79,7 @@ function ReviewTabs({
     { value: "ALL", label: "All", count: overview.submissions.length },
     {
       value: "PLAGIARISM",
-      label: "Similarity & Plagiarism Audit",
+      label: "Code similarity review",
       count: flaggedPairsCount,
       isPlagiarism: true,
     },
@@ -263,10 +263,10 @@ function TeacherSubmissionsContent({
   return (
     <div className="space-y-8">
       <PageHeader
-        title={isPlagiarismTab ? "Cohort Similarity & Plagiarism Audit" : "Review"}
+        title={isPlagiarismTab ? "Cohort code similarity review" : "Review"}
         description={
           isPlagiarismTab
-            ? "MOSS-grade AST token invariant comparisons across student peer submissions."
+            ? "Normalized syntax-token comparisons across peer submissions. Use these signals only to prioritize human review."
             : "Review student submissions and publish feedback."
         }
         actions={

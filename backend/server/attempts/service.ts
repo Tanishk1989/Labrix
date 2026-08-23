@@ -174,9 +174,14 @@ export async function getOrCreateStudentWorkspace(
   taskId: string,
 ): Promise<StudentWorkspace> {
   const task = await requirePublishedTaskForStudent(prisma, studentId, taskId);
-  const executionMode = getServerExecutionProvider().executionMode;
   const existing = await findActiveSession(studentId, taskId);
-  if (existing) return toWorkspace(task, existing, executionMode);
+  if (existing) {
+    const executionMode = getServerExecutionProvider(
+      process.env,
+      existing.language,
+    ).executionMode;
+    return toWorkspace(task, existing, executionMode);
+  }
 
   try {
     const created = await prisma.$transaction(
@@ -216,11 +221,21 @@ export async function getOrCreateStudentWorkspace(
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+    const executionMode = getServerExecutionProvider(
+      process.env,
+      created.language,
+    ).executionMode;
     return toWorkspace(task, created, executionMode);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrent = await findActiveSession(studentId, taskId);
-      if (concurrent) return toWorkspace(task, concurrent, executionMode);
+      if (concurrent) {
+        const executionMode = getServerExecutionProvider(
+          process.env,
+          concurrent.language,
+        ).executionMode;
+        return toWorkspace(task, concurrent, executionMode);
+      }
     }
     throw error;
   }
@@ -604,8 +619,10 @@ export async function runStudentDraft(
     language: AllowedLanguage;
     sourceCode: string;
   },
-  provider: ServerExecutionProvider = getServerExecutionProvider(),
+  provider?: ServerExecutionProvider,
 ) {
+  const executionProvider =
+    provider ?? getServerExecutionProvider(process.env, input.language);
   const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.CODE_RUN);
   if (!rl.success) {
     throw new RateLimitExceededError(
@@ -619,7 +636,7 @@ export async function runStudentDraft(
       sessionId: input.sessionId,
       kind: "run",
     },
-    () => executeStudentDraft(input, provider, "VISIBLE"),
+    () => executeStudentDraft(input, executionProvider, "VISIBLE"),
   );
 }
 
@@ -669,7 +686,7 @@ async function submitStudentDraftWithoutGuard(
     sourceCode: string;
     idempotencyKey: string;
   },
-  provider: ServerExecutionProvider = getServerExecutionProvider(),
+  provider: ServerExecutionProvider,
 ): Promise<PersistedSubmission> {
   const existing = await findIdempotentSubmission(
     input.studentId,
@@ -769,8 +786,10 @@ export async function submitStudentDraft(
     sourceCode: string;
     idempotencyKey: string;
   },
-  provider: ServerExecutionProvider = getServerExecutionProvider(),
+  provider?: ServerExecutionProvider,
 ): Promise<PersistedSubmission> {
+  const executionProvider =
+    provider ?? getServerExecutionProvider(process.env, input.language);
   const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.SUBMISSION);
   if (!rl.success) {
     throw new RateLimitExceededError(
@@ -784,7 +803,7 @@ export async function submitStudentDraft(
       sessionId: input.sessionId,
       kind: "submit",
     },
-    () => submitStudentDraftWithoutGuard(input, provider),
+    () => submitStudentDraftWithoutGuard(input, executionProvider),
   );
 }
 
@@ -840,6 +859,7 @@ export async function getSubmissionForTeacher(
       taskId: submission.taskId,
       task: { classroom: { ownerTeacherId: teacherId } },
       id: { not: submission.id },
+      studentId: { not: submission.studentId },
     },
     select: {
       id: true,

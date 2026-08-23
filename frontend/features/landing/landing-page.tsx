@@ -109,7 +109,7 @@ function HeroSection() {
       <div className="relative mx-auto max-w-[96rem] text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/15 bg-indigo-400/[0.07] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-300">
           <Sparkles size={12} aria-hidden="true" />
-          AI-assisted coding practicals
+          Evidence-assisted coding practicals
         </div>
         <h1 className="mx-auto mt-6 max-w-[96rem] text-balance text-[clamp(3rem,7vw,7.5rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-white">
           Trace the work.

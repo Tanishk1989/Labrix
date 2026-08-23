@@ -18,14 +18,24 @@ export interface EnvValidationResult {
  * Enforces production security invariants while maintaining smooth development defaults.
  */
 export function validateEnvironment(): EnvValidationResult {
-  const mode = (process.env.LABRIX_IDENTITY_MODE === "clerk" ? "clerk" : "demo") as "demo" | "clerk";
+  const configuredIdentityMode = process.env.LABRIX_IDENTITY_MODE;
+  const mode = configuredIdentityMode === "clerk" ? "clerk" : "demo";
   const isProduction = process.env.NODE_ENV === "production";
+  const isSupervisedLocalDemo =
+    isProduction &&
+    mode === "demo" &&
+    process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD === "true" &&
+    process.env.NEXT_PUBLIC_LABRIX_DEMO_RUNTIME === "local-real";
   const missingRequired: string[] = [];
   const warnings: string[] = [];
 
   // 1. Database URL
   if (!process.env.DATABASE_URL) {
     missingRequired.push("DATABASE_URL");
+  }
+  if (configuredIdentityMode !== "demo" && configuredIdentityMode !== "clerk") {
+    if (isProduction) missingRequired.push("LABRIX_IDENTITY_MODE=clerk");
+    else warnings.push("LABRIX_IDENTITY_MODE must be explicitly set to 'demo' or 'clerk'.");
   }
 
   // 2. Authentication Validation
@@ -40,10 +50,8 @@ export function validateEnvironment(): EnvValidationResult {
       if (isProduction) missingRequired.push("CLERK_WEBHOOK_SECRET");
       else warnings.push("CLERK_WEBHOOK_SECRET is not set. Clerk webhook requests will be rejected.");
     }
-  } else if (isProduction && !process.env.LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD) {
-    warnings.push(
-      "LABRIX_IDENTITY_MODE is 'demo' in a production environment. Switch to 'clerk' for real user security.",
-    );
+  } else if (isProduction && !isSupervisedLocalDemo) {
+    missingRequired.push("LABRIX_IDENTITY_MODE=clerk");
   }
 
   // 3. AI Providers
@@ -58,7 +66,7 @@ export function validateEnvironment(): EnvValidationResult {
   const upstashRateLimiting = Boolean(
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
   );
-  if (isProduction && !upstashRateLimiting) {
+  if (isProduction && !isSupervisedLocalDemo && !upstashRateLimiting) {
     if (!process.env.UPSTASH_REDIS_REST_URL) {
       missingRequired.push("UPSTASH_REDIS_REST_URL");
     }
@@ -66,14 +74,20 @@ export function validateEnvironment(): EnvValidationResult {
       missingRequired.push("UPSTASH_REDIS_REST_TOKEN");
     }
   }
+  if (isSupervisedLocalDemo && !upstashRateLimiting) {
+    warnings.push("Shared rate limiting is not configured for this supervised single-host demo.");
+  }
 
   // 5. Runner Configuration
-  const runnerConfigured = ["local-docker", "remote-docker"].includes(
-    process.env.LABRIX_EXECUTION_PROVIDER ?? "",
-  ) &&
+  const configuredExecutionProvider = process.env.LABRIX_EXECUTION_PROVIDER;
+  const supportedExecutionProvider = isProduction
+    ? configuredExecutionProvider === "remote-docker" ||
+      (isSupervisedLocalDemo && configuredExecutionProvider === "local-docker")
+    : ["local-docker", "remote-docker"].includes(configuredExecutionProvider ?? "");
+  const runnerConfigured = supportedExecutionProvider &&
     Boolean(process.env.LABRIX_JAVA_RUNNER_URL) &&
     Boolean(process.env.LABRIX_CPP_RUNNER_URL) &&
-    (process.env.LABRIX_EXECUTION_PROVIDER !== "remote-docker" ||
+    (configuredExecutionProvider !== "remote-docker" ||
       (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) >= 32);
 
   if (!runnerConfigured) {
@@ -85,7 +99,11 @@ export function validateEnvironment(): EnvValidationResult {
       ] as const) {
         if (!process.env[name]) missingRequired.push(name);
       }
-      if ((process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) < 32) {
+      if (!supportedExecutionProvider && configuredExecutionProvider) {
+        missingRequired.push("LABRIX_EXECUTION_PROVIDER=remote-docker");
+      }
+      if (configuredExecutionProvider === "remote-docker" &&
+        (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) < 32) {
         missingRequired.push("LABRIX_RUNNER_BEARER_TOKEN (minimum 32 characters)");
       }
     } else {

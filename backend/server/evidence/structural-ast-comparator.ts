@@ -205,11 +205,11 @@ export function computeStructuralSimilarity(
   if (similarityScore >= 78) {
     verdict = "STRUCTURAL_COLLUSION_FLAG";
     explanation = isRenamed
-      ? "High-confidence structural collusion: AST tokens & control flow are identical despite variable renaming and cosmetic edits."
-      : "Near-identical AST token structure and statement sequencing.";
+      ? "High structural overlap remains after identifier normalization and cosmetic edits. Review the matching regions in context."
+      : "High overlap in normalized syntax tokens and statement sequencing. Review the matching regions in context.";
   } else if (similarityScore >= 48) {
     verdict = "SUSPICIOUS_SIMILARITY";
-    explanation = "Moderate structural overlap detected. May share common starter logic or algorithmic template.";
+    explanation = "Moderate structural overlap detected. Common starter logic or a shared algorithm can contribute to this result.";
   }
 
   return {
