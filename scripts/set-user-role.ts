@@ -31,7 +31,13 @@ async function main() {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { platformRole: roleValue },
+    data: {
+      platformRole: roleValue,
+      accountStatus: "ACTIVE",
+      teacherApprovalRequestedAt: null,
+      teacherApprovalNotifiedAt: null,
+      teacherApprovedAt: null,
+    },
   });
   console.log(JSON.stringify({ updated: true, userId: user.id, role: roleValue }));
 }

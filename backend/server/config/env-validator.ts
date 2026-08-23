@@ -10,7 +10,6 @@ export interface EnvValidationResult {
     geminiAiEnabled: boolean;
     upstashRateLimiting: boolean;
     runnerConfigured: boolean;
-    teacherApprovalConfigured: boolean;
   };
 }
 
@@ -94,32 +93,6 @@ export function validateEnvironment(): EnvValidationResult {
     }
   }
 
-  const teacherApprovalVariables = [
-    "LABRIX_APP_URL",
-    "RESEND_API_KEY",
-    "TEACHER_APPROVAL_EMAIL",
-    "TEACHER_APPROVAL_FROM_EMAIL",
-    "TEACHER_APPROVAL_SECRET",
-  ] as const;
-  const teacherApprovalConfigured = teacherApprovalVariables.every((name) =>
-    Boolean(process.env[name]?.trim()),
-  ) && (process.env.TEACHER_APPROVAL_SECRET?.trim().length ?? 0) >= 32;
-  if (mode === "clerk" && !teacherApprovalConfigured) {
-    if (isProduction) {
-      for (const name of teacherApprovalVariables) {
-        if (!process.env[name]?.trim()) missingRequired.push(name);
-      }
-      if (
-        process.env.TEACHER_APPROVAL_SECRET?.trim() &&
-        process.env.TEACHER_APPROVAL_SECRET.trim().length < 32
-      ) {
-        missingRequired.push("TEACHER_APPROVAL_SECRET (minimum 32 characters)");
-      }
-    } else {
-      warnings.push("Teacher approval email delivery is not fully configured.");
-    }
-  }
-
   return {
     isValid: missingRequired.length === 0,
     mode,
@@ -130,7 +103,6 @@ export function validateEnvironment(): EnvValidationResult {
       geminiAiEnabled,
       upstashRateLimiting,
       runnerConfigured,
-      teacherApprovalConfigured,
     },
   };
 }

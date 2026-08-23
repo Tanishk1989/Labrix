@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   clerkUserDataSchema,
   clerkWebhookEnvelopeSchema,
+  getClerkAssignedRole,
   isClerkUserEventType,
   verifyClerkWebhookSignature,
 } from "@/server/onboarding/clerk-webhook";
@@ -43,5 +44,11 @@ describe("Clerk webhook boundary", () => {
     expect(clerkUserDataSchema.safeParse({ id: "", email_addresses: [{ id: "e", email_address: "bad" }] }).success).toBe(false);
     expect(isClerkUserEventType("user.updated")).toBe(true);
     expect(isClerkUserEventType("session.created")).toBe(false);
+  });
+
+  it("grants teacher only from administrator-controlled public metadata", () => {
+    expect(getClerkAssignedRole({ id: "teacher", public_metadata: { role: "TEACHER" } })).toBe("TEACHER");
+    expect(getClerkAssignedRole({ id: "student", public_metadata: { role: "STUDENT" } })).toBe("STUDENT");
+    expect(getClerkAssignedRole({ id: "unsafe", unsafe_metadata: { role: "TEACHER" } })).toBe("STUDENT");
   });
 });

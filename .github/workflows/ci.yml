@@ -38,11 +38,6 @@ jobs:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder_key_for_ci_build"
       CLERK_SECRET_KEY: "sk_test_placeholder_secret_for_ci_build"
       CLERK_WEBHOOK_SECRET: "whsec_dGVzdC1vbmx5LWNpLXdlYmhvb2stc2VjcmV0"
-      LABRIX_APP_URL: "https://trace-ci.example.test"
-      RESEND_API_KEY: "re_ci_placeholder"
-      TEACHER_APPROVAL_EMAIL: "admin@example.test"
-      TEACHER_APPROVAL_FROM_EMAIL: "TRACE <trace@example.test>"
-      TEACHER_APPROVAL_SECRET: "ci-only-teacher-approval-secret-32-characters"
       UPSTASH_REDIS_REST_URL: "https://ci-placeholder.upstash.io"
       UPSTASH_REDIS_REST_TOKEN: "ci-placeholder-token"
 

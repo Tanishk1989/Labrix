@@ -1,40 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { sendTeacherApprovalEmail } from "@/server/teacher-approval/notification";
 import { globalRateLimiter } from "@/server/security/rate-limiter";
 import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 import {
   clerkUserDataSchema,
   clerkWebhookEnvelopeSchema,
+  getClerkAssignedRole,
   isClerkUserEventType,
   verifyClerkWebhookSignature,
 } from "@/server/onboarding/clerk-webhook";
 import { logEvent } from "@/server/observability/logger";
 
 export const dynamic = "force-dynamic";
-
-interface PendingTeacherRequest {
-  userId: string;
-  name: string;
-  email: string;
-  requestedAt: Date;
-}
-
-async function notifyPendingTeacher(
-  request: PendingTeacherRequest,
-  fallbackOrigin: string,
-) {
-  await sendTeacherApprovalEmail(request, { fallbackOrigin });
-  await prisma.user.updateMany({
-    where: {
-      id: request.userId,
-      accountStatus: "PENDING_TEACHER_APPROVAL",
-      teacherApprovalRequestedAt: request.requestedAt,
-      teacherApprovalNotifiedAt: null,
-    },
-    data: { teacherApprovalNotifiedAt: new Date() },
-  });
-}
 
 export async function POST(req: NextRequest) {
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
@@ -97,16 +74,14 @@ export async function POST(req: NextRequest) {
 
   const fullName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim() || "TRACE User";
   const metadataRole = data.public_metadata?.role;
-  // Unsafe metadata can request teacher access, but never grants it directly:
-  // the local account remains blocked until the signed email link is approved.
-  const requestedTeacher =
-    metadataRole === "TEACHER" || data.unsafe_metadata?.role === "TEACHER";
-  const assignedRole = requestedTeacher ? "TEACHER" : "STUDENT";
+  // Only Clerk public metadata, controlled by an administrator, may grant the
+  // teacher role. User-editable unsafe metadata is intentionally ignored.
+  const assignedRole = getClerkAssignedRole(data);
 
   try {
     switch (type) {
       case "user.created": {
-        const teacherRequest = await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx) => {
           const existingIdentity = await tx.externalIdentity.findUnique({
             where: {
               provider_providerSubject: {
@@ -114,35 +89,8 @@ export async function POST(req: NextRequest) {
                 providerSubject: clerkUserId,
               },
             },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  accountStatus: true,
-                  teacherApprovalRequestedAt: true,
-                  teacherApprovalNotifiedAt: true,
-                },
-              },
-            },
           });
-          if (existingIdentity) {
-            const existingUser = existingIdentity.user;
-            if (
-              existingUser.accountStatus === "PENDING_TEACHER_APPROVAL" &&
-              existingUser.teacherApprovalRequestedAt &&
-              !existingUser.teacherApprovalNotifiedAt
-            ) {
-              return {
-                userId: existingUser.id,
-                name: existingUser.name,
-                email: existingUser.email,
-                requestedAt: existingUser.teacherApprovalRequestedAt,
-              };
-            }
-            return null;
-          }
+          if (existingIdentity) return;
 
           const emailOwner = await tx.user.findUnique({
             where: { email: primaryEmail },
@@ -152,18 +100,12 @@ export async function POST(req: NextRequest) {
             throw new Error("A TRACE account already owns this email address.");
           }
 
-          const teacherApprovalRequestedAt =
-            assignedRole === "TEACHER" ? new Date() : null;
           const user = await tx.user.create({
             data: {
               name: fullName,
               email: primaryEmail,
               platformRole: assignedRole,
-              accountStatus:
-                assignedRole === "TEACHER"
-                  ? "PENDING_TEACHER_APPROVAL"
-                  : "ACTIVE",
-              teacherApprovalRequestedAt,
+              accountStatus: "ACTIVE",
             },
           });
 
@@ -175,18 +117,7 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          return teacherApprovalRequestedAt
-            ? {
-                userId: user.id,
-                name: user.name,
-                email: user.email,
-                requestedAt: teacherApprovalRequestedAt,
-              }
-            : null;
         });
-        if (teacherRequest) {
-          await notifyPendingTeacher(teacherRequest, req.nextUrl.origin);
-        }
         return NextResponse.json({ success: true, action: "created", userId: clerkUserId });
       }
 
@@ -198,46 +129,17 @@ export async function POST(req: NextRequest) {
               providerSubject: clerkUserId,
             },
           },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                platformRole: true,
-                accountStatus: true,
-                teacherApprovalRequestedAt: true,
-                teacherApprovalNotifiedAt: true,
-              },
-            },
-          },
         });
 
-        let teacherRequest: PendingTeacherRequest | null = null;
         if (identity) {
-          const becameTeacher =
-            requestedTeacher &&
-            identity.user.platformRole !== "TEACHER";
-          const teacherApprovalRequestedAt = becameTeacher ? new Date() : null;
-          const updatedUser = await prisma.user.update({
+          await prisma.user.update({
             where: { id: identity.userId },
             data: {
               name: fullName,
               email: primaryEmail,
-              ...(metadataRole ? { platformRole: metadataRole } : {}),
-              ...(becameTeacher
+              ...(metadataRole
                 ? {
-                    platformRole: "TEACHER" as const,
-                    accountStatus: "PENDING_TEACHER_APPROVAL" as const,
-                    teacherApprovalRequestedAt,
-                    teacherApprovalNotifiedAt: null,
-                    teacherApprovedAt: null,
-                  }
-                : {}),
-              ...(metadataRole === "STUDENT" &&
-              identity.user.accountStatus === "PENDING_TEACHER_APPROVAL"
-                ? {
-                    platformRole: "STUDENT" as const,
+                    platformRole: metadataRole,
                     accountStatus: "ACTIVE" as const,
                     teacherApprovalRequestedAt: null,
                     teacherApprovalNotifiedAt: null,
@@ -246,30 +148,6 @@ export async function POST(req: NextRequest) {
                 : {}),
             },
           });
-
-          if (teacherApprovalRequestedAt) {
-            teacherRequest = {
-              userId: updatedUser.id,
-              name: updatedUser.name,
-              email: updatedUser.email,
-              requestedAt: teacherApprovalRequestedAt,
-            };
-          } else if (
-            requestedTeacher &&
-            identity.user.accountStatus === "PENDING_TEACHER_APPROVAL" &&
-            identity.user.teacherApprovalRequestedAt &&
-            !identity.user.teacherApprovalNotifiedAt
-          ) {
-            teacherRequest = {
-              userId: identity.user.id,
-              name: updatedUser.name,
-              email: updatedUser.email,
-              requestedAt: identity.user.teacherApprovalRequestedAt,
-            };
-          }
-        }
-        if (teacherRequest) {
-          await notifyPendingTeacher(teacherRequest, req.nextUrl.origin);
         }
         return NextResponse.json({ success: true, action: "updated", userId: clerkUserId });
       }

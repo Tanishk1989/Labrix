@@ -39,13 +39,6 @@ LABRIX_RUNNER_BEARER_TOKEN="at-least-32-random-characters"
 UPSTASH_REDIS_REST_URL="https://your-database.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="store-in-your-secret-manager"
 
-# Teacher approval delivery
-LABRIX_APP_URL="https://trace.example.edu"
-RESEND_API_KEY="re_..."
-TEACHER_APPROVAL_EMAIL="administrator@example.edu"
-TEACHER_APPROVAL_FROM_EMAIL="TRACE <approvals@example.edu>"
-TEACHER_APPROVAL_SECRET="at-least-32-random-characters"
-
 # Optional: Standalone Docker output
 NEXT_OUTPUT_STANDALONE="true"
 ```
@@ -67,7 +60,7 @@ To synchronize user creation, updates, and account status with TRACE:
 
 ## 3. Teacher Account Promotion & Admin Control
 
-In production, new sign-ups default to `STUDENT` role (or `PENDING_TEACHER_APPROVAL` if requesting instructor access).
+In production, new sign-ups default to `STUDENT`. Teacher access is granted only when an administrator sets Clerk `public_metadata.role` to `TEACHER`; the signed webhook activates that role directly.
 
 To promote verified instructors to `TEACHER`:
 ```bash

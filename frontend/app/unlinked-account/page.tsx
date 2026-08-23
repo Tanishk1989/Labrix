@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
 import { AuthStatePage } from "@/components/auth-state-page";
 import { StudentOnboardingForm } from "@/features/onboarding/student-onboarding-form";
-import {
-  DisabledAccountError,
-  PendingTeacherApprovalError,
-} from "@/server/actors/account-status";
+import { DisabledAccountError } from "@/server/actors/account-status";
 import {
   resolveCurrentActor,
   UnauthenticatedActorError,
@@ -29,9 +26,6 @@ export default async function UnlinkedAccountPage() {
     destination = "/classes";
   } catch (error) {
     if (error instanceof UnauthenticatedActorError) destination = "/sign-in";
-    else if (error instanceof PendingTeacherApprovalError) {
-      destination = "/pending-teacher-approval";
-    }
     else if (error instanceof DisabledAccountError) destination = "/disabled-account";
     else if (error instanceof InvalidExternalIdentityError) destination = "/unauthorized";
     else if (!(error instanceof UnlinkedActorError)) throw error;

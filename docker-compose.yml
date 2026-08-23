@@ -53,11 +53,6 @@ services:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?Set the Clerk publishable key}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?Set the Clerk secret key}
       CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET:?Set the Clerk webhook secret}
-      LABRIX_APP_URL: ${LABRIX_APP_URL:?Set the public HTTPS application URL}
-      RESEND_API_KEY: ${RESEND_API_KEY:?Set the Resend API key}
-      TEACHER_APPROVAL_EMAIL: ${TEACHER_APPROVAL_EMAIL:?Set the approval recipient}
-      TEACHER_APPROVAL_FROM_EMAIL: ${TEACHER_APPROVAL_FROM_EMAIL:?Set the verified approval sender}
-      TEACHER_APPROVAL_SECRET: ${TEACHER_APPROVAL_SECRET:?Set a random approval secret of at least 32 characters}
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:?Set the Upstash REST URL}
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?Set the Upstash REST token}
       LABRIX_EXECUTION_PROVIDER: remote-docker

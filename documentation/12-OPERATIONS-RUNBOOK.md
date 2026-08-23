@@ -42,7 +42,7 @@ The restore refuses to run without the matching checksum metadata and the exact 
 
 1. Disable enrollment or submission access at the edge if integrity or privacy is at risk.
 2. Preserve JSON application logs, Clerk delivery IDs, runner health, database metrics, and relevant immutable audit rows.
-3. Rotate affected Clerk, runner, Upstash, email, or AI credentials. Never paste secrets into tickets or chat.
+3. Rotate affected Clerk, runner, Upstash, or AI credentials. Never paste secrets into tickets or chat.
 4. Identify affected users and timestamps from server-owned audit records, not browser claims.
 5. Restore service only after health and the role-specific smoke tests pass.
 6. Record impact, cause, remediation, and follow-up owner. Follow institutional breach-notification rules.
@@ -58,7 +58,7 @@ The restore refuses to run without the matching checksum metadata and the exact 
 
 - Health is green from outside the hosting network.
 - Latest backup is off-host and its restore has been tested.
-- Clerk webhook delivery succeeds and a teacher approval email arrives.
+- Clerk webhook delivery succeeds and an administrator-assigned teacher role reaches the teacher dashboard.
 - Both languages pass one real visible-test execution.
 - Queue capacity matches expected class size; overload returns a controlled retry response.
 - A second operator knows how to disable traffic, rotate secrets, and restore the prior image.

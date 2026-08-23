@@ -26,6 +26,10 @@ export const clerkUserDataSchema = z.object({
 export type ClerkUserData = z.infer<typeof clerkUserDataSchema>;
 export type ClerkUserEventType = "user.created" | "user.updated" | "user.deleted";
 
+export function getClerkAssignedRole(data: ClerkUserData): "TEACHER" | "STUDENT" {
+  return data.public_metadata?.role === "TEACHER" ? "TEACHER" : "STUDENT";
+}
+
 export function isClerkUserEventType(type: string): type is ClerkUserEventType {
   return type === "user.created" || type === "user.updated" || type === "user.deleted";
 }

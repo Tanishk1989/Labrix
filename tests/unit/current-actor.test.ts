@@ -1,9 +1,6 @@
 import { AccountStatus, PlatformRole } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import {
-  DisabledAccountError,
-  PendingTeacherApprovalError,
-} from "@/server/actors/account-status";
+import { DisabledAccountError } from "@/server/actors/account-status";
 import {
   resolveCurrentActor,
   UnauthenticatedActorError,
@@ -118,7 +115,7 @@ describe("authenticated current actor resolution", () => {
     ).rejects.toBeInstanceOf(DisabledAccountError);
   });
 
-  it("denies teacher access while administrator verification is pending", async () => {
+  it("denies a legacy pending account as inactive", async () => {
     await expect(
       resolveCurrentActor({
         mode: "clerk",
@@ -133,7 +130,7 @@ describe("authenticated current actor resolution", () => {
           accountStatus: AccountStatus.PENDING_TEACHER_APPROVAL,
         }),
       }),
-    ).rejects.toBeInstanceOf(PendingTeacherApprovalError);
+    ).rejects.toBeInstanceOf(DisabledAccountError);
   });
 
   it.each([

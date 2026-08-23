@@ -11,8 +11,6 @@ const PUBLIC_PATHS = [
   "/unauthorized",
   "/unlinked-account",
   "/disabled-account",
-  "/pending-teacher-approval",
-  "/teacher-approvals",
 ];
 
 function isPublicPath(pathname: string | null): boolean {

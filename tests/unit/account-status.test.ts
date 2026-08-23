@@ -2,7 +2,6 @@ import { AccountStatus } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import {
   DisabledAccountError,
-  PendingTeacherApprovalError,
   requireActiveAccount,
 } from "@/server/actors/account-status";
 
@@ -17,9 +16,9 @@ describe("local account-status policy", () => {
     );
   });
 
-  it("routes a pending teacher to the verification state", () => {
+  it("denies a legacy pending account as inactive", () => {
     expect(() =>
       requireActiveAccount(AccountStatus.PENDING_TEACHER_APPROVAL),
-    ).toThrow(PendingTeacherApprovalError);
+    ).toThrow(DisabledAccountError);
   });
 });
