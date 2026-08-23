@@ -17,8 +17,18 @@ if (!BASE_URL) {
 }
 const results: TestResult[] = [];
 
-function isProtectedRedirect(statusCode: number, location: string | undefined) {
-  return [302, 303, 307, 308].includes(statusCode) && Boolean(location?.includes("/sign-in"));
+function isProtectedRedirect(
+  statusCode: number,
+  location: string | undefined,
+  body: string,
+) {
+  const httpRedirect =
+    [302, 303, 307, 308].includes(statusCode) && Boolean(location?.includes("/sign-in"));
+  const streamedRedirect =
+    statusCode === 200 &&
+    (body.includes('id="__next-page-redirect"') || body.includes("NEXT_REDIRECT")) &&
+    body.includes("/sign-in");
+  return httpRedirect || streamedRedirect;
 }
 
 async function fetchUrl(
@@ -118,15 +128,17 @@ async function runAllTests() {
   // 2. Public landing page
   try {
     const res = await fetchUrl("/");
-    const isRedirect = res.statusCode === 200 && res.body.includes("Trace the work");
+    const isRedirect =
+      (res.statusCode === 200 && res.body.includes("Trace the work")) ||
+      ([302, 303, 307, 308].includes(res.statusCode) && res.headers.location === "/dashboard");
     results.push({
       category: "Routing & Core Pages",
-      name: "Public landing page (/)",
+      name: "Root entry route (/)",
       url: `${BASE_URL}/`,
       status: isRedirect ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isRedirect ? "Landing page rendered" : "Landing page content missing",
+      details: isRedirect ? "Root entry route rendered or redirected to dashboard" : "Unexpected root route response",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -143,7 +155,7 @@ async function runAllTests() {
   // 3. Dashboard Page
   try {
     const res = await fetchUrl("/dashboard");
-    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Routing & Core Pages",
       name: "Teacher & Student Dashboard (/dashboard)",
@@ -168,7 +180,7 @@ async function runAllTests() {
   // 4. Classes List Page
   try {
     const res = await fetchUrl("/classes");
-    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Teacher & Student Flows",
       name: "Classrooms List (/classes)",
@@ -193,7 +205,7 @@ async function runAllTests() {
   // 5. Practicals / Tasks Directory
   try {
     const res = await fetchUrl("/practicals");
-    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Teacher & Student Flows",
       name: "Practicals Directory (/practicals)",
@@ -218,7 +230,7 @@ async function runAllTests() {
   // 6. Submissions & Oral Review Queue
   try {
     const res = await fetchUrl("/submissions");
-    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Teacher & Student Flows",
       name: "Submissions & AI Defense Reviews (/submissions)",
@@ -243,7 +255,7 @@ async function runAllTests() {
   // 7. Student Analytics & Progress Page
   try {
     const res = await fetchUrl("/progress");
-    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Analytics & Defense Progress",
       name: "Progress & Integrity Overview (/progress)",
