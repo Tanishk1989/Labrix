@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   MemoryRateLimiterStore,
   RateLimiter,
+  UpstashRateLimiterStore,
 } from "@/server/security/rate-limiter";
 import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 
@@ -71,5 +72,26 @@ describe("RateLimiter sliding window", () => {
     expect(RATE_LIMIT_CONFIGS.SUBMISSION.maxRequests).toBe(5);
     expect(RATE_LIMIT_CONFIGS.AUTOSAVE.maxRequests).toBe(60);
     expect(RATE_LIMIT_CONFIGS.AI_GENERATION.maxRequests).toBe(5);
+  });
+});
+
+describe("Upstash shared rate-limit store", () => {
+  it("uses an authenticated atomic script and maps the shared count", async () => {
+    const fetchImplementation = vi.fn<typeof fetch>(async () =>
+      new Response(JSON.stringify({ result: [1, 2, Date.now()] }), { status: 200 }),
+    );
+    const store = new UpstashRateLimiterStore(
+      "https://example.upstash.io",
+      "secret-token",
+      fetchImplementation,
+    );
+
+    const result = await store.consume("safe-key", 5, 60);
+
+    expect(result).toMatchObject({ success: true, limit: 5, remaining: 3 });
+    const [url, options] = fetchImplementation.mock.calls[0];
+    expect(String(url)).toContain("/eval/");
+    expect(String(url)).toContain("ratelimit%3Asafe-key");
+    expect(options?.headers).toEqual({ Authorization: "Bearer secret-token" });
   });
 });

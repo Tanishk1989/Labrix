@@ -6,7 +6,7 @@
  *   npx tsx scripts/db-backup.ts [--output <dir>]
  */
 
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -44,13 +44,25 @@ async function main() {
   const dbConfig = parseDatabaseUrl(dbUrl);
   console.log(`[Backup] Starting backup for database '${dbConfig.database}' on ${dbConfig.host}:${dbConfig.port}...`);
 
-  const pgDumpCmd = `pg_dump -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} --clean --if-exists --no-owner --no-privileges -f "${filePath}"`;
-
   try {
-    execSync(pgDumpCmd, {
+    const result = spawnSync("pg_dump", [
+      "-h", dbConfig.host,
+      "-p", dbConfig.port,
+      "-U", dbConfig.user,
+      "-d", dbConfig.database,
+      "--clean",
+      "--if-exists",
+      "--no-owner",
+      "--no-privileges",
+      "-f", filePath,
+    ], {
       env: { ...process.env, PGPASSWORD: dbConfig.password },
       stdio: "pipe",
     });
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      throw new Error(result.stderr?.toString().trim() || `pg_dump exited with status ${result.status}`);
+    }
 
     const fileBuffer = readFileSync(filePath);
     const checksum = createHash("sha256").update(fileBuffer).digest("hex");
@@ -62,6 +74,7 @@ async function main() {
       database: dbConfig.database,
       sizeBytes: fileBuffer.length,
       sha256: checksum,
+      format: "postgresql-plain-sql",
     };
 
     writeFileSync(metaPath, JSON.stringify(metadata, null, 2), "utf8");

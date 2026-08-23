@@ -6,6 +6,9 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    settings: {
+      next: { rootDir: "frontend/" },
+    },
     rules: {
       // Existing hydration/recovery effects intentionally restore browser-only
       // state after mount. Keep the rule advisory while those flows are

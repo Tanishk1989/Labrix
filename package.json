@@ -24,6 +24,8 @@
     "db:migrate": "prisma migrate dev --schema=backend/prisma/schema.prisma",
     "db:migrate:status": "prisma migrate status --schema=backend/prisma/schema.prisma",
     "db:seed": "tsx backend/prisma/seed.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "db:restore": "tsx scripts/db-restore.ts",
     "data:remove-demo": "tsx scripts/remove-demo-data.ts --confirm",
     "user:set-role": "tsx scripts/set-user-role.ts",
     "db:local:up": "tsx scripts/local-database.ts up",

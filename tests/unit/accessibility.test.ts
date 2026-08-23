@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 describe("Accessibility & WCAG AA Compliance Validation", () => {
-  it("ensures auth routes redirect directly to dashboard and auth visual side has accessible navigation", () => {
+  it("ensures auth routes render the configured identity provider and auth visual side has accessible navigation", () => {
     const signInPath = join(process.cwd(), "frontend/app/sign-in/[[...sign-in]]/page.tsx");
     const signUpPath = join(process.cwd(), "frontend/app/sign-up/[[...sign-up]]/page.tsx");
     const visualSidePath = join(process.cwd(), "frontend/features/auth/auth-visual-side.tsx");
@@ -16,9 +16,10 @@ describe("Accessibility & WCAG AA Compliance Validation", () => {
     const signUpContent = readFileSync(signUpPath, "utf8");
     const visualContent = readFileSync(visualSidePath, "utf8");
 
-    // Routes redirect directly to dashboard
-    expect(signInContent).toContain('redirect("/dashboard")');
-    expect(signUpContent).toContain('redirect("/dashboard")');
+    expect(signInContent).toContain("<SignIn />");
+    expect(signUpContent).toContain("<SignUp />");
+    expect(signInContent).toContain('getIdentityMode() === "demo"');
+    expect(signUpContent).toContain('getIdentityMode() === "demo"');
 
     // Must have dark theme integration in layout
     const layoutPath = join(process.cwd(), "frontend/app/layout.tsx");
@@ -59,6 +60,21 @@ describe("Accessibility & WCAG AA Compliance Validation", () => {
       const content = readFileSync(dialogPath, "utf8");
       expect(content).toMatch(/role=["']dialog["']|aria-modal/);
     }
+  });
+
+  it("keeps production account roles server-owned and uses Clerk sign-out", () => {
+    const shellContent = readFileSync(
+      join(process.cwd(), "frontend/components/app-shell.tsx"),
+      "utf8",
+    );
+    const accountContent = readFileSync(
+      join(process.cwd(), "frontend/components/account-dropdown.tsx"),
+      "utf8",
+    );
+
+    expect(shellContent).toContain('identityMode === "demo" && rolePreviewAvailable');
+    expect(accountContent).toContain('identityMode === "demo" ?');
+    expect(accountContent).toContain("<SignOutButton");
   });
 
   it("ensures quick start guide has accessible heading landmarks and live regions", () => {

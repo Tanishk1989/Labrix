@@ -1,5 +1,6 @@
 "use client";
 
+import { SignOutButton } from "@clerk/nextjs";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -144,7 +145,7 @@ export function AccountDropdown({
           </div>
 
           {/* Role Switching / Perspective View */}
-          <div className="py-1.5">
+          {identityMode === "demo" ? <div className="py-1.5">
             <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-white/40">
               Perspective View
             </div>
@@ -179,7 +180,7 @@ export function AccountDropdown({
               </div>
               {currentRole === "student" && <Check size={14} className="text-lime-400" />}
             </button>
-          </div>
+          </div> : null}
 
           {/* Quick Links */}
           <div className="py-1.5">
@@ -204,14 +205,26 @@ export function AccountDropdown({
 
           {/* Log Out Action */}
           <div className="p-1.5">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-all cursor-pointer"
-            >
-              <LogOut size={14} />
-              <span>Log Out</span>
-            </button>
+            {identityMode === "clerk" ? (
+              <SignOutButton redirectUrl="/sign-in">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-all cursor-pointer"
+                >
+                  <LogOut size={14} />
+                  <span>Log Out</span>
+                </button>
+              </SignOutButton>
+            ) : (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-all cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Exit demo</span>
+              </button>
+            )}
           </div>
         </div>
       )}

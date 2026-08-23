@@ -1,4 +1,4 @@
-# 🚀 TRACE / Labrix — Complete Production Deployment Guide
+# TRACE / Labrix production deployment guide
 
 This guide provides step-by-step instructions to deploy TRACE / Labrix to production on modern cloud infrastructure (Vercel / Railway + Neon PostgreSQL + Clerk + Groq).
 
@@ -22,9 +22,7 @@ flowchart TD
 
 1. Create a free project at [Neon.tech](https://neon.tech) or [Supabase](https://supabase.com).
 2. Create a PostgreSQL database named `labrix`.
-3. In Neon, copy **two connection strings**:
-   - **Pooled connection string** (with PgBouncer enabled) $\rightarrow$ Use for `DATABASE_URL`.
-   - **Direct connection string** (non-pooled port 5432) $\rightarrow$ Use for `DIRECT_URL` (migrations).
+3. Copy the connection string required by your hosting provider and set it as `DATABASE_URL`. Run migrations from a controlled release job that can reach the database.
 4. Run database migrations:
    ```bash
    npx prisma migrate deploy --schema=backend/prisma/schema.prisma
@@ -80,7 +78,12 @@ flowchart TD
 | `TEACHER_APPROVAL_SECRET` | Random secret containing at least 32 characters |
 | `GROQ_API_KEY` | `gsk_...` |
 | `GROQ_AI_REVIEW_MODEL` | `openai/gpt-oss-20b` |
-| `LABRIX_EXECUTION_PROVIDER` | `mock` (or `sandbox` with remote runner) |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST credential |
+| `LABRIX_EXECUTION_PROVIDER` | `remote-docker` |
+| `LABRIX_JAVA_RUNNER_URL` | Public or private HTTPS execution endpoint |
+| `LABRIX_CPP_RUNNER_URL` | Public or private HTTPS execution endpoint |
+| `LABRIX_RUNNER_BEARER_TOKEN` | Shared random credential, at least 32 characters |
 | `NODE_ENV` | `production` |
 
 6. Click **Deploy**. Vercel will automatically build and publish your high-performance edge deployment.
@@ -97,7 +100,7 @@ For executing untrusted student C++ and Java code in isolated containers:
    npm run runner:java
    npm run runner:cpp
    ```
-4. Set `LABRIX_JAVA_RUNNER_URL` and `LABRIX_CPP_RUNNER_URL` to your worker's internal VPC IP address.
+4. Put the worker services behind HTTPS and set `LABRIX_RUNNER_BEARER_TOKEN` on both workers to the same random 32+ character value used by the web app. Do not expose the worker's unauthenticated Docker host or daemon socket.
 
 ---
 
@@ -126,12 +129,10 @@ Expected output:
       "groqAiEnabled": true,
       "geminiAiEnabled": false,
       "upstashRateLimiting": true,
-      "runnerConfigured": false
+      "runnerConfigured": true
     }
   }
 }
 ```
 
----
-
-🎉 **Your TRACE / Labrix platform is now 100% production ready, secure, and ready for high-concurrency university deployment!**
+Complete the release gate and the pre-class checklist in `documentation/12-OPERATIONS-RUNBOOK.md` before opening enrollment. A successful deployment alone is not evidence that authentication, email delivery, runner capacity, backups, and role-specific classroom flows work in the target environment.

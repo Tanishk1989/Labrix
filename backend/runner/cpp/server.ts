@@ -12,6 +12,8 @@ import {
   cleanupActiveCppContainers,
   executeCppInDocker,
 } from "./docker-executor";
+import { boundedPositiveInteger } from "../config";
+import { configuredRunnerBearerToken, runnerRequestIsAuthorized } from "../auth";
 
 const RUNNER_HOST = "127.0.0.1";
 const RUNNER_PORT = 4_020;
@@ -88,15 +90,29 @@ export type RunnerServerOptions = {
   maxConcurrency?: number;
   maxQueueSize?: number;
   queueTimeoutMs?: number;
+  bearerToken?: string;
 };
 
 export function createCppRunnerServer(
   execute: CppExecutor = executeCppInDocker,
   options?: RunnerServerOptions,
 ) {
-  const maxConcurrency = options?.maxConcurrency ?? Math.max(1, parseInt(process.env.RUNNER_MAX_CONCURRENCY ?? "4", 10));
-  const maxQueueSize = options?.maxQueueSize ?? Math.max(1, parseInt(process.env.RUNNER_MAX_QUEUE_SIZE ?? "64", 10));
-  const queueTimeoutMs = options?.queueTimeoutMs ?? Math.max(1000, parseInt(process.env.RUNNER_QUEUE_TIMEOUT_MS ?? "60000", 10));
+  const maxConcurrency = options?.maxConcurrency ?? boundedPositiveInteger(
+    process.env.RUNNER_MAX_CONCURRENCY,
+    4,
+    { max: 32 },
+  );
+  const maxQueueSize = options?.maxQueueSize ?? boundedPositiveInteger(
+    process.env.RUNNER_MAX_QUEUE_SIZE,
+    64,
+    { max: 1_000 },
+  );
+  const queueTimeoutMs = options?.queueTimeoutMs ?? boundedPositiveInteger(
+    process.env.RUNNER_QUEUE_TIMEOUT_MS,
+    60_000,
+    { min: 1_000, max: 600_000 },
+  );
+  const bearerToken = options?.bearerToken ?? configuredRunnerBearerToken();
 
   let activeWorkers = 0;
   const queue: Array<() => Promise<void>> = [];
@@ -156,6 +172,11 @@ export function createCppRunnerServer(
 
     if (request.method !== "POST" || request.url !== EXECUTION_PATH) {
       writeJson(response, 404, { error: "Not found." });
+      return;
+    }
+
+    if (!runnerRequestIsAuthorized(request, bearerToken)) {
+      writeJson(response, 401, { error: "Unauthorized." });
       return;
     }
 

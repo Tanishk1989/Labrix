@@ -11,6 +11,7 @@ export interface ExecutionProviderEnvironment {
   LABRIX_EXECUTION_PROVIDER?: string;
   LABRIX_JAVA_RUNNER_URL?: string;
   LABRIX_CPP_RUNNER_URL?: string;
+  LABRIX_RUNNER_BEARER_TOKEN?: string;
   LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION?: string;
 }
 
@@ -63,12 +64,41 @@ function requireLoopbackRunnerUrl(
   return url.toString();
 }
 
+function requireRemoteRunnerUrl(
+  value: string | undefined,
+  variableName: "LABRIX_JAVA_RUNNER_URL" | "LABRIX_CPP_RUNNER_URL",
+) {
+  if (!value) {
+    throw new Error(`Invalid execution provider configuration: ${variableName} is required.`);
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`Invalid execution provider configuration: ${variableName} must be a valid HTTPS URL.`);
+  }
+  if (url.protocol !== "https:" || url.username || url.password) {
+    throw new Error(`Invalid execution provider configuration: ${variableName} must use HTTPS without URL credentials.`);
+  }
+  return url.toString();
+}
+
+function requireRunnerToken(value: string | undefined) {
+  if (!value || value.length < 32) {
+    throw new Error(
+      "Invalid execution provider configuration: LABRIX_RUNNER_BEARER_TOKEN must contain at least 32 characters.",
+    );
+  }
+  return value;
+}
+
 export function getServerExecutionProvider(
   environment: ExecutionProviderEnvironment = {
     NODE_ENV: process.env.NODE_ENV,
     LABRIX_EXECUTION_PROVIDER: process.env.LABRIX_EXECUTION_PROVIDER,
     LABRIX_JAVA_RUNNER_URL: process.env.LABRIX_JAVA_RUNNER_URL,
     LABRIX_CPP_RUNNER_URL: process.env.LABRIX_CPP_RUNNER_URL,
+    LABRIX_RUNNER_BEARER_TOKEN: process.env.LABRIX_RUNNER_BEARER_TOKEN,
     LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION:
       process.env.LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION,
   },
@@ -125,6 +155,30 @@ export function getServerExecutionProvider(
         "LABRIX_CPP_RUNNER_URL",
         mode,
       ),
+    });
+  }
+  if (mode === "remote-docker") {
+    if (!language) {
+      throw new Error(
+        "Invalid execution provider configuration: remote-docker requires a server-resolved execution language.",
+      );
+    }
+    const bearerToken = requireRunnerToken(environment.LABRIX_RUNNER_BEARER_TOKEN);
+    if (language === "JAVA") {
+      return new JavaHttpExecutionProvider({
+        endpoint: requireRemoteRunnerUrl(
+          environment.LABRIX_JAVA_RUNNER_URL,
+          "LABRIX_JAVA_RUNNER_URL",
+        ),
+        bearerToken,
+      });
+    }
+    return new CppHttpExecutionProvider({
+      endpoint: requireRemoteRunnerUrl(
+        environment.LABRIX_CPP_RUNNER_URL,
+        "LABRIX_CPP_RUNNER_URL",
+      ),
+      bearerToken,
     });
   }
   throw new Error(`Unsupported LABRIX_EXECUTION_PROVIDER: ${mode}`);

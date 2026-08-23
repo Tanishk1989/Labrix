@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-trace_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trace_secure_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong PostgreSQL password}
       POSTGRES_DB: ${POSTGRES_DB:-trace_db}
     ports:
       - "127.0.0.1:5432:5432"
@@ -25,14 +23,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: migrator
     container_name: trace-migration
     restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:-trace_secure_password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
-    command: ["npx", "prisma", "migrate", "deploy", "--schema=backend/prisma/schema.prisma"]
+      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:?Set a strong PostgreSQL password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
     networks:
       - trace-network
 
@@ -49,16 +47,33 @@ services:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:-trace_secure_password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
+      LABRIX_IDENTITY_MODE: clerk
+      DATABASE_URL: postgresql://${POSTGRES_USER:-trace_user}:${POSTGRES_PASSWORD:?Set a strong PostgreSQL password}@postgres:5432/${POSTGRES_DB:-trace_db}?schema=public
       PORT: 3000
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET}
-      RUNNER_BEARER_TOKEN: ${RUNNER_BEARER_TOKEN}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:?Set the Clerk publishable key}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:?Set the Clerk secret key}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET:?Set the Clerk webhook secret}
+      LABRIX_APP_URL: ${LABRIX_APP_URL:?Set the public HTTPS application URL}
+      RESEND_API_KEY: ${RESEND_API_KEY:?Set the Resend API key}
+      TEACHER_APPROVAL_EMAIL: ${TEACHER_APPROVAL_EMAIL:?Set the approval recipient}
+      TEACHER_APPROVAL_FROM_EMAIL: ${TEACHER_APPROVAL_FROM_EMAIL:?Set the verified approval sender}
+      TEACHER_APPROVAL_SECRET: ${TEACHER_APPROVAL_SECRET:?Set a random approval secret of at least 32 characters}
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:?Set the Upstash REST URL}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?Set the Upstash REST token}
+      LABRIX_EXECUTION_PROVIDER: remote-docker
+      LABRIX_JAVA_RUNNER_URL: ${LABRIX_JAVA_RUNNER_URL:?Set the HTTPS Java runner endpoint}
+      LABRIX_CPP_RUNNER_URL: ${LABRIX_CPP_RUNNER_URL:?Set the HTTPS C++ runner endpoint}
+      LABRIX_RUNNER_BEARER_TOKEN: ${LABRIX_RUNNER_BEARER_TOKEN:?Set a random runner bearer token of at least 32 characters}
       RUNNER_MAX_CONCURRENCY: ${RUNNER_MAX_CONCURRENCY:-4}
       RUNNER_MAX_QUEUE_SIZE: ${RUNNER_MAX_QUEUE_SIZE:-64}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - trace-network
 

@@ -9,6 +9,14 @@ COPY backend/prisma ./backend/prisma
 RUN npm ci
 
 # ----------------------------------------------------
+# Migration Runner (contains Prisma CLI and generated client)
+# ----------------------------------------------------
+FROM deps AS migrator
+WORKDIR /app
+ENV NODE_ENV=production
+ENTRYPOINT ["npx", "prisma", "migrate", "deploy", "--schema=backend/prisma/schema.prisma"]
+
+# ----------------------------------------------------
 # Stage 2: Builder
 # ----------------------------------------------------
 FROM node:20-alpine AS builder

@@ -11,21 +11,29 @@ interface TestResult {
   details: string;
 }
 
-const BASE_URL = "https://trace-seven-alpha.vercel.app";
+const BASE_URL = (process.env.TRACE_BASE_URL ?? process.argv[2] ?? "").replace(/\/$/, "");
+if (!BASE_URL) {
+  throw new Error("Set TRACE_BASE_URL or pass the target origin as the first argument.");
+}
 const results: TestResult[] = [];
+
+function isProtectedRedirect(statusCode: number, location: string | undefined) {
+  return [302, 303, 307, 308].includes(statusCode) && Boolean(location?.includes("/sign-in"));
+}
 
 async function fetchUrl(
   path: string,
   options: { method?: string; followRedirects?: boolean; headers?: Record<string, string> } = {}
 ): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: string; latencyMs: number }> {
-  const fullUrl = `${BASE_URL}${path}`;
+  const fullUrl = new URL(path, `${BASE_URL}/`).toString();
   const start = Date.now();
 
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(fullUrl);
+    const transport = parsedUrl.protocol === "https:" ? https : http;
     const reqOptions: https.RequestOptions = {
       hostname: parsedUrl.hostname,
-      port: 443,
+      port: parsedUrl.port || (parsedUrl.protocol === "https:" ? 443 : 80),
       path: parsedUrl.pathname + parsedUrl.search,
       method: options.method || "GET",
       headers: {
@@ -34,7 +42,7 @@ async function fetchUrl(
       },
     };
 
-    const req = https.request(reqOptions, (res) => {
+    const req = transport.request(reqOptions, (res) => {
       let body = "";
       res.on("data", (chunk) => (body += chunk));
       res.on("end", () => {
@@ -46,7 +54,7 @@ async function fetchUrl(
           res.statusCode < 400 &&
           res.headers.location
         ) {
-          fetchUrl(res.headers.location, { ...options, followRedirects: false })
+          fetchUrl(new URL(res.headers.location, fullUrl).toString(), { ...options, followRedirects: false })
             .then(resolve)
             .catch(reject);
         } else {
@@ -107,24 +115,24 @@ async function runAllTests() {
     });
   }
 
-  // 2. Root Redirect
+  // 2. Public landing page
   try {
     const res = await fetchUrl("/");
-    const isRedirect = res.statusCode === 307 || res.statusCode === 308 || res.statusCode === 200;
+    const isRedirect = res.statusCode === 200 && res.body.includes("Trace the work");
     results.push({
       category: "Routing & Core Pages",
-      name: "Root URL (/) Redirect to Dashboard",
+      name: "Public landing page (/)",
       url: `${BASE_URL}/`,
       status: isRedirect ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: res.headers.location ? `Redirects to ${res.headers.location}` : "Loaded successfully directly",
+      details: isRedirect ? "Landing page rendered" : "Landing page content missing",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     results.push({
       category: "Routing & Core Pages",
-      name: "Root URL (/) Redirect",
+      name: "Public landing page (/)",
       url: `${BASE_URL}/`,
       status: "FAILED",
       latencyMs: 0,
@@ -135,9 +143,7 @@ async function runAllTests() {
   // 3. Dashboard Page
   try {
     const res = await fetchUrl("/dashboard");
-    const hasTrace = res.body.includes("TRACE");
-    const hasNav = res.body.includes("Dashboard") && res.body.includes("Classes");
-    const isOk = res.statusCode === 200 && hasTrace && hasNav;
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
     results.push({
       category: "Routing & Core Pages",
       name: "Teacher & Student Dashboard (/dashboard)",
@@ -145,7 +151,7 @@ async function runAllTests() {
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isOk ? "Rendered complete page with navbar, metrics, and cards" : "Missing key elements in HTML",
+      details: isOk ? "Signed-out request redirected to sign-in" : "Protected route did not fail closed",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -162,7 +168,7 @@ async function runAllTests() {
   // 4. Classes List Page
   try {
     const res = await fetchUrl("/classes");
-    const isOk = res.statusCode === 200 && res.body.includes("Classes");
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
     results.push({
       category: "Teacher & Student Flows",
       name: "Classrooms List (/classes)",
@@ -170,7 +176,7 @@ async function runAllTests() {
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isOk ? "Classroom management and enrolled student cards accessible" : "Failed to load classes",
+      details: isOk ? "Signed-out request redirected to sign-in" : "Protected route did not fail closed",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -187,7 +193,7 @@ async function runAllTests() {
   // 5. Practicals / Tasks Directory
   try {
     const res = await fetchUrl("/practicals");
-    const isOk = res.statusCode === 200 && (res.body.includes("Practicals") || res.body.includes("Task"));
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
     results.push({
       category: "Teacher & Student Flows",
       name: "Practicals Directory (/practicals)",
@@ -195,7 +201,7 @@ async function runAllTests() {
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isOk ? "All laboratory programming tasks and practicals listed" : "Failed to load practicals",
+      details: isOk ? "Signed-out request redirected to sign-in" : "Protected route did not fail closed",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -212,7 +218,7 @@ async function runAllTests() {
   // 6. Submissions & Oral Review Queue
   try {
     const res = await fetchUrl("/submissions");
-    const isOk = res.statusCode === 200 && (res.body.includes("Reviews") || res.body.includes("Submissions"));
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
     results.push({
       category: "Teacher & Student Flows",
       name: "Submissions & AI Defense Reviews (/submissions)",
@@ -220,7 +226,7 @@ async function runAllTests() {
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isOk ? "Evaluation queue, AI interview review cards & grading loaded" : "Failed to load submissions",
+      details: isOk ? "Signed-out request redirected to sign-in" : "Protected route did not fail closed",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -237,7 +243,7 @@ async function runAllTests() {
   // 7. Student Analytics & Progress Page
   try {
     const res = await fetchUrl("/progress");
-    const isOk = res.statusCode === 200 && (res.body.includes("Progress") || res.body.includes("Analytics"));
+    const isOk = isProtectedRedirect(res.statusCode, res.headers.location);
     results.push({
       category: "Analytics & Defense Progress",
       name: "Progress & Integrity Overview (/progress)",
@@ -245,7 +251,7 @@ async function runAllTests() {
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
-      details: isOk ? "Student competency metrics, integrity ratings, and completion tracks verified" : "Failed to load progress",
+      details: isOk ? "Signed-out request redirected to sign-in" : "Protected route did not fail closed",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

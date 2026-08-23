@@ -461,6 +461,8 @@ export function ErrorState({
   actionLabel,
   actionHref,
   onAction,
+  action,
+  secondaryAction,
   className,
   headingLevel = "h3",
 }: {
@@ -469,6 +471,8 @@ export function ErrorState({
   actionLabel?: string;
   actionHref?: string;
   onAction?: () => void;
+  action?: ReactNode;
+  secondaryAction?: ReactNode;
   className?: string;
   headingLevel?: "h1" | "h2" | "h3";
 }) {
@@ -481,6 +485,8 @@ export function ErrorState({
         actionLabel={actionLabel}
         actionHref={actionHref}
         onAction={onAction}
+        action={action}
+        secondaryAction={secondaryAction}
         headingLevel={headingLevel}
         icon={<AlertCircle size={18} aria-hidden="true" className="text-[var(--color-danger)]" />}
       />

@@ -11,7 +11,7 @@ export function resolveIdentityMode(input: {
   mode?: string;
   nodeEnv?: string;
   allowProductionBuildDemo?: string;
-}): IdentityMode {
+} = {}): IdentityMode {
   const mode = input.mode;
   if (mode === "clerk") {
     return "clerk";

@@ -18,6 +18,7 @@ type FetchImplementation = typeof fetch;
 
 interface CppHttpExecutionProviderOptions {
   endpoint: string;
+  bearerToken?: string;
   fetchImplementation?: FetchImplementation;
   requestTimeoutMs?: number;
 }
@@ -123,11 +124,13 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
   readonly executionMode = "cpp-docker-local" as const;
 
   private readonly endpoint: string;
+  private readonly bearerToken?: string;
   private readonly fetchImplementation: FetchImplementation;
   private readonly requestTimeoutMs: number;
 
   constructor(options: CppHttpExecutionProviderOptions) {
     this.endpoint = options.endpoint;
+    this.bearerToken = options.bearerToken;
     this.fetchImplementation = options.fetchImplementation ?? fetch;
     this.requestTimeoutMs =
       options.requestTimeoutMs ?? CPP_RUNNER_HTTP_TIMEOUT_MS;
@@ -155,7 +158,12 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
     try {
       const response = await this.fetchImplementation(this.endpoint, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(this.bearerToken
+            ? { authorization: `Bearer ${this.bearerToken}` }
+            : {}),
+        },
         body: JSON.stringify({
           language: "CPP",
           sourceCode: request.sourceCode,

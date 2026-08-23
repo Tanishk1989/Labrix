@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
+import { logEvent } from "@/server/observability/logger";
 
 export interface LogAiGenerationInput {
   teacherId: string;
@@ -39,7 +40,11 @@ export async function logAiGeneration(input: LogAiGenerationInput) {
       },
     });
   } catch (error) {
-    console.error("Failed to log AI generation audit:", error);
+    logEvent("error", "ai_audit_write_failed", {
+      kind: input.kind,
+      status: input.status,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return null;
   }
 }

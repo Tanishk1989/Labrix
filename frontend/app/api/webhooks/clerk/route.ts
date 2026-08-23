@@ -3,22 +3,15 @@ import { prisma } from "@/lib/db/prisma";
 import { sendTeacherApprovalEmail } from "@/server/teacher-approval/notification";
 import { globalRateLimiter } from "@/server/security/rate-limiter";
 import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
-import crypto from "crypto";
+import {
+  clerkUserDataSchema,
+  clerkWebhookEnvelopeSchema,
+  isClerkUserEventType,
+  verifyClerkWebhookSignature,
+} from "@/server/onboarding/clerk-webhook";
+import { logEvent } from "@/server/observability/logger";
 
 export const dynamic = "force-dynamic";
-
-interface ClerkWebhookEvent {
-  type: "user.created" | "user.updated" | "user.deleted";
-  data: {
-    id: string;
-    first_name?: string | null;
-    last_name?: string | null;
-    email_addresses?: Array<{ id: string; email_address: string }>;
-    primary_email_address_id?: string | null;
-    public_metadata?: { role?: "TEACHER" | "STUDENT" };
-    unsafe_metadata?: { role?: "TEACHER" | "STUDENT" };
-  };
-}
 
 interface PendingTeacherRequest {
   userId: string;
@@ -43,57 +36,6 @@ async function notifyPendingTeacher(
   });
 }
 
-function verifyClerkWebhookSignature(
-  payload: string,
-  headers: Headers,
-  secret: string,
-): boolean {
-  const svixId = headers.get("svix-id");
-  const svixTimestamp = headers.get("svix-timestamp");
-  const svixSignature = headers.get("svix-signature");
-
-  if (!svixId || !svixTimestamp || !svixSignature || !secret) {
-    return false;
-  }
-
-  // Prevent replay attacks (timestamp within 5 minutes)
-  const timestampMs = parseInt(svixTimestamp, 10) * 1000;
-  if (Math.abs(Date.now() - timestampMs) > 5 * 60 * 1000) {
-    return false;
-  }
-
-  try {
-    const toSign = `${svixId}.${svixTimestamp}.${payload}`;
-    // Clerk uses base64-encoded secret with whsec_ prefix
-    const secretKey = secret.startsWith("whsec_")
-      ? Buffer.from(secret.slice(6), "base64")
-      : Buffer.from(secret);
-
-    const expectedSignature = crypto
-      .createHmac("sha256", secretKey)
-      .update(toSign)
-      .digest("base64");
-
-    const passedSignatures = svixSignature
-      .split(" ")
-      .map((part) => (part.startsWith("v1,") ? part.slice(3) : part));
-
-    return passedSignatures.some((sig) => {
-      try {
-        return crypto.timingSafeEqual(
-          Buffer.from(sig),
-          Buffer.from(expectedSignature),
-        );
-      } catch {
-        return false;
-      }
-    });
-  } catch (err) {
-    console.error("Clerk webhook signature verification error:", err);
-    return false;
-  }
-}
-
 export async function POST(req: NextRequest) {
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1";
   const rl = await globalRateLimiter.check(clientIp, RATE_LIMIT_CONFIGS.WEBHOOK);
@@ -111,7 +53,7 @@ export async function POST(req: NextRequest) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    console.error("CLERK_WEBHOOK_SECRET is not configured.");
+    logEvent("error", "clerk_webhook_configuration_missing");
     return NextResponse.json(
       { error: "Webhook verification is unavailable." },
       { status: 503 },
@@ -125,19 +67,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let event: ClerkWebhookEvent;
+  let rawEvent: unknown;
   try {
-    event = JSON.parse(rawBody);
+    rawEvent = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
 
-  const { type, data } = event;
-  const clerkUserId = data.id;
-
-  if (!clerkUserId) {
-    return NextResponse.json({ error: "Missing user ID in event data" }, { status: 400 });
+  const envelope = clerkWebhookEnvelopeSchema.safeParse(rawEvent);
+  if (!envelope.success) {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
   }
+  const { type } = envelope.data;
+  if (!isClerkUserEventType(type)) {
+    return NextResponse.json({ success: true, ignored: type });
+  }
+  const parsedData = clerkUserDataSchema.safeParse(envelope.data.data);
+  if (!parsedData.success) {
+    return NextResponse.json({ error: "Invalid user event data" }, { status: 400 });
+  }
+  const data = parsedData.data;
+  const clerkUserId = data.id;
 
   const primaryEmail =
     data.email_addresses?.find((e) => e.id === data.primary_email_address_id)
@@ -342,12 +292,12 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ success: true, action: "disabled", userId: clerkUserId });
       }
-
-      default:
-        return NextResponse.json({ success: true, ignored: type });
     }
   } catch (error) {
-    console.error(`Failed processing webhook event ${type}:`, error);
+    logEvent("error", "clerk_webhook_processing_failed", {
+      eventType: type,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return NextResponse.json(
       { error: "Database synchronization failed" },
       { status: 500 },

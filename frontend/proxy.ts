@@ -1,15 +1,14 @@
-import type { NextRequest } from "next/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-export default function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+const clerkProxy = clerkMiddleware();
 
-  // Jump straight to dashboard from sign-in/sign-up
-  if (pathname === "/sign-in" || pathname === "/sign-up") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (process.env.LABRIX_IDENTITY_MODE === "demo") {
+    return NextResponse.next();
   }
-
-  return NextResponse.next();
+  return clerkProxy(request, event);
 }
 
 export const config = {

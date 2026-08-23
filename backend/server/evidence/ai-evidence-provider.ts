@@ -6,6 +6,7 @@ import {
   type VivaGenerationResult,
 } from "./viva-generator";
 import { computeSourceCodeHash, logAiGeneration } from "./ai-audit";
+import { logEvent } from "@/server/observability/logger";
 import { globalRateLimiter } from "@/server/security/rate-limiter";
 import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 
@@ -132,7 +133,7 @@ async function callGroqAI(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn("Groq API returned error status:", response.status);
+      logEvent("warn", "ai_provider_http_error", { provider: "groq", status: response.status });
       return null;
     }
 
@@ -162,7 +163,10 @@ async function callGroqAI(
     };
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("Groq call failed:", err);
+    logEvent("warn", "ai_provider_request_failed", {
+      provider: "groq",
+      errorName: err instanceof Error ? err.name : "UnknownError",
+    });
     return null;
   }
 }
@@ -191,7 +195,7 @@ async function callGeminiAI(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn("Gemini API returned error status:", response.status);
+      logEvent("warn", "ai_provider_http_error", { provider: "gemini", status: response.status });
       return null;
     }
 
@@ -221,7 +225,10 @@ async function callGeminiAI(
     };
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("Gemini call failed:", err);
+    logEvent("warn", "ai_provider_request_failed", {
+      provider: "gemini",
+      errorName: err instanceof Error ? err.name : "UnknownError",
+    });
     return null;
   }
 }

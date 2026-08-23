@@ -2,7 +2,7 @@
 
 > *“Trace the work, not the screen.”*
 
-TRACE is a modern, developer-focused programming lab and code-assessment platform for university classrooms. Teachers create programming practicals, students write/run/submit code in a monitored workspace, and teachers review student submissions using execution results, timeline activity signals, progress, and rubric feedback.
+TRACE is a modern, developer-focused programming lab and code-assessment platform for university classrooms. Teachers create programming practicals, students write, run, and submit code in an autosaved workspace, and teachers review submissions using execution results, timeline activity signals, progress, and rubric feedback.
 
 The core student journey is:
 
@@ -13,14 +13,14 @@ TRACE presents clear evidence and activity signals for teacher judgment. It does
 ## Current repository state
 
 - **Implemented:** Next.js classroom/practical persistence; optional visible/hidden test authoring for the single-problem model; Monaco workspace for the seeded practical; change-aware server-autosaved and resumable drafts; numbered coding sessions; server-owned deterministic execution boundary with honest runtime mode disclosure; immutable submission attempts and result snapshots with visibility counters and a suggested equal-weight test score when tests exist; five foundation timeline events; database-backed teacher and student dashboards, classroom/practical lists, progress, submission history/review, and workspace views; configurable practical marks, optional 2–5 criterion rubrics, and append-only teacher-review revisions per immutable attempt; server-side membership and teacher-ownership checks; Clerk SDK/configuration and sign-in/sign-up shell; join-code student onboarding; provider-neutral authenticated actor resolution for linked users; local account-status enforcement; and controlled identity linking.
-- **Partial:** production authentication still needs a security acceptance pass. Clerk teacher identities are held in a pending state, emailed to the configured administrator for signed-link approval, and denied product access until approved. `demo` remains an explicit non-production resolver mode; a supervised loopback-only launcher may use it with an exact acknowledgement solely to present an optimized local build. Deployed production must use `clerk`, which resolves linked Labrix users and onboards unlinked students through a valid join code. Practical authoring remains intentionally limited to the current single-problem data model. Separate loopback-only local Java and C++ workers can compile and execute code in disposable locked-down Docker containers, but both are opt-in development proofs rather than a production execution system.
+- **Production boundary:** deployed builds use Clerk without identity fallback. Teacher accounts remain pending until an administrator follows a signed approval link, while students join through a valid classroom code. Production execution uses authenticated HTTPS runner services with bounded queues; loopback Java and C++ workers remain development-only. Practical authoring intentionally uses the current single-problem data model.
 - **Mock by default:** ordinary development still uses the deterministic simulated provider. For an honest local demonstration, `npm run demo:real` starts both isolated Docker workers and routes Java/C++ by the submitted language without falling back to simulation. **Preview as teacher/student** is available only on routes that render both demo views; it changes presentation and is not authentication. Role-specific routes remain tied to their fixed demo actor.
-- **Planned:** administrator-controlled teacher provisioning, authentication security hardening, isolated execution, practical-authoring completion, deterministic evidence signals, AI-assisted explanation/feedback/viva generation, and pilot hardening.
+- **Operational requirement:** configure Clerk, approval email delivery, Upstash rate limiting, PostgreSQL backups, and both runner services, then complete the release and pre-class checks in [documentation/12-OPERATIONS-RUNBOOK.md](documentation/12-OPERATIONS-RUNBOOK.md).
 - **Out of scope for the MVP:** screen/webcam recording, gamification, mobile coding, cross-institution plagiarism detection, automatic guilt verdicts, and automatic copy/paste blocking.
 
 See [documentation/02-MVP.md](documentation/02-MVP.md) for the complete boundary.
 
-Canonical product routes are `/dashboard`, `/classes`, `/practicals`, `/progress`, `/submissions`, `/classes/[classroomId]`, `/classes/[classroomId]/students`, `/tasks/[taskId]`, and `/submissions/[submissionId]`. The retired root demo and its two known list/history aliases redirect to these persisted routes; other unmatched paths return a 404.
+The public landing page is `/`. Canonical protected product routes are `/dashboard`, `/classes`, `/practicals`, `/progress`, `/submissions`, `/classes/[classroomId]`, `/classes/[classroomId]/students`, `/tasks/[taskId]`, and `/submissions/[submissionId]`; unmatched paths return a 404.
 
 ## Stack
 
@@ -113,7 +113,7 @@ Workspace-level Java acceptance is database-mutating and therefore requires the 
 
 Untrusted student code must never execute inside Next.js. `ServerMockExecutionProvider` only simulates outcomes. Production execution requires a separate isolated provider or sandbox with explicit resource and network controls.
 
-The optional `java-http` and `cpp-http` adapters talk only to their separate loopback Docker workers; Next.js never starts a compiler, runtime, Docker, a shell, or a child process. These local single-flight workers are not production execution. See [documentation/09-JAVA-RUNNER-SPIKE.md](documentation/09-JAVA-RUNNER-SPIKE.md) and [documentation/10-CPP-RUNNER-SPIKE.md](documentation/10-CPP-RUNNER-SPIKE.md); leaving `LABRIX_EXECUTION_PROVIDER` unset or set to `mock` preserves current behavior.
+The optional `java-http` and `cpp-http` adapters talk only to separate loopback Docker workers for development. Production uses `remote-docker`, authenticated HTTPS runner endpoints, and bounded worker queues; Next.js never starts a compiler, runtime, Docker, shell, or child process. See [documentation/11-EXECUTION-PROVIDER-SAFETY.md](documentation/11-EXECUTION-PROVIDER-SAFETY.md) and [documentation/12-OPERATIONS-RUNBOOK.md](documentation/12-OPERATIONS-RUNBOOK.md). Leaving the provider unset preserves mock behavior only outside production.
 
 Production rejects both local adapters unless `LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=true` is set exactly. That exceptional acknowledgment does not make them production-ready and never relaxes the HTTP loopback restriction. See [documentation/11-EXECUTION-PROVIDER-SAFETY.md](documentation/11-EXECUTION-PROVIDER-SAFETY.md).
 

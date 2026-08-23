@@ -94,6 +94,14 @@ function run(arguments_: string[]) {
   }).status ?? 1;
 }
 
+if (target === "e2e") {
+  const seedStatus = run([
+    resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs"),
+    resolve(process.cwd(), "backend/prisma/seed.ts"),
+  ]);
+  if (seedStatus !== 0) process.exit(seedStatus);
+}
+
 const status = run(commandArguments);
 if (status !== 0 || target !== "prepare") process.exit(status);
 

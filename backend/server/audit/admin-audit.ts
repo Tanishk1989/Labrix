@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { logEvent } from "@/server/observability/logger";
 
 export interface LogAdminActionInput {
   actorUserId: string;
@@ -38,7 +39,11 @@ export async function logAdminAction(input: LogAdminActionInput) {
       },
     });
   } catch (error) {
-    console.error("Failed to write admin audit log:", error);
+    logEvent("error", "admin_audit_write_failed", {
+      action: input.action,
+      targetType: input.targetType,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return null;
   }
 }

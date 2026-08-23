@@ -464,6 +464,15 @@ async function executeStudentDraft(
     const currentDraft = session.draft;
     if (!currentDraft) throw new AccessDeniedError();
     assertAllowedLanguage(input.language, session.task.allowedLanguages);
+    if (
+      scope === "ALL" &&
+      session.task.deadline &&
+      session.task.deadline < new Date()
+    ) {
+      throw new SubmissionDeadlineError(
+        "The deadline for this practical has passed. New submissions are no longer accepted.",
+      );
+    }
 
     const draftChanged = currentDraft.sourceCode !== input.sourceCode;
     const languageChanged = session.language !== input.language;

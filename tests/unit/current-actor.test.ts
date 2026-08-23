@@ -14,6 +14,7 @@ import {
   IdentityConfigurationError,
   resolveIdentityMode,
 } from "@/server/actors/identity-mode";
+import { actorErrorDestination } from "@/server/actors/page-actor";
 
 function fakeSource(value: unknown) {
   return { getExternalIdentity: vi.fn(async () => value) };
@@ -166,6 +167,11 @@ describe("authenticated current actor resolution", () => {
         demoActor: "teacher",
       }),
     ).rejects.toBeInstanceOf(UnauthenticatedActorError);
+  });
+
+  it("routes unauthenticated and unlinked page actors without demo fallback", () => {
+    expect(actorErrorDestination(new UnauthenticatedActorError())).toBe("/sign-in");
+    expect(actorErrorDestination(new UnlinkedActorError())).toBe("/unlinked-account");
   });
 
   it("fails closed when the Clerk identity source is unavailable", async () => {

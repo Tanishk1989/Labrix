@@ -18,6 +18,7 @@ type FetchImplementation = typeof fetch;
 
 interface JavaHttpExecutionProviderOptions {
   endpoint: string;
+  bearerToken?: string;
   fetchImplementation?: FetchImplementation;
   requestTimeoutMs?: number;
 }
@@ -124,11 +125,13 @@ export class JavaHttpExecutionProvider implements ServerExecutionProvider {
   readonly executionMode = "java-docker-local" as const;
 
   private readonly endpoint: string;
+  private readonly bearerToken?: string;
   private readonly fetchImplementation: FetchImplementation;
   private readonly requestTimeoutMs: number;
 
   constructor(options: JavaHttpExecutionProviderOptions) {
     this.endpoint = options.endpoint;
+    this.bearerToken = options.bearerToken;
     this.fetchImplementation = options.fetchImplementation ?? fetch;
     this.requestTimeoutMs =
       options.requestTimeoutMs ?? JAVA_RUNNER_HTTP_TIMEOUT_MS;
@@ -156,7 +159,12 @@ export class JavaHttpExecutionProvider implements ServerExecutionProvider {
     try {
       const response = await this.fetchImplementation(this.endpoint, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(this.bearerToken
+            ? { authorization: `Bearer ${this.bearerToken}` }
+            : {}),
+        },
         body: JSON.stringify({
           language: "JAVA",
           sourceCode: request.sourceCode,

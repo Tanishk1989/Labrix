@@ -55,6 +55,8 @@ export async function createClassroom(values: unknown): Promise<Result> {
     });
 
     revalidatePath("/classes");
+    revalidatePath("/dashboard");
+    updateTag(CLASSROOM_MANAGEMENT_CACHE_TAG);
     return { ok: true, classroomId: classroom.id };
   } catch {
     return { ok: false, message: "TRACE could not create the classroom. Try again." };

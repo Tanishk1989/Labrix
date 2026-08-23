@@ -114,6 +114,36 @@ describe("execution provider production safety configuration", () => {
     }, "CPP")).toThrow(/not production-ready/);
   });
 
+  it("allows authenticated HTTPS runners in production", () => {
+    const environment = {
+      NODE_ENV: "production",
+      LABRIX_EXECUTION_PROVIDER: "remote-docker",
+      LABRIX_JAVA_RUNNER_URL: "https://java-runner.example.test/v1/execute/java",
+      LABRIX_CPP_RUNNER_URL: "https://cpp-runner.example.test/v1/execute/cpp",
+      LABRIX_RUNNER_BEARER_TOKEN: "test-runner-token-at-least-32-characters",
+    };
+    expect(getServerExecutionProvider(environment, "JAVA")).toBeInstanceOf(
+      JavaHttpExecutionProvider,
+    );
+    expect(getServerExecutionProvider(environment, "CPP")).toBeInstanceOf(
+      CppHttpExecutionProvider,
+    );
+  });
+
+  it.each([
+    { LABRIX_JAVA_RUNNER_URL: "http://java-runner.example.test/v1/execute/java" },
+    { LABRIX_RUNNER_BEARER_TOKEN: "too-short" },
+  ])("rejects unsafe remote runner configuration", (override) => {
+    expect(() => getServerExecutionProvider({
+      NODE_ENV: "production",
+      LABRIX_EXECUTION_PROVIDER: "remote-docker",
+      LABRIX_JAVA_RUNNER_URL: "https://java-runner.example.test/v1/execute/java",
+      LABRIX_CPP_RUNNER_URL: "https://cpp-runner.example.test/v1/execute/cpp",
+      LABRIX_RUNNER_BEARER_TOKEN: "test-runner-token-at-least-32-characters",
+      ...override,
+    }, "JAVA")).toThrow(/Invalid execution provider configuration/);
+  });
+
   it.each([
     "not-a-url",
     "https://127.0.0.1:4010/v1/execute/java",

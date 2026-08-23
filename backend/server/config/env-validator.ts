@@ -59,14 +59,39 @@ export function validateEnvironment(): EnvValidationResult {
   const upstashRateLimiting = Boolean(
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
   );
+  if (isProduction && !upstashRateLimiting) {
+    if (!process.env.UPSTASH_REDIS_REST_URL) {
+      missingRequired.push("UPSTASH_REDIS_REST_URL");
+    }
+    if (!process.env.UPSTASH_REDIS_REST_TOKEN) {
+      missingRequired.push("UPSTASH_REDIS_REST_TOKEN");
+    }
+  }
 
   // 5. Runner Configuration
-  const runnerConfigured = process.env.LABRIX_EXECUTION_PROVIDER === "local-docker" &&
+  const runnerConfigured = ["local-docker", "remote-docker"].includes(
+    process.env.LABRIX_EXECUTION_PROVIDER ?? "",
+  ) &&
     Boolean(process.env.LABRIX_JAVA_RUNNER_URL) &&
-    Boolean(process.env.LABRIX_CPP_RUNNER_URL);
+    Boolean(process.env.LABRIX_CPP_RUNNER_URL) &&
+    (process.env.LABRIX_EXECUTION_PROVIDER !== "remote-docker" ||
+      (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) >= 32);
 
   if (!runnerConfigured) {
-    warnings.push("Real Java and C++ execution runners are not fully configured.");
+    if (isProduction) {
+      for (const name of [
+        "LABRIX_EXECUTION_PROVIDER",
+        "LABRIX_JAVA_RUNNER_URL",
+        "LABRIX_CPP_RUNNER_URL",
+      ] as const) {
+        if (!process.env[name]) missingRequired.push(name);
+      }
+      if ((process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) < 32) {
+        missingRequired.push("LABRIX_RUNNER_BEARER_TOKEN (minimum 32 characters)");
+      }
+    } else {
+      warnings.push("Real Java and C++ execution runners are not fully configured.");
+    }
   }
 
   const teacherApprovalVariables = [

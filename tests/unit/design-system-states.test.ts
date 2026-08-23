@@ -55,6 +55,18 @@ describe("shared product states", () => {
     expect(markup).toContain("Couldn&#x27;t load this page");
   });
 
+  it("supports explicit primary and secondary recovery actions", () => {
+    const markup = renderToStaticMarkup(createElement(ErrorState, {
+      description: "Try again or switch accounts.",
+      action: createElement("button", { type: "button" }, "Try again"),
+      secondaryAction: createElement("a", { href: "/sign-in" }, "Switch account"),
+    }));
+
+    expect(markup).toContain("Try again");
+    expect(markup).toContain('href="/sign-in"');
+    expect(markup).toContain("Switch account");
+  });
+
   it("gives dialogs a real click-outside close control", () => {
     const TestDialog = Dialog as ComponentType<{
       title: string;

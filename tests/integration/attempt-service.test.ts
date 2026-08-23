@@ -324,6 +324,37 @@ describe.sequential("persisted student-attempt service", () => {
     ).rejects.toThrow(/immutable Labrix record/);
   });
 
+  it("rejects an expired submission before running hidden tests", async () => {
+    const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
+    const executeCount = vi.mocked(passingProvider.execute).mock.calls.length;
+    const runCount = await prisma.runAttempt.count({
+      where: { codingSessionId: workspace.session.id },
+    });
+    await prisma.task.update({
+      where: { id: taskId },
+      data: { deadline: new Date(Date.now() - 60_000) },
+    });
+
+    try {
+      await expect(submitStudentDraft(
+        {
+          studentId,
+          sessionId: workspace.session.id,
+          language: "CPP",
+          sourceCode: "int main() { return 0; }",
+          idempotencyKey: randomUUID(),
+        },
+        passingProvider,
+      )).rejects.toMatchObject({ name: "SubmissionDeadlineError" });
+      expect(vi.mocked(passingProvider.execute).mock.calls).toHaveLength(executeCount);
+      expect(await prisma.runAttempt.count({
+        where: { codingSessionId: workspace.session.id },
+      })).toBe(runCount);
+    } finally {
+      await prisma.task.update({ where: { id: taskId }, data: { deadline: null } });
+    }
+  });
+
   it("counts one student with one persisted submission", async () => {
     const overview = await getClassroomOverviewViewModel(teacherId, classroomId);
     expect(overview?.submittedCount).toBe(1);

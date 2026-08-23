@@ -30,7 +30,21 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
 RUNNER_MAX_CONCURRENCY="4"
 RUNNER_MAX_QUEUE_SIZE="64"
 RUNNER_QUEUE_TIMEOUT_MS="60000"
-RUNNER_BEARER_TOKEN="your-secure-bearer-token"
+LABRIX_EXECUTION_PROVIDER="remote-docker"
+LABRIX_JAVA_RUNNER_URL="https://java-runner.example.edu/v1/execute/java"
+LABRIX_CPP_RUNNER_URL="https://cpp-runner.example.edu/v1/execute/cpp"
+LABRIX_RUNNER_BEARER_TOKEN="at-least-32-random-characters"
+
+# Shared production rate limiting
+UPSTASH_REDIS_REST_URL="https://your-database.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="store-in-your-secret-manager"
+
+# Teacher approval delivery
+LABRIX_APP_URL="https://trace.example.edu"
+RESEND_API_KEY="re_..."
+TEACHER_APPROVAL_EMAIL="administrator@example.edu"
+TEACHER_APPROVAL_FROM_EMAIL="TRACE <approvals@example.edu>"
+TEACHER_APPROVAL_SECRET="at-least-32-random-characters"
 
 # Optional: Standalone Docker output
 NEXT_OUTPUT_STANDALONE="true"
@@ -62,9 +76,9 @@ npm run user:set-role -- --email=teacher@university.edu --role=TEACHER --confirm
 
 ---
 
-## 4. One-Click Docker Deployment
+## 4. Docker Web Deployment
 
-To launch the complete production stack (PostgreSQL + Automated Migrations + TRACE Web App with Security Headers):
+This Compose file launches PostgreSQL, applies migrations, and starts the TRACE web app. Java and C++ execution workers are separate capacity-managed services behind HTTPS. Configure the same 32+ character bearer token on the web app and both runners before classroom use; Compose refuses to start when those endpoints are absent.
 
 ```bash
 # 1. Start PostgreSQL, run migrations, and launch TRACE via Docker Compose

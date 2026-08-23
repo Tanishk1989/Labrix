@@ -63,7 +63,11 @@ const proofMetrics = [
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
+    <>
+      <a href="#main-content" className="sr-only fixed left-4 top-4 z-50 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black focus:not-sr-only">
+        Skip to main content
+      </a>
+      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
       <div className="mx-auto flex h-14 max-w-[118rem] items-center justify-between rounded-2xl border border-white/[0.08] bg-[#070910]/90 px-3 shadow-[0_12px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:px-4">
         <Link href="/" className="group inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400" aria-label="TRACE home">
           <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/[0.04] transition-colors group-hover:border-white/20">
@@ -75,25 +79,26 @@ function LandingHeader() {
         </Link>
 
         <nav aria-label="Landing page navigation" className="hidden items-center gap-1 md:flex">
-          <a href="#workflow" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white">Workflow</a>
-          <a href="#evidence" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white">Evidence</a>
-          <a href="#integrity" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white">Integrity</a>
+          <a href="#workflow" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">Workflow</a>
+          <a href="#evidence" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">Evidence</a>
+          <a href="#integrity" className="rounded-lg px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">Integrity</a>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/sign-in" className="hidden min-h-9 items-center rounded-lg px-3 text-xs font-semibold text-white/80 transition-colors hover:text-white sm:inline-flex">
+          <Link href="/sign-in" className="hidden min-h-9 items-center rounded-lg px-3 text-xs font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 sm:inline-flex">
             Sign in
           </Link>
-          <Link href="/dashboard" className="group inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-indigo-500 px-3.5 text-xs font-semibold text-white shadow-[0_8px_24px_rgba(79,70,229,0.25)] transition-all hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070910]">
+          <Link href="/sign-in" className="group inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-indigo-500 px-3.5 text-xs font-semibold text-white shadow-[0_8px_24px_rgba(79,70,229,0.25)] transition-all hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070910]">
                 Open TRACE
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
-          <a href="#workflow" aria-label="View page sections" className="grid size-9 place-items-center rounded-lg border border-white/10 text-white/80 md:hidden">
+          <a href="#workflow" aria-label="Jump to workflow" className="grid size-9 place-items-center rounded-lg border border-white/10 text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 md:hidden">
             <Menu size={16} aria-hidden="true" />
           </a>
         </div>
       </div>
-    </header>
+      </header>
+    </>
   );
 }
 
@@ -116,7 +121,7 @@ function HeroSection() {
           TRACE helps instructors create coding practicals, evaluate immutable submissions, and run evidence-led oral defenses—without turning the lab into surveillance.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/dashboard" className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-0.5 hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050609] sm:w-auto">
+          <Link href="/sign-in" className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-0.5 hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050609] sm:w-auto">
                   Get started
             <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
@@ -176,7 +181,7 @@ function EvidenceSection() {
             <div className="relative">
               <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300">
                 <CircleGauge size={13} aria-hidden="true" />
-                Instructor signal
+                Example instructor view
               </div>
               <h2 className="mt-6 max-w-md text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-5xl">
                 A review queue that explains itself.
@@ -187,10 +192,10 @@ function EvidenceSection() {
             </div>
 
             <div className="relative mt-12 flex items-center gap-3">
-              <span className="grid size-9 place-items-center rounded-full border border-amber-300/20 bg-amber-300/10 font-mono text-xs font-semibold text-amber-300">5</span>
+              <span className="grid size-9 place-items-center rounded-full border border-amber-300/20 bg-amber-300/10 text-amber-300"><FileSearch2 size={16} aria-hidden="true" /></span>
               <div>
-                <p className="text-sm font-semibold text-white">Pending reviews</p>
-                <p className="mt-0.5 text-xs text-white/60">Oldest submission · 2h ago</p>
+                <p className="text-sm font-semibold text-white">Prioritized review queue</p>
+                <p className="mt-0.5 text-xs text-white/60">Driven by real submission status</p>
               </div>
             </div>
           </div>
@@ -214,7 +219,7 @@ function EvidenceSection() {
                     <span className="inline-flex items-center gap-1.5"><Braces size={12} aria-hidden="true" /> solution.java</span>
                     <span>12 lines</span>
                   </div>
-                  <pre className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#06080d] p-4 font-mono text-[10px] leading-5 text-white/70 sm:text-[11px]">
+                  <pre aria-label="Illustrative Java submission" className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#06080d] p-4 font-mono text-[10px] leading-5 text-white/70 sm:text-[11px]">
                     <code><span className="text-indigo-300">public int</span> search(Node root, <span className="text-cyan-300">int</span> key) &#123;{"\n"}  <span className="text-indigo-300">while</span> (root != <span className="text-rose-300">null</span>) &#123;{"\n"}    <span className="text-indigo-300">if</span> (root.value == key) <span className="text-indigo-300">return</span> key;{"\n"}    root = key &lt; root.value{"\n"}      ? root.left : root.right;{"\n"}  &#125;{"\n"}  <span className="text-indigo-300">return</span> -1;{"\n"}&#125;</code>
                   </pre>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -240,7 +245,7 @@ function EvidenceSection() {
                       </div>
                     ))}
                   </div>
-                  <Link href="/submissions" className="group mt-5 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-500 text-xs font-semibold text-white transition-colors hover:bg-indigo-400">
+                  <Link href="/sign-in" className="group mt-5 inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-500 text-xs font-semibold text-white transition-colors hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">
                     Review evidence <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                   </Link>
                 </div>
@@ -326,7 +331,7 @@ function FinalCta() {
           <span className="mx-auto mt-2 block w-fit border-b-4 border-cyan-400 pb-1 text-indigo-400">how students think.</span>
         </h2>
         <p className="mx-auto mt-7 max-w-xl text-sm leading-6 text-white/70 sm:text-base">Create the lab, publish the practical, and review real code evidence with complete academic integrity.</p>
-        <Link href="/dashboard" className="group mt-9 inline-flex min-h-12 items-center gap-2 rounded-xl bg-indigo-500 px-6 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(79,70,229,0.28)] transition-all hover:-translate-y-0.5 hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">
+          <Link href="/sign-in" className="group mt-9 inline-flex min-h-12 items-center gap-2 rounded-xl bg-indigo-500 px-6 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(79,70,229,0.28)] transition-all hover:-translate-y-0.5 hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">
           Get started with TRACE
           <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
@@ -339,7 +344,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#050609] text-white selection:bg-indigo-500/35">
       <LandingHeader />
-      <main>
+      <main id="main-content">
         <HeroSection />
         <WorkflowSection />
         <EvidenceSection />
@@ -349,12 +354,12 @@ export function LandingPage() {
       </main>
       <footer className="border-t border-white/[0.06] bg-[#050609] px-5 py-7">
         <div className="mx-auto flex max-w-[88rem] flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-          <Link href="/" className="inline-flex items-center gap-2.5" aria-label="TRACE home">
+          <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300" aria-label="TRACE home">
             <TraceMark size={18} />
             <span className="text-xs font-semibold tracking-[0.08em] text-white/70">TRACE</span>
           </Link>
           <p className="text-[10px] text-white/60">Trace the work, not the screen.</p>
-          <Link href="/sign-in" className="inline-flex items-center gap-1 text-[10px] font-semibold text-white/70 transition-colors hover:text-white">Instructor sign in <ChevronRight size={11} aria-hidden="true" /></Link>
+          <Link href="/sign-in" className="inline-flex items-center gap-1 rounded-lg text-[10px] font-semibold text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">Instructor sign in <ChevronRight size={11} aria-hidden="true" /></Link>
         </div>
       </footer>
     </div>

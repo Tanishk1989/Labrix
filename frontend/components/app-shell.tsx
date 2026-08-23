@@ -1,6 +1,5 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Beaker, BookOpen, CheckSquare, GraduationCap, LayoutDashboard, Menu, TrendingUp, X, type LucideIcon } from "lucide-react";
@@ -166,7 +165,9 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   const identityMode = useIdentityMode();
   const rolePreviewAvailable = supportsDemoRolePreview(pathname);
   const actorRole: DemoRole = actor?.role === "STUDENT" ? "student" : "teacher";
-  const effectiveRole: DemoRole = rolePreviewAvailable ? role : (role ?? actorRole);
+  const effectiveRole: DemoRole = identityMode === "demo" && rolePreviewAvailable
+    ? role
+    : actorRole;
   const profileName = customUser ?? (actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student"));
   const profileLabel = effectiveRole === "teacher" ? "Teacher" : "Student";
   const avatar = useMemo(() => initials(profileName), [profileName]);
@@ -250,6 +251,9 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                   <CommandPalette />
                   <ThemeSelector />
                   <DemoRuntimeBadge />
+                  {identityMode === "demo" && rolePreviewAvailable
+                    ? <DemoRoleControl role={role} setRole={setRole} />
+                    : null}
                   <AccountDropdown
                     name={profileName}
                     roleLabel={profileLabel}
@@ -258,7 +262,6 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                     setRole={setRole}
                     identityMode={identityMode}
                   />
-                  {identityMode === "clerk" && <UserButton />}
                 </div>
               </div>
             </div>
@@ -284,6 +287,9 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               <div className="editorial-drawer-footer">
                 <ThemeSelector />
                 <DemoRuntimeBadge />
+                {identityMode === "demo" && rolePreviewAvailable
+                  ? <DemoRoleControl role={role} setRole={setRole} />
+                  : null}
                 <AccountDropdown
                   name={profileName}
                   roleLabel={profileLabel}
@@ -292,7 +298,6 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                   setRole={setRole}
                   identityMode={identityMode}
                 />
-                {identityMode === "clerk" && <UserButton />}
               </div>
             </aside>
           </div>
@@ -303,17 +308,14 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
 }
 
 export function DemoShell({ children, actor }: { children: ReactNode; actor?: ShellActor }) {
+  const identityMode = useIdentityMode();
   const [role, setRole] = useState<DemoRole>(actor?.role === "STUDENT" ? "student" : "teacher");
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const stored = getStoredDemoRole();
-      if (stored) {
-        setRole(stored);
-      } else if (actor?.role) {
-        setRole(actor.role === "STUDENT" ? "student" : "teacher");
-      }
+      const actorRole = actor?.role === "STUDENT" ? "student" : "teacher";
+      setRole(identityMode === "demo" ? getStoredDemoRole() : actorRole);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [actor?.role]);
+  }, [actor?.role, identityMode]);
   return <AppShell role={role} setRole={setRole} actor={actor}>{children}</AppShell>;
 }

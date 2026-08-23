@@ -313,7 +313,7 @@ function TeacherSubmissionsContent({
   );
 }
 
-export default async function SubmissionsQueuePage({
+export default async function SubmissionsPage({
   searchParams,
 }: {
   searchParams: Promise<SubmissionSearchParams>;

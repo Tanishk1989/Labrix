@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 export interface RateLimitConfig {
   /** Maximum number of allowed requests in the window */
@@ -81,6 +81,77 @@ export class MemoryRateLimiterStore implements RateLimiterStore {
 
   async reset(key: string): Promise<void> {
     this.timestamps.delete(key);
+  }
+}
+
+type FetchImplementation = typeof fetch;
+
+const upstashSlidingWindowScript = `
+redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[2])
+local count = redis.call('ZCARD', KEYS[1])
+if count >= tonumber(ARGV[3]) then
+  local oldest = redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES')
+  return {0, count, oldest[2] or ARGV[1]}
+end
+redis.call('ZADD', KEYS[1], ARGV[1], ARGV[4])
+redis.call('EXPIRE', KEYS[1], ARGV[5])
+return {1, count + 1, ARGV[1]}
+`.trim();
+
+export class UpstashRateLimiterStore implements RateLimiterStore {
+  constructor(
+    private readonly url: string,
+    private readonly token: string,
+    private readonly fetchImplementation: FetchImplementation = fetch,
+  ) {}
+
+  private async command(parts: Array<string | number>): Promise<unknown> {
+    const endpoint = `${this.url.replace(/\/$/, "")}/${parts
+      .map((part) => encodeURIComponent(String(part)))
+      .join("/")}`;
+    const response = await this.fetchImplementation(endpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.token}` },
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Shared rate-limit store is unavailable.");
+    const body = await response.json() as { result?: unknown; error?: string };
+    if (body.error) throw new Error("Shared rate-limit command failed.");
+    return body.result;
+  }
+
+  async consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+    const now = Date.now();
+    const windowMs = windowSeconds * 1000;
+    const result = await this.command([
+      "eval",
+      upstashSlidingWindowScript,
+      1,
+      `ratelimit:${key}`,
+      now,
+      now - windowMs,
+      limit,
+      `${now}-${randomUUID()}`,
+      windowSeconds + 10,
+    ]);
+    if (!Array.isArray(result) || result.length < 3) {
+      throw new Error("Shared rate-limit store returned an invalid response.");
+    }
+    const success = Number(result[0]) === 1;
+    const count = Number(result[1]);
+    const oldest = Number(result[2]);
+    const resetTime = success ? now + windowMs : oldest + windowMs;
+    return {
+      success,
+      limit,
+      remaining: success ? Math.max(0, limit - count) : 0,
+      resetAt: new Date(resetTime),
+      retryAfterSeconds: success ? 0 : Math.max(1, Math.ceil((resetTime - now) / 1000)),
+    };
+  }
+
+  async reset(key: string): Promise<void> {
+    await this.command(["del", `ratelimit:${key}`]);
   }
 }
 
@@ -180,9 +251,15 @@ export class RedisRateLimiterStore implements RateLimiterStore {
 }
 
 // Global default store instance
-const defaultStore: RateLimiterStore = process.env.REDIS_URL
-  ? new RedisRateLimiterStore(process.env.REDIS_URL)
-  : new MemoryRateLimiterStore();
+const defaultStore: RateLimiterStore =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new UpstashRateLimiterStore(
+        process.env.UPSTASH_REDIS_REST_URL,
+        process.env.UPSTASH_REDIS_REST_TOKEN,
+      )
+    : process.env.REDIS_URL
+      ? new RedisRateLimiterStore(process.env.REDIS_URL)
+      : new MemoryRateLimiterStore();
 
 /**
  * Main RateLimiter entry point.

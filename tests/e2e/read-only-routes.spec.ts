@@ -40,8 +40,8 @@ test("read-only professor route smoke check", async ({ page }) => {
   );
 
   await page.getByRole("link", { name: /^Review attempt / }).first().click();
-  await expect(page.getByRole("link", { name: "Back to review queue" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Submitted source" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Reviews Queue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Code Inspection Suite" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Marks and feedback" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish feedback" })).toBeVisible();

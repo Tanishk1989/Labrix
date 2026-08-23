@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 function requireConfirmation() {
-  if (!process.argv.includes("--confirm")) {
+  if (!process.argv.includes("--confirm") && !process.argv.includes("--dry-run")) {
     throw new Error(
       "Refusing to remove data without --confirm. This command deletes only TRACE demo and automated-test fixtures.",
     );
@@ -12,6 +12,7 @@ function requireConfirmation() {
 
 async function main() {
   requireConfirmation();
+  const dryRun = process.argv.includes("--dry-run");
 
   const fixtureUsers = await prisma.user.findMany({
     where: {
@@ -105,6 +106,17 @@ async function main() {
   });
   const fixtureRunIds = fixtureRuns.map(({ id }) => id);
 
+  const summary = {
+    users: fixtureUserIds.length,
+    classrooms: fixtureClassroomIds.length,
+    tasks: fixtureTaskIds.length,
+    submissions: fixtureSubmissionIds.length,
+  };
+  if (dryRun) {
+    console.log(JSON.stringify({ dryRun: true, matched: summary }));
+    return;
+  }
+
   await prisma.$transaction(async (tx) => {
     if (fixtureReviewIds.length) {
       await tx.submissionReviewCriterionScore.deleteMany({ where: { reviewId: { in: fixtureReviewIds } } });
@@ -146,12 +158,7 @@ async function main() {
   }, { timeout: 30_000 });
 
   console.log(JSON.stringify({
-    removed: {
-      users: fixtureUserIds.length,
-      classrooms: fixtureClassroomIds.length,
-      tasks: fixtureTaskIds.length,
-      submissions: fixtureSubmissionIds.length,
-    },
+    removed: summary,
   }));
 }
 
