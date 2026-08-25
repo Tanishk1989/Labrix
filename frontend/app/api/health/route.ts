@@ -4,10 +4,12 @@ import { validateEnvironment } from "@/server/config/env-validator";
 
 export const dynamic = "force-dynamic";
 
+const RUNNER_HEALTH_TIMEOUT_MS = 5_000;
+
 async function checkRunner(endpoint: string | undefined) {
   if (!endpoint) return { status: "not-configured" as const };
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2_000);
+  const timeout = setTimeout(() => controller.abort(), RUNNER_HEALTH_TIMEOUT_MS);
   const startedAt = Date.now();
   try {
     const healthUrl = new URL(endpoint);
