@@ -69,7 +69,7 @@ function analyzeCodeStructure(sourceCode: string, language: "CPP" | "JAVA") {
     if (/HashSet\s*<|Set\s*</.test(sourceCode)) detectedDataStructures.push("java.util.Set / HashSet");
     if (/Stack\s*<|Deque\s*</.test(sourceCode)) detectedDataStructures.push("Stack / Deque");
     if (/PriorityQueue\s*</.test(sourceCode)) detectedDataStructures.push("PriorityQueue / Heap");
-    if (/class\s+\w+/.test(sourceCode)) detectedDataStructures.push("Custom Class Object");
+    if (/new\s+[A-Z]\w*\s*\(/.test(sourceCode)) detectedDataStructures.push("Custom Class Object");
   }
 
   // Function signature detection
@@ -88,7 +88,7 @@ function analyzeCodeStructure(sourceCode: string, language: "CPP" | "JAVA") {
   }
 
   // Algorithmic Pattern detection
-  if (/for\s*\(.*for\s*\(/.test(sourceCode.replace(/\s+/g, " "))) {
+  if (/for\s*\([^)]*\)\s*\{[^{}]*for\s*\(/.test(sourceCode.replace(/\r?\n/g, " "))) {
     detectedPatterns.push("Nested Iteration (O(N²) structure)");
   } else if (/for\s*\(|while\s*\(/.test(sourceCode)) {
     detectedPatterns.push("Linear Iteration (O(N) structure)");
@@ -106,18 +106,20 @@ function analyzeCodeStructure(sourceCode: string, language: "CPP" | "JAVA") {
     detectedPatterns.push("Library Sorting Routine (O(N log N))");
   }
 
-  let estimatedComplexity = "O(N) Linear Time";
+  let estimatedComplexity = "Not reliably inferred";
   if (detectedPatterns.includes("Nested Iteration (O(N²) structure)")) {
     estimatedComplexity = "O(N²) Quadratic Time";
   } else if (detectedPatterns.includes("Library Sorting Routine (O(N log N))")) {
     estimatedComplexity = "O(N log N) Linearithmic Time";
   } else if (detectedPatterns.includes("Binary Search / Divide & Conquer")) {
     estimatedComplexity = "O(log N) Logarithmic Time";
+  } else if (detectedPatterns.includes("Linear Iteration (O(N) structure)")) {
+    estimatedComplexity = "O(N) Linear Time";
   }
 
   return {
-    detectedFunctions: detectedFunctions.length > 0 ? detectedFunctions : ["main logic routine"],
-    detectedDataStructures: detectedDataStructures.length > 0 ? detectedDataStructures : ["Primitive variables and arrays"],
+    detectedFunctions,
+    detectedDataStructures,
     detectedPatterns: detectedPatterns.length > 0 ? detectedPatterns : ["Sequential execution"],
     estimatedComplexity,
   };
@@ -129,32 +131,36 @@ function analyzeCodeStructure(sourceCode: string, language: "CPP" | "JAVA") {
  */
 export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationResult {
   const structure = analyzeCodeStructure(input.sourceCode, input.language);
-  const primaryFunction = structure.detectedFunctions[0] || "main";
-  const primaryDataStructure = structure.detectedDataStructures[0] || "standard variables";
+  const primaryFunction = structure.detectedFunctions[0];
+  const primaryDataStructure = structure.detectedDataStructures[0];
+  const codeLocation = primaryFunction ? `\`${primaryFunction}\`` : "the submitted program";
+  const implementationSubject = primaryDataStructure ?? "the variables and control flow shown in the source";
 
   const questions: VivaQuestion[] = [
     {
       id: "viva-q1-implementation",
       category: "IMPLEMENTATION_CHOICE",
       title: "Implementation Choice & Data Structure",
-      question: `In your implementation of ${input.taskTitle}, explain why you chose to use ${primaryDataStructure} inside \`${primaryFunction}\`. What alternative approach did you consider?`,
-      expectedAnswerHint: `The student should explain the memory access and retrieval trade-offs of using ${primaryDataStructure} for this problem.`,
+      question: `In your implementation of ${input.taskTitle}, explain how you used ${implementationSubject} in ${codeLocation}. What alternative approach did you consider?`,
+      expectedAnswerHint: `The student should point to the submitted source and explain the trade-offs of ${implementationSubject}.`,
       rubricFocus: "Logic & Design Justification (2–3 marks)",
     },
     {
       id: "viva-q2-complexity",
       category: "COMPLEXITY_EDGE_CASES",
       title: "Time Complexity & Boundary Conditions",
-      question: `What is the worst-case time complexity of your \`${primaryFunction}\` function, and how does your code behave if the input is empty or contains extreme boundary values?`,
-      expectedAnswerHint: `Expected complexity: ${structure.estimatedComplexity}. Student should trace the loop termination conditions and empty checks.`,
+      question: `What is the worst-case time complexity of ${codeLocation}, and how does the submitted code behave if the input is empty or contains extreme boundary values?`,
+      expectedAnswerHint: structure.estimatedComplexity === "Not reliably inferred"
+        ? "Complexity was not reliably inferred. Ask the student to trace the actual control flow and justify the bound."
+        : `Possible complexity signal: ${structure.estimatedComplexity}. Verify it against the submitted control flow before grading.`,
       rubricFocus: "Algorithmic Analysis & Edge Cases (2–3 marks)",
     },
     {
       id: "viva-q3-modification",
       category: "MODIFICATION_CHALLENGE",
       title: "Code Modification / Dry-Run Scenario",
-      question: `If the practical requirement is modified to handle reverse ordering or duplicate keys, what specific lines in \`${primaryFunction}\` would you need to alter?`,
-      expectedAnswerHint: `Student should point to the comparison operator or indexing step inside the main loop and explain the exact syntax change.`,
+      question: `Choose one branch, loop, or output statement in ${codeLocation}. What specific change would be needed to handle an additional edge case?`,
+      expectedAnswerHint: "The student should identify a real line in the submitted source, name an edge case, and explain the exact change without relying on an assumed algorithm.",
       rubricFocus: "Hands-on Code Understanding (2–3 marks)",
     },
   ];
@@ -165,7 +171,7 @@ export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationRes
       id: "viva-q4-authorial-probe",
       category: "PROCESS_GROUNDED_PROBE",
       title: "Authorial Verification & Code Defense",
-      question: `Explain the exact sequence of state transformations in \`${primaryFunction}\`. If you had to rewrite this function live on the whiteboard without using your current variable names, what algorithmic invariant would you preserve?`,
+      question: `Explain the exact sequence of state transformations in ${codeLocation}. If you rewrote it without the current variable names, what invariant would you preserve?`,
       expectedAnswerHint: "Student must demonstrate spontaneous, fluent understanding of the underlying logic rather than memorized variable names.",
       rubricFocus: "Authentic Code Authorship (2–3 marks)",
     });
@@ -174,8 +180,8 @@ export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationRes
       id: "viva-q4-process",
       category: "PROCESS_GROUNDED_PROBE",
       title: "Process & Refactoring Walkthrough",
-      question: `Walk me through your thought process when authoring the core algorithmic loop in \`${primaryFunction}\`. How did you formulate this structure before writing the code?`,
-      expectedAnswerHint: "Student should be able to explain the step-by-step logic and mental model without hesitation.",
+      question: `Walk me through how you authored ${codeLocation}. Which part is complete, which part still needs work, and why?`,
+      expectedAnswerHint: "The student should connect their explanation to the submitted lines and acknowledge incomplete or failing behavior when present.",
       rubricFocus: "Authentic Code Authorship (2 marks)",
     });
   } else {
@@ -190,12 +196,11 @@ export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationRes
   }
 
   // Constructive Teacher Feedback Draft
-  const passRate = input.testPassRatio ? `${input.testPassRatio.passed}/${input.testPassRatio.total}` : "passed";
-  const feedbackDraft = [
-    `Strong implementation of ${input.taskTitle} with ${structure.estimatedComplexity} time complexity.`,
-    `Good utilization of ${primaryDataStructure} within \`${primaryFunction}\`. Test verification achieved (${passRate} automated tests).`,
-    `Recommendation: Review boundary conditions and consider adding comments explaining key loop invariants.`,
-  ].join(" ");
+  const verification = input.testPassRatio;
+  const passRate = verification ? `${verification.passed}/${verification.total}` : "not available";
+  const feedbackDraft = verification && verification.total > 0 && verification.passed === 0
+    ? `${input.taskTitle}: automated verification did not pass (${passRate} tests). Review compiler or runtime diagnostics before grading. Ask the student to explain the submitted source; no correctness or complexity claim is inferred.`
+    : `${input.taskTitle}: automated verification result is ${passRate} tests passed. Review the submitted source and boundary cases before awarding marks. Complexity signal: ${structure.estimatedComplexity}; verify this directly rather than treating it as a grade.`;
 
   return {
     questions,
@@ -205,9 +210,9 @@ export function generateVivaDefense(input: GenerateVivaInput): VivaGenerationRes
       ...structure,
     },
     provenance: {
-      model: "AST-Grounded Code Analysis Engine (v1.0)",
+      model: "Deterministic source heuristic (v1.1)",
       generatedAt: new Date().toISOString(),
-      groundedInAST: true,
+      groundedInAST: false,
     },
   };
 }

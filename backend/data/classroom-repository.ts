@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { curatedDemoClassroomId } from "@/server/actors/demo-scope";
 
 export const classroomSummaryInclude = {
   memberships: {
@@ -28,16 +29,19 @@ export type ClassroomSummaryRecord = Prisma.ClassroomGetPayload<{
 }>;
 
 export function getClassroomsForTeacher(teacherId: string) {
+  const demoClassroomId = curatedDemoClassroomId(teacherId);
   return prisma.classroom.findMany({
-    where: { status: "ACTIVE", ownerTeacherId: teacherId },
+    where: { status: "ACTIVE", ownerTeacherId: teacherId, ...(demoClassroomId ? { id: demoClassroomId } : {}) },
     include: classroomSummaryInclude,
     orderBy: { createdAt: "desc" },
   });
 }
 
 export function getClassroomsForStudent(studentId: string) {
+  const demoClassroomId = curatedDemoClassroomId(studentId);
   return prisma.classroom.findMany({
     where: {
+      ...(demoClassroomId ? { id: demoClassroomId } : {}),
       status: "ACTIVE",
       memberships: {
         some: {
@@ -53,6 +57,8 @@ export function getClassroomsForStudent(studentId: string) {
 }
 
 export function getOwnedClassroomById(teacherId: string, id: string) {
+  const demoClassroomId = curatedDemoClassroomId(teacherId);
+  if (demoClassroomId && id !== demoClassroomId) return Promise.resolve(null);
   return prisma.classroom.findFirst({
     where: { id, ownerTeacherId: teacherId },
     include: classroomSummaryInclude,
@@ -60,6 +66,8 @@ export function getOwnedClassroomById(teacherId: string, id: string) {
 }
 
 export function getClassroomForStudentById(studentId: string, id: string) {
+  const demoClassroomId = curatedDemoClassroomId(studentId);
+  if (demoClassroomId && id !== demoClassroomId) return Promise.resolve(null);
   return prisma.classroom.findFirst({
     where: {
       id,

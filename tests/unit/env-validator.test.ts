@@ -16,12 +16,20 @@ function configureProductionClerkEnvironment() {
   vi.stubEnv("CLERK_SECRET_KEY", "sk_test_example");
   vi.stubEnv("CLERK_WEBHOOK_SECRET", "whsec_example");
   vi.stubEnv("LABRIX_EXECUTION_PROVIDER", "remote-docker");
+  vi.stubEnv("LABRIX_EXECUTION_DISPATCH", "queued");
   vi.stubEnv("LABRIX_JAVA_RUNNER_URL", "https://java.example.edu/v1/execute/java");
   vi.stubEnv("LABRIX_CPP_RUNNER_URL", "https://cpp.example.edu/v1/execute/cpp");
   vi.stubEnv("LABRIX_RUNNER_BEARER_TOKEN", "a-secure-runner-token-with-32-characters");
 }
 
 describe("production environment validation", () => {
+  it("requires durable queued dispatch in deployed production", () => {
+    configureProductionClerkEnvironment();
+    vi.stubEnv("LABRIX_EXECUTION_DISPATCH", "inline");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://example.upstash.io");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "upstash-token");
+    expect(validateEnvironment().missingRequired).toContain("LABRIX_EXECUTION_DISPATCH=queued");
+  });
   it("requires a shared rate-limit store in deployed production", () => {
     configureProductionClerkEnvironment();
     vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
@@ -31,9 +39,22 @@ describe("production environment validation", () => {
 
     expect(result.isValid).toBe(false);
     expect(result.missingRequired).toEqual(expect.arrayContaining([
-      "UPSTASH_REDIS_REST_URL",
-      "UPSTASH_REDIS_REST_TOKEN",
+      "UPSTASH_REDIS_REST_URL or KV_REST_API_URL",
+      "UPSTASH_REDIS_REST_TOKEN or KV_REST_API_TOKEN",
     ]));
+  });
+
+  it("accepts Vercel KV aliases created by an existing Redis integration", () => {
+    configureProductionClerkEnvironment();
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    vi.stubEnv("KV_REST_API_URL", "https://example.upstash.io");
+    vi.stubEnv("KV_REST_API_TOKEN", "vercel-kv-token");
+
+    const result = validateEnvironment();
+
+    expect(result.features.upstashRateLimiting).toBe(true);
+    expect(result.missingRequired).not.toContain("UPSTASH_REDIS_REST_URL or KV_REST_API_URL");
   });
 
   it("permits the acknowledged single-host professor demo without Upstash", () => {

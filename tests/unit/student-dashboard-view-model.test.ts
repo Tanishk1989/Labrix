@@ -144,6 +144,18 @@ describe("student dashboard view model", () => {
     });
   });
 
+  it("labels unsubmitted work after its deadline as overdue", () => {
+    const dashboard = buildStudentDashboardViewModel(overview({
+      practicals: [practical({ deadline: "2026-08-15T10:00:00.000Z" })],
+      summary: { classCount: 1, practicalCount: 1, submittedPracticalCount: 0, completionPercentage: 0 },
+    }), new Date("2026-08-25T10:00:00.000Z"));
+
+    expect(dashboard).toMatchObject({
+      headline: "An overdue practical needs attention.",
+      nextUp: { statusLabel: "Overdue" },
+    });
+  });
+
   it("orders unsubmitted work by deadline and preserves DTO order for ties", () => {
     const dashboard = buildStudentDashboardViewModel(overview({
       practicals: [

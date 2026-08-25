@@ -68,10 +68,23 @@ export async function GET() {
       ])
     : [{ status: "not-checked" as const }, { status: "not-checked" as const }];
 
+  const queueEnabled = configuredQueueHealth(configuration.isValid);
+  const queue = queueEnabled
+    ? await prisma.executionJob.groupBy({ by: ["status"], _count: { _all: true } })
+    : [];
+  const activeWorkers = queueEnabled
+    ? await prisma.executionWorkerHeartbeat.findMany({
+        where: { lastSeenAt: { gt: new Date(Date.now() - 30_000) } },
+        select: { workerId: true, concurrency: true, lastSeenAt: true },
+      })
+    : [];
+  const queueCounts = Object.fromEntries(queue.map((entry) => [entry.status.toLowerCase(), entry._count._all]));
+
   const runnersHealthy =
     !shouldCheckRunners ||
     (javaRunner.status === "connected" && cppRunner.status === "connected");
-  const healthy = configuration.isValid && runnersHealthy;
+  const workersHealthy = !queueEnabled || activeWorkers.length > 0;
+  const healthy = configuration.isValid && runnersHealthy && workersHealthy;
 
   return NextResponse.json(
     {
@@ -93,6 +106,13 @@ export async function GET() {
         java: javaRunner,
         cpp: cppRunner,
       },
+      executionQueue: {
+        queued: queueCounts.queued ?? 0,
+        running: queueCounts.running ?? 0,
+        failed: queueCounts.failed ?? 0,
+        workersOnline: activeWorkers.length,
+        capacity: activeWorkers.reduce((sum, worker) => sum + worker.concurrency, 0),
+      },
     },
     {
       status: healthy ? 200 : 503,
@@ -101,4 +121,8 @@ export async function GET() {
       },
     },
   );
+}
+
+function configuredQueueHealth(configurationValid: boolean) {
+  return configurationValid && process.env.LABRIX_EXECUTION_DISPATCH === "queued";
 }

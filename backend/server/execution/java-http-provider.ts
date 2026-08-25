@@ -3,6 +3,7 @@ import type {
   ServerExecutionRequest,
   ServerExecutionResult,
 } from "./provider";
+import type { ExecutionMode } from "@/domain/execution/execution-mode";
 import {
   JAVA_RUNNER_OUTPUT_BYTES,
   JAVA_RUNNER_HTTP_TIMEOUT_MS,
@@ -19,6 +20,7 @@ type FetchImplementation = typeof fetch;
 interface JavaHttpExecutionProviderOptions {
   endpoint: string;
   bearerToken?: string;
+  executionMode?: Extract<ExecutionMode, "java-docker-local" | "java-docker-remote">;
   fetchImplementation?: FetchImplementation;
   requestTimeoutMs?: number;
 }
@@ -122,7 +124,7 @@ async function readBoundedResponse(response: Response) {
  * It never invokes Java, Docker, or a child process inside Next.js.
  */
 export class JavaHttpExecutionProvider implements ServerExecutionProvider {
-  readonly executionMode = "java-docker-local" as const;
+  readonly executionMode: Extract<ExecutionMode, "java-docker-local" | "java-docker-remote">;
 
   private readonly endpoint: string;
   private readonly bearerToken?: string;
@@ -130,6 +132,7 @@ export class JavaHttpExecutionProvider implements ServerExecutionProvider {
   private readonly requestTimeoutMs: number;
 
   constructor(options: JavaHttpExecutionProviderOptions) {
+    this.executionMode = options.executionMode ?? "java-docker-local";
     this.endpoint = options.endpoint;
     this.bearerToken = options.bearerToken;
     this.fetchImplementation = options.fetchImplementation ?? fetch;

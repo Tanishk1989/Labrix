@@ -128,6 +128,8 @@ describe("execution provider production safety configuration", () => {
     expect(getServerExecutionProvider(environment, "CPP")).toBeInstanceOf(
       CppHttpExecutionProvider,
     );
+    expect(getServerExecutionProvider(environment, "JAVA").executionMode).toBe("java-docker-remote");
+    expect(getServerExecutionProvider(environment, "CPP").executionMode).toBe("cpp-docker-remote");
   });
 
   it.each([

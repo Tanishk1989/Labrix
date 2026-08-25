@@ -168,7 +168,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   const effectiveRole: DemoRole = identityMode === "demo" && rolePreviewAvailable
     ? role
     : actorRole;
-  const profileName = customUser ?? (actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student"));
+  const previewActorName = effectiveRole === "student" ? "Aarav Mehta" : "Dr. Meera Sharma";
+  const profileName = customUser ?? (
+    identityMode === "demo" && rolePreviewAvailable && effectiveRole !== actorRole
+      ? previewActorName
+      : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student")
+  );
   const profileLabel = effectiveRole === "teacher" ? "Teacher" : "Student";
   const avatar = useMemo(() => initials(profileName), [profileName]);
 

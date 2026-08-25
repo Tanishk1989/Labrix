@@ -10,6 +10,7 @@ Status reflects repository behavior as of 2026-08-15.
 - A server-resolved seeded student/teacher identity boundary that accepts no browser user ID or role.
 - Active `CodingSession` plus one mutable `Draft`; the first draft uses the practical's language-specific starter template, while change-aware server autosave resumes saved work without overwriting it, skips identical updates, and exposes Saving, Saved, and Save failed states.
 - Server-owned `ServerExecutionProvider` with a deterministic mock implementation.
+- Durable PostgreSQL execution jobs for production Run/Submit, with leased worker claims, bounded retry, worker heartbeat, queue position, and idempotent result/submission finalization on a separate Google Cloud worker.
 - Persisted `RunAttempt` and immutable `ResultSnapshot` records.
 - Run evaluates visible tests only; Submit evaluates visible and hidden tests. Students receive visible details plus a hidden aggregate, while the owning teacher can inspect both groups.
 - New result snapshots store visible/hidden counters and a one-decimal, equal-weight suggested test score out of ten. This never overwrites teacher-awarded marks; legacy snapshots remain readable.
@@ -45,7 +46,7 @@ Status reflects repository behavior as of 2026-08-15.
 
 - Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
 - Clerk email invitations, MFA, and social-login acceptance remain outside this slice. Signed Clerk lifecycle webhooks and administrator-controlled public metadata handle teacher provisioning.
-- Isolated production execution with queues, limits, retries, and observability.
+- Complete staging capacity validation and operational alert delivery for the isolated production queue.
 - Versioned deterministic evidence signals beyond the five foundation events.
 - AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.
 - Concurrency, retention/deletion, deadline/timezone, accessibility, and operations hardening.

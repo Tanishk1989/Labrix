@@ -13,7 +13,9 @@ flowchart TB
   ID -->|"Demo"| AUTHZ["Membership and teacher-ownership checks"]
   AUTHZ --> SVC["Attempt service"]
   SVC --> DB[("PostgreSQL via Prisma")]
-  SVC --> EP["ServerExecutionProvider"]
+  SVC --> Q["Durable PostgreSQL execution queue"]
+  Q --> EW["Google Cloud execution worker"]
+  EW --> EP["ServerExecutionProvider"]
   EP --> MOCK["Deterministic mock; no code execution"]
   EP -. "explicit local opt-in" .-> JHTTP["Loopback Java HTTP adapter"]
   JHTTP --> WORKER["Separate single-flight Java worker"]
@@ -83,7 +85,9 @@ Before provider dispatch, a process-local execution guard serializes work by stu
 
 Each server execution provider exposes a runtime descriptor: the default mock is `simulated`, the opt-in loopback Java provider is `java-docker-local`, and the opt-in loopback C++ provider is `cpp-docker-local`. New `ResultSnapshot` rows persist that mode as a nullable enum, so fresh responses and reloaded student/teacher details use the same **Simulated execution**, **Java Docker runner**, or **C++ Docker runner** label. Historical snapshots remain null and disclose **Execution mode unavailable**; provider identity is never inferred from language or the current environment.
 
-The local worker supplies source and one test input at a time over `docker exec` standard input. It does not mount the repository, Docker socket, application environment, or database credentials into the sandbox. The container uses a pinned Java 21 image, a non-root user, a read-only root filesystem, bounded temporary filesystems, no network, no Linux capabilities, and forced cleanup. Hidden expected outputs stay in the worker process and are never written into the container.
+Production Run and Submit actions return after creating a durable `ExecutionJob`. The workspace polls an authorization-checked status action and displays queued/running state. A separate worker claims jobs with `FOR UPDATE SKIP LOCKED`, writes a database heartbeat, retries bounded infrastructure failures, and atomically creates the immutable result and optional submission. A partial unique index permits only one queued/running job per coding session, while submission idempotency survives browser retries and deployments.
+
+The runner supplies source and one test input at a time over `docker exec` standard input. It does not mount the repository, application environment, or database credentials into the sandbox. The container uses a pinned Java 21 image, a non-root user, a read-only root filesystem, bounded temporary filesystems, no network, no Linux capabilities, and forced cleanup. Hidden expected outputs stay in the worker process and are never written into the container.
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.
 

@@ -240,6 +240,16 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 
 **Status:** complete for configurable marks, optional rubrics, current criterion scores, and append-only review revisions. Weighted automated grading, moderation workflows, and AI-authored feedback remain deferred.
 
+## Phase 21A — durable Google Cloud execution queue
+
+- Persist Run and Submit requests before dispatch.
+- Claim jobs safely across workers with leases, bounded retries, and worker heartbeats.
+- Keep immutable result/submission finalization server-owned and idempotent.
+- Show queue position and running state in the student workspace.
+- Require queued dispatch and shared rate limiting in deployed production.
+
+**Status:** implemented. Google Cloud provisioning, production secrets, migrations, DNS, and staging capacity verification remain operator steps.
+
 ## Later slices
 
 1. Complete teacher provisioning and authentication security acceptance.

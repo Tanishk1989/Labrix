@@ -16,6 +16,8 @@ describe("execution mode disclosure", () => {
     expect(executionModeLabel("cpp-docker-local")).toBe(
       "C++ Docker runner",
     );
+    expect(executionModeLabel("java-docker-remote")).toBe("Java cloud runner");
+    expect(executionModeLabel("cpp-docker-remote")).toBe("C++ cloud runner");
   });
 
   it("does not infer a provider for a legacy persisted snapshot", () => {
@@ -35,6 +37,8 @@ describe("execution mode disclosure", () => {
     ["simulated", "Simulated execution"],
     ["java-docker-local", "Java Docker runner"],
     ["cpp-docker-local", "C++ Docker runner"],
+    ["java-docker-remote", "Java cloud runner"],
+    ["cpp-docker-remote", "C++ cloud runner"],
   ] as const)("keeps the persisted %s label consistent", (mode, label) => {
     expect(executionModeLabel(executionModeFromPersistedSnapshot(mode))).toBe(
       label,

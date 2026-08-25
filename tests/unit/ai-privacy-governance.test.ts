@@ -20,14 +20,14 @@ describe("AI Privacy Governance & Fallback", () => {
     expect(hash1).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("returns deterministic AST viva output when AI assistance is disabled by policy", async () => {
+  it("returns deterministic source-heuristic viva output when AI assistance is disabled by policy", async () => {
     const result = await generateVivaDefenseWithAI(sampleInput, {
       allowAiAssistance: false,
     });
 
     expect(result).toBeDefined();
     expect(result.questions.length).toBeGreaterThanOrEqual(4);
-    expect(result.provenance.groundedInAST).toBe(true);
+    expect(result.provenance.groundedInAST).toBe(false);
   });
 
   it("returns deterministic AST viva output when no API keys are present (zero downtime)", async () => {

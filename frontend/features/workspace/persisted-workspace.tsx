@@ -7,16 +7,17 @@ import {
   Play,
   Send,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Dialog } from "@/components/dialog";
 import { ExecutionModeBadge } from "@/components/execution-mode-badge";
 import { sourceAfterLanguageChange } from "@/domain/tasks/starter-code";
 import type {
   PersistedRun,
   PersistedSubmission,
+  StudentExecutionJob,
   StudentWorkspace,
 } from "@/server/attempts/service";
-import { runDraftAction, saveDraftAction, submitDraftAction } from "./actions";
+import { executionJobStatusAction, runDraftAction, saveDraftAction, submitDraftAction } from "./actions";
 import { draftVersionChanged, type DraftVersion } from "./draft-version";
 import {
   clearLocalDraftMirror,
@@ -89,8 +90,10 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const [submitting, setSubmitting] = useState(false);
   const [submission, setSubmission] = useState<PersistedSubmission>();
   const [submissionFailure, setSubmissionFailure] = useState<string>();
+  const [executionJob, setExecutionJob] = useState<StudentExecutionJob>();
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("code");
+  const [workspaceOpenedAt] = useState(() => Date.now());
   const isOnline = useNetworkOnlineState();
   const lastPersisted = useRef<DraftVersion>({
     sourceCode: workspace.draft.sourceCode,
@@ -100,6 +103,59 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const idempotencyKey = useRef<string | null>(null);
   const templateSwitchAllowed = useRef(workspace.draft.revision === 0);
   const wasOffline = useRef(false);
+  const statusPollFailures = useRef(0);
+
+  const showResults = useCallback(() => {
+    setActivePanel("results");
+    window.requestAnimationFrame(() => {
+      document.getElementById(panelIds.results)?.focus({ preventScroll: true });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!executionJob || !["QUEUED", "RUNNING"].includes(executionJob.status)) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => startTransition(async () => {
+      const result = await executionJobStatusAction({ jobId: executionJob.id });
+      if (cancelled) return;
+      if (!result.ok) {
+        statusPollFailures.current += 1;
+        if (statusPollFailures.current < 3) {
+          setExecutionJob({ ...executionJob });
+          return;
+        }
+        setRunFailure(result.message);
+        setSubmissionFailure(executionJob.kind === "SUBMIT" ? result.message : undefined);
+        setRunning(false);
+        setSubmitting(false);
+        return;
+      }
+      statusPollFailures.current = 0;
+      setExecutionJob(result.job);
+      if (result.job.status === "COMPLETED") {
+        if (result.job.run) setRun(result.job.run);
+        if (result.job.submission) {
+          setSubmission(result.job.submission);
+          clearLocalDraftMirror(workspace.session.id);
+        }
+        lastPersisted.current = { sourceCode: source, language };
+        templateSwitchAllowed.current = false;
+        setSaveState("saved");
+        setRunning(false);
+        setSubmitting(false);
+      } else if (result.job.status === "FAILED") {
+        const message = result.job.message ?? "Execution failed after safe retries.";
+        if (result.job.kind === "SUBMIT") setSubmissionFailure(message);
+        else setRunFailure(message);
+        setRunning(false);
+        setSubmitting(false);
+      }
+    }), executionJob.status === "QUEUED" ? 2_000 : 1_500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [executionJob, language, source, workspace.session.id]);
 
   // Reconcile and restore local offline mirror on initial load
   useEffect(() => {
@@ -182,10 +238,11 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const runCode = useCallback(async () => {
     if (!source.trim()) {
       setRunFailure("Write some code before running tests.");
-      setActivePanel("results");
+      showResults();
       return;
     }
     setRunning(true);
+    setExecutionJob(undefined);
     setRunFailure(undefined);
     setRun(undefined);
     const result = await runDraftAction({
@@ -193,7 +250,9 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       sourceCode: source,
       language,
     });
-    if (result.ok) {
+    if (result.ok && result.queued) {
+      setExecutionJob(result.job);
+    } else if (result.ok) {
       setRun(result.run);
       lastPersisted.current = { sourceCode: source, language };
       templateSwitchAllowed.current = false;
@@ -201,9 +260,9 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     } else {
       setRunFailure(result.message);
     }
-    setRunning(false);
-    setActivePanel("results");
-  }, [language, source, workspace.session.id]);
+    if (!result.ok || !result.queued) setRunning(false);
+    showResults();
+  }, [language, showResults, source, workspace.session.id]);
 
   // Keyboard shortcut listener for Ctrl+Enter / Cmd+Enter (Run code) & Ctrl+S (Save)
   useEffect(() => {
@@ -243,10 +302,11 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     setConfirmSubmit(false);
     if (!source.trim()) {
       setSubmissionFailure("Write some code before submitting your practical.");
-      setActivePanel("results");
+      showResults();
       return;
     }
     setSubmitting(true);
+    setExecutionJob(undefined);
     setSubmissionFailure(undefined);
     idempotencyKey.current ??= crypto.randomUUID();
     const result = await submitDraftAction({
@@ -255,7 +315,12 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       language,
       idempotencyKey: idempotencyKey.current,
     });
-    if (result.ok) {
+    if (result.ok && result.queued) {
+      setExecutionJob(result.job);
+      lastPersisted.current = { sourceCode: source, language };
+      templateSwitchAllowed.current = false;
+      setSaveState("saved");
+    } else if (result.ok) {
       setSubmission(result.submission);
       setRun(result.submission.result);
       lastPersisted.current = { sourceCode: source, language };
@@ -265,8 +330,8 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
     } else {
       setSubmissionFailure(result.message);
     }
-    setSubmitting(false);
-    setActivePanel("results");
+    if (!result.ok || !result.queued) setSubmitting(false);
+    showResults();
   }
 
   const closeSubmitDialog = useCallback(() => setConfirmSubmit(false), []);
@@ -292,6 +357,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   }
 
   const deadline = workspace.task.deadline ? new Date(workspace.task.deadline) : null;
+  const overdue = Boolean(deadline && deadline.getTime() < workspaceOpenedAt && !submission);
 
   return (
     <div className="workspace-shell">
@@ -306,7 +372,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
             <span aria-hidden="true">·</span>
             {deadline ? (
               <span>
-                Due <time dateTime={deadline.toISOString()}>{deadline.toLocaleString("en-IN")}</time>
+                {overdue ? "Overdue since" : "Due"} <time dateTime={deadline.toISOString()}>{deadline.toLocaleString("en-IN")}</time>
               </span>
             ) : (
               <span>No deadline</span>
@@ -362,7 +428,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
             title="Run visible tests (Ctrl + Enter)"
           >
             {running ? <span className="button-spinner" aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
-            <span>{running ? "Running tests…" : "Run tests"}</span>
+            <span>{running ? (executionJob?.status === "QUEUED" ? "Queued…" : "Running tests…") : "Run tests"}</span>
             <kbd className="hidden sm:inline-flex rounded border border-white/20 bg-black/40 px-1.5 py-0.2 font-mono text-[9px] text-white/70">
               Ctrl+↵
             </kbd>
@@ -377,7 +443,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
             aria-expanded={confirmSubmit}
           >
             {submitting ? <span className="button-spinner" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
-            {submitting ? "Submitting…" : "Submit attempt"}
+            {submitting ? (executionJob?.status === "QUEUED" ? "Submission queued…" : "Submitting…") : "Submit attempt"}
           </button>
         </div>
       </header>
@@ -385,6 +451,12 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       {saveMessage ? (
         <p role="alert" className="workspace-save-error">
           {saveMessage}
+        </p>
+      ) : null}
+
+      {overdue ? (
+        <p role="status" className="workspace-deadline-warning">
+          This deadline has passed. TRACE can still record an attempt; check your teacher’s late-work policy before submitting.
         </p>
       ) : null}
 
@@ -547,7 +619,8 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
               <StudentRunResults
                 key={run?.id ?? (running ? "running" : runFailure ?? "idle")}
                 run={run}
-                running={running}
+                running={running || submitting}
+                progress={executionJob}
                 failure={runFailure}
                 visibleTests={workspace.task.tests}
               />
@@ -571,7 +644,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
             role="tabpanel"
             aria-labelledby="workspace-hints-tab workspace-hints-heading"
             tabIndex={0}
-            className={`workspace-results ${activePanel === "hints" ? "workspace-panel-active" : ""}`}
+            className={`workspace-results workspace-hints ${activePanel === "hints" ? "workspace-panel-active" : ""}`}
           >
             <StudentHintPanel
               taskId={workspace.task.id}

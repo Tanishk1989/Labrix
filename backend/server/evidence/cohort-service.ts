@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import { curatedDemoClassroomId } from "@/server/actors/demo-scope";
 import {
   auditCohortPlagiarism,
   type PairwiseStructuralSimilarity,
@@ -34,8 +35,9 @@ export async function getCohortPlagiarismReport(
     classroomId?: string;
   },
 ): Promise<CohortPlagiarismReport> {
+  const demoClassroomId = curatedDemoClassroomId(teacherId);
   const classrooms = await prisma.classroom.findMany({
-    where: { ownerTeacherId: teacherId, status: "ACTIVE" },
+    where: { ownerTeacherId: teacherId, status: "ACTIVE", ...(demoClassroomId ? { id: demoClassroomId } : {}) },
     select: {
       id: true,
       name: true,
@@ -63,14 +65,14 @@ export async function getCohortPlagiarismReport(
   // Build where clause for submissions
   const whereClause: {
     task: {
-      classroom: { ownerTeacherId: string; status: "ACTIVE" };
+      classroom: { ownerTeacherId: string; status: "ACTIVE"; id?: string };
       classroomId?: string;
       id?: string;
       status: "PUBLISHED";
     };
   } = {
     task: {
-      classroom: { ownerTeacherId: teacherId, status: "ACTIVE" },
+      classroom: { ownerTeacherId: teacherId, status: "ACTIVE", ...(demoClassroomId ? { id: demoClassroomId } : {}) },
       status: "PUBLISHED",
     },
   };

@@ -1,6 +1,7 @@
 import type { StudentOverview } from "@/server/student/overview";
 import {
   hasActiveStudentSession,
+  isStudentPracticalOverdue,
   orderStudentActionablePracticals,
 } from "./student-dashboard-view-model";
 
@@ -17,7 +18,7 @@ export type StudentClassWorkspace = {
     id: string;
     title: string;
     deadline: string | null;
-    statusLabel: "In progress" | "Not started";
+    statusLabel: "Overdue" | "In progress" | "Not started";
     actionLabel: "Continue" | "Start";
     href: string;
   } | null;
@@ -29,6 +30,7 @@ export type StudentClassesViewModel = {
 
 export function buildStudentClassesViewModel(
   overview: StudentOverview,
+  now = new Date(),
 ): StudentClassesViewModel {
   return {
     classes: overview.classes.map((classroom) => {
@@ -61,7 +63,9 @@ export function buildStudentClassesViewModel(
               id: nextPractical.id,
               title: nextPractical.title,
               deadline: nextPractical.deadline,
-              statusLabel: hasActiveStudentSession(nextPractical) ? "In progress" : "Not started",
+              statusLabel: isStudentPracticalOverdue(nextPractical, now)
+                ? "Overdue"
+                : hasActiveStudentSession(nextPractical) ? "In progress" : "Not started",
               actionLabel: hasActiveStudentSession(nextPractical) ? "Continue" : "Start",
               href: `/tasks/${nextPractical.id}`,
             }

@@ -78,9 +78,9 @@ The slice uses one draft per coding session with debounced server saves. Decide 
 
 The slice permits numbered resubmissions and deduplicates retried requests. Define allowed-attempt limits, late/grace rules, timezone source, practical versioning, and result-disclosure policy.
 
-### D-012 — Execution provider and limits
+### D-012 — Google Cloud execution workers and durable PostgreSQL queue
 
-Select build/buy/provider, compiler versions, queue/concurrency targets, resource/network/filesystem limits, retention, observability, and outage behavior.
+**Accepted 2026-08-25.** Production Run and Submit requests are persisted as durable PostgreSQL jobs and processed by a separate worker on a dedicated Google Cloud VM. The worker calls authenticated HTTPS Java/C++ Docker runner services; untrusted code never runs in Next.js or in the worker container. Queue claims use PostgreSQL row locking, leases, bounded retries, one active job per coding session, student-scoped submission idempotency, and persisted worker heartbeats. Vercel production must use `LABRIX_EXECUTION_DISPATCH=queued`; inline dispatch remains local/test-only. Initial capacity is eight worker slots and must be tuned by staging load tests rather than claimed as guaranteed capacity.
 
 ### D-013 — AI provider and governance
 

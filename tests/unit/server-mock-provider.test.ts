@@ -12,10 +12,22 @@ describe("server-owned execution provider boundary", () => {
   it("accepts the deterministic mock through the typed provider interface", async () => {
     const provider: ServerExecutionProvider = new ServerMockExecutionProvider(0);
     expect(provider.executionMode).toBe("simulated");
-    const result = await provider.execute(request);
+    const result = await provider.execute({
+      ...request,
+      sourceCode: "#include <iostream>\nint main() { std::cout << 1; }",
+    });
     expect(result.state).toBe("completed");
     expect(result.passedTests).toBe(1);
     expect(result.testResults[0]?.visibility).toBe("VISIBLE");
+  });
+
+  it("does not report an untouched output-free starter as passing", async () => {
+    const provider = new ServerMockExecutionProvider(0);
+    const result = await provider.execute(request);
+
+    expect(result.state).toBe("completed");
+    expect(result.passedTests).toBe(0);
+    expect(result.testResults[0]?.passed).toBe(false);
   });
 
   it("simulates feedback without claiming compilation", async () => {

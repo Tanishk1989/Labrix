@@ -1,8 +1,27 @@
 import { expect, test } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+let classroomName: string | undefined;
+
+test.afterEach(async () => {
+  if (!classroomName) return;
+  const classroom = await prisma.classroom.findFirst({
+    where: { name: classroomName, ownerTeacherId: "demo-teacher" },
+    select: { id: true },
+  });
+  if (!classroom) return;
+  await prisma.$transaction([
+    prisma.membershipAuditEntry.deleteMany({ where: { classroomId: classroom.id } }),
+    prisma.classMembership.deleteMany({ where: { classroomId: classroom.id } }),
+    prisma.classroom.delete({ where: { id: classroom.id } }),
+  ]);
+  classroomName = undefined;
+});
 
 test("demo teacher creates a class and the demo student joins it by code", async ({ page }) => {
   const browserErrors: string[] = [];
-  const classroomName = `Join flow verification ${Date.now()}`;
+  classroomName = `Join flow verification ${Date.now()}`;
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
   await page.goto("/classes");

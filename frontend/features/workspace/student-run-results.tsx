@@ -3,7 +3,7 @@
 import { CheckCircle2, CircleX, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { triggerVictoryMoment } from "@/components/victory-effects";
-import type { PersistedRun, StudentWorkspace } from "@/server/attempts/service";
+import type { PersistedRun, StudentExecutionJob, StudentWorkspace } from "@/server/attempts/service";
 import {
   createRunPanelState,
   type StudentRunResultViewModel,
@@ -114,11 +114,13 @@ export function StudentRunResults({
   run,
   running,
   failure,
+  progress,
   visibleTests,
 }: {
   run?: PersistedRun;
   running: boolean;
   failure?: string;
+  progress?: StudentExecutionJob;
   visibleTests: VisibleWorkspaceTest[];
 }) {
   const panelState = createRunPanelState({ run, running, failure, visibleTests });
@@ -128,8 +130,18 @@ export function StudentRunResults({
       <div className="workspace-run-pending" role="status" aria-live="polite">
         <LoaderCircle size={16} aria-hidden="true" />
         <div>
-          <p>Running visible tests…</p>
-          <span>TRACE is checking your code against the visible tests.</span>
+          <p>
+            {progress?.status === "QUEUED"
+              ? (progress.kind === "SUBMIT" ? "Submission queued" : "Run queued")
+              : (progress?.kind === "SUBMIT" ? "Checking submission…" : "Running visible tests…")}
+          </p>
+          <span>
+            {progress?.status === "QUEUED"
+              ? `Your code is safely queued${progress.queuePosition ? ` at position ${progress.queuePosition}` : ""}. You can keep this page open while a runner becomes available.`
+              : progress?.kind === "SUBMIT"
+                ? "TRACE is checking visible and hidden tests before permanently recording this attempt."
+                : "TRACE is checking your code against the visible tests."}
+          </span>
         </div>
       </div>
     );

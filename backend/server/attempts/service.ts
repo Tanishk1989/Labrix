@@ -124,6 +124,40 @@ export interface PersistedSubmission {
   result: PersistedRun;
 }
 
+export class ExecutionAlreadyQueuedError extends Error {
+  constructor(message = "This workspace already has an execution in progress.") {
+    super(message);
+    this.name = "ExecutionAlreadyQueuedError";
+  }
+}
+
+export interface StudentExecutionJob {
+  id: string;
+  kind: "RUN" | "SUBMIT";
+  status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+  queuePosition?: number;
+  createdAt: string;
+  startedAt?: string;
+  message?: string;
+  run?: PersistedRun;
+  submission?: PersistedSubmission;
+}
+
+export type ExecutionDispatchMode = "inline" | "queued";
+
+export function configuredExecutionDispatchMode(
+  environment: NodeJS.ProcessEnv = process.env,
+): ExecutionDispatchMode {
+  return environment.LABRIX_EXECUTION_DISPATCH === "queued" ? "queued" : "inline";
+}
+
+function configuredWorkspaceExecutionMode(language: AllowedLanguage): ExecutionModeDisclosure {
+  if (configuredExecutionDispatchMode() === "queued") {
+    return language === "JAVA" ? "java-docker-remote" : "cpp-docker-remote";
+  }
+  return getServerExecutionProvider(process.env, language).executionMode;
+}
+
 function toWorkspace(
   task: Awaited<ReturnType<typeof requirePublishedTaskForStudent>>,
   session: WorkspaceSession,
@@ -176,10 +210,7 @@ export async function getOrCreateStudentWorkspace(
   const task = await requirePublishedTaskForStudent(prisma, studentId, taskId);
   const existing = await findActiveSession(studentId, taskId);
   if (existing) {
-    const executionMode = getServerExecutionProvider(
-      process.env,
-      existing.language,
-    ).executionMode;
+    const executionMode = configuredWorkspaceExecutionMode(existing.language);
     return toWorkspace(task, existing, executionMode);
   }
 
@@ -221,19 +252,13 @@ export async function getOrCreateStudentWorkspace(
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
-    const executionMode = getServerExecutionProvider(
-      process.env,
-      created.language,
-    ).executionMode;
+    const executionMode = configuredWorkspaceExecutionMode(created.language);
     return toWorkspace(task, created, executionMode);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrent = await findActiveSession(studentId, taskId);
       if (concurrent) {
-        const executionMode = getServerExecutionProvider(
-          process.env,
-          concurrent.language,
-        ).executionMode;
+        const executionMode = configuredWorkspaceExecutionMode(concurrent.language);
         return toWorkspace(task, concurrent, executionMode);
       }
     }
@@ -383,12 +408,16 @@ const storedExecutionModeByRuntime: Record<ExecutionMode, StoredExecutionMode> =
   simulated: StoredExecutionMode.SIMULATED,
   "java-docker-local": StoredExecutionMode.JAVA_DOCKER_LOCAL,
   "cpp-docker-local": StoredExecutionMode.CPP_DOCKER_LOCAL,
+  "java-docker-remote": StoredExecutionMode.JAVA_DOCKER_REMOTE,
+  "cpp-docker-remote": StoredExecutionMode.CPP_DOCKER_REMOTE,
 };
 
 const runtimeExecutionModeByStored: Record<StoredExecutionMode, ExecutionMode> = {
   SIMULATED: "simulated",
   JAVA_DOCKER_LOCAL: "java-docker-local",
   CPP_DOCKER_LOCAL: "cpp-docker-local",
+  JAVA_DOCKER_REMOTE: "java-docker-remote",
+  CPP_DOCKER_REMOTE: "cpp-docker-remote",
 };
 
 function storedExecutionMode(mode: ExecutionMode) {
@@ -805,6 +834,351 @@ export async function submitStudentDraft(
     },
     () => submitStudentDraftWithoutGuard(input, executionProvider),
   );
+}
+
+type QueueInput = {
+  studentId: string;
+  sessionId: string;
+  language: AllowedLanguage;
+  sourceCode: string;
+  idempotencyKey?: string;
+};
+
+async function enqueueStudentExecution(input: QueueInput, kind: "RUN" | "SUBMIT") {
+  if (kind === "SUBMIT" && input.idempotencyKey) {
+    const existing = await prisma.executionJob.findUnique({
+      where: {
+        studentId_idempotencyKey: {
+          studentId: input.studentId,
+          idempotencyKey: input.idempotencyKey,
+        },
+      },
+    });
+    if (existing) {
+      if (existing.status === "FAILED") {
+        await prisma.executionJob.update({
+          where: { id: existing.id },
+          data: {
+            status: "QUEUED",
+            attemptCount: 0,
+            availableAt: new Date(),
+            lockedAt: null,
+            lockedBy: null,
+            startedAt: null,
+            completedAt: null,
+            lastError: null,
+          },
+        });
+      }
+      return getStudentExecutionJob(input.studentId, existing.id);
+    }
+  }
+
+  try {
+    const job = await prisma.$transaction(async (tx) => {
+      const session = await requireActiveStudentSession(tx, input.studentId, input.sessionId);
+      assertAllowedLanguage(input.language, session.task.allowedLanguages);
+      if (kind === "SUBMIT" && session.task.deadline && session.task.deadline < new Date()) {
+        throw new SubmissionDeadlineError();
+      }
+
+      const activeJob = await tx.executionJob.findFirst({
+        where: { codingSessionId: session.id, status: { in: ["QUEUED", "RUNNING"] } },
+        select: { id: true },
+      });
+      if (activeJob) throw new ExecutionAlreadyQueuedError();
+
+      const draftChanged = session.draft?.sourceCode !== input.sourceCode;
+      const languageChanged = session.language !== input.language;
+      if (draftChanged) {
+        await tx.draft.update({
+          where: { codingSessionId: session.id },
+          data: { sourceCode: input.sourceCode, revision: { increment: 1 } },
+        });
+      }
+      if (languageChanged) {
+        await tx.codingSession.update({ where: { id: session.id }, data: { language: input.language } });
+      }
+      if (draftChanged || languageChanged) {
+        await createEvent(tx, { codingSessionId: session.id, type: "DRAFT_SAVED" });
+      }
+
+      const latestRun = await tx.runAttempt.aggregate({
+        where: { codingSessionId: session.id },
+        _max: { sequence: true },
+      });
+      const run = await tx.runAttempt.create({
+        data: {
+          codingSessionId: session.id,
+          sequence: (latestRun._max.sequence ?? 0) + 1,
+          language: input.language,
+          sourceCodeSnapshot: input.sourceCode,
+        },
+      });
+      await createEvent(tx, {
+        codingSessionId: session.id,
+        runAttemptId: run.id,
+        type: "RUN_REQUESTED",
+      });
+      return tx.executionJob.create({
+        data: {
+          runAttemptId: run.id,
+          codingSessionId: session.id,
+          studentId: input.studentId,
+          kind,
+          idempotencyKey: kind === "SUBMIT" ? input.idempotencyKey : null,
+        },
+      });
+    }, {
+      ...transactionOptions,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+    return getStudentExecutionJob(input.studentId, job.id);
+  } catch (error) {
+    if (error instanceof ExecutionAlreadyQueuedError || error instanceof SubmissionDeadlineError) throw error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new ExecutionAlreadyQueuedError();
+    }
+    throw error;
+  }
+}
+
+export async function enqueueStudentRun(input: Omit<QueueInput, "idempotencyKey">) {
+  const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.CODE_RUN);
+  if (!rl.success) throw new RateLimitExceededError("Code run rate limit exceeded. Please wait before executing again.", rl.retryAfterSeconds);
+  return enqueueStudentExecution(input, "RUN");
+}
+
+export async function enqueueStudentSubmission(input: QueueInput & { idempotencyKey: string }) {
+  const rl = await globalRateLimiter.check(input.sessionId, RATE_LIMIT_CONFIGS.SUBMISSION);
+  if (!rl.success) throw new RateLimitExceededError("Submission rate limit exceeded. Please wait before submitting again.", rl.retryAfterSeconds);
+  return enqueueStudentExecution(input, "SUBMIT");
+}
+
+export async function getStudentExecutionJob(studentId: string, jobId: string): Promise<StudentExecutionJob> {
+  const job = await prisma.executionJob.findFirst({
+    where: { id: jobId, studentId },
+    include: {
+      runAttempt: {
+        include: {
+          resultSnapshot: { include: { submission: true } },
+        },
+      },
+    },
+  });
+  if (!job) throw new AccessDeniedError();
+
+  const output: StudentExecutionJob = {
+    id: job.id,
+    kind: job.kind,
+    status: job.status,
+    createdAt: job.createdAt.toISOString(),
+    startedAt: job.startedAt?.toISOString(),
+    message: job.status === "FAILED" ? (job.lastError ?? "Execution failed after safe retries.") : undefined,
+  };
+  if (job.status === "QUEUED") {
+    output.queuePosition = await prisma.executionJob.count({
+      where: {
+        status: "QUEUED",
+        OR: [
+          { createdAt: { lt: job.createdAt } },
+          { createdAt: job.createdAt, id: { lte: job.id } },
+        ],
+      },
+    });
+  }
+
+  const snapshot = job.runAttempt.resultSnapshot;
+  if (snapshot) {
+    const breakdown = snapshotBreakdown(snapshot);
+    output.run = {
+      executionMode: disclosedSnapshotExecutionMode(snapshot.executionMode),
+      id: job.runAttempt.id,
+      resultSnapshotId: snapshot.id,
+      state: fromRunResultState(snapshot.state),
+      passedTests: snapshot.passedTests,
+      totalTests: snapshot.totalTests,
+      errorText: snapshot.errorText ?? undefined,
+      testResults: publicTestResults(snapshot.testResults as unknown as StoredTestResult[]),
+      ...breakdown,
+      completedAt: (job.runAttempt.completedAt ?? snapshot.createdAt).toISOString(),
+    };
+    if (snapshot.submission) {
+      output.submission = {
+        id: snapshot.submission.id,
+        attemptNumber: snapshot.submission.attemptNumber,
+        submittedAt: snapshot.submission.submittedAt.toISOString(),
+        result: output.run,
+      };
+    }
+  }
+  return output;
+}
+
+export async function claimNextExecutionJob(workerId: string, leaseMs = 120_000) {
+  const staleBefore = new Date(Date.now() - leaseMs);
+  const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
+    WITH candidate AS (
+      SELECT "id"
+      FROM "ExecutionJob"
+      WHERE ("status" = 'QUEUED' AND "availableAt" <= NOW())
+         OR ("status" = 'RUNNING' AND "lockedAt" < ${staleBefore})
+      ORDER BY "createdAt" ASC
+      FOR UPDATE SKIP LOCKED
+      LIMIT 1
+    )
+    UPDATE "ExecutionJob" AS job
+    SET "status" = 'RUNNING',
+        "lockedAt" = NOW(),
+        "lockedBy" = ${workerId},
+        "startedAt" = COALESCE(job."startedAt", NOW()),
+        "attemptCount" = job."attemptCount" + 1,
+        "updatedAt" = NOW()
+    FROM candidate
+    WHERE job."id" = candidate."id"
+    RETURNING job."id"
+  `;
+  if (!claimed[0]) return null;
+  return prisma.executionJob.findUnique({
+    where: { id: claimed[0].id },
+    include: {
+      runAttempt: {
+        include: {
+          resultSnapshot: true,
+          codingSession: {
+            include: { task: { include: { testCases: { orderBy: { position: "asc" } } } } },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function processClaimedExecutionJob(
+  job: NonNullable<Awaited<ReturnType<typeof claimNextExecutionJob>>>,
+  provider: ServerExecutionProvider,
+  options: { maxAttempts?: number } = {},
+) {
+  if (job.runAttempt.resultSnapshot) {
+    await prisma.executionJob.update({
+      where: { id: job.id },
+      data: { status: "COMPLETED", completedAt: new Date(), lockedAt: null, lockedBy: null },
+    });
+    return;
+  }
+  const allTests = job.runAttempt.codingSession.task.testCases.map((test) => ({
+    id: test.id,
+    input: test.input,
+    expectedOutput: test.expectedOutput,
+    visibility: test.visible ? ("VISIBLE" as const) : ("HIDDEN" as const),
+  }));
+  const tests = job.kind === "RUN" ? allTests.filter((test) => test.visibility === "VISIBLE") : allTests;
+  const result = await provider.execute({
+    language: job.runAttempt.language,
+    sourceCode: job.runAttempt.sourceCodeSnapshot,
+    tests,
+  });
+
+  const maxAttempts = options.maxAttempts ?? 3;
+  if (result.state === "internal_error" && job.attemptCount < maxAttempts) {
+    await prisma.executionJob.update({
+      where: { id: job.id },
+      data: {
+        status: "QUEUED",
+        availableAt: new Date(Date.now() + 2 ** job.attemptCount * 1_000),
+        lockedAt: null,
+        lockedBy: null,
+        lastError: "Runner unavailable; retrying safely.",
+      },
+    });
+    return;
+  }
+
+  const visibilityById = new Map(tests.map((test) => [test.id, test.visibility]));
+  const normalizedResult: ServerExecutionResult = {
+    ...result,
+    testResults: result.testResults.flatMap((test) => {
+      const visibility = visibilityById.get(test.testId);
+      return visibility ? [{ ...test, visibility }] : [];
+    }),
+  };
+  const breakdown = buildResultBreakdown(normalizedResult, tests);
+
+  await prisma.$transaction(async (tx) => {
+    const current = await tx.executionJob.findUnique({ where: { id: job.id } });
+    if (!current || current.status !== "RUNNING" || current.lockedBy !== job.lockedBy) return;
+    const existingSnapshot = await tx.resultSnapshot.findUnique({ where: { runAttemptId: job.runAttempt.id } });
+    const snapshot = existingSnapshot ?? await tx.resultSnapshot.create({
+      data: {
+        runAttemptId: job.runAttempt.id,
+        state: toRunResultState(normalizedResult.state),
+        executionMode: storedExecutionMode(provider.executionMode),
+        passedTests: normalizedResult.passedTests,
+        totalTests: normalizedResult.totalTests,
+        ...breakdown,
+        errorText: normalizedResult.errorText,
+        testResults: normalizedResult.testResults as unknown as Prisma.InputJsonValue,
+      },
+    });
+    const completedAt = new Date();
+    await tx.runAttempt.update({ where: { id: job.runAttempt.id }, data: { completedAt } });
+    await createEvent(tx, {
+      codingSessionId: job.codingSessionId,
+      runAttemptId: job.runAttempt.id,
+      type: "RUN_COMPLETED",
+    });
+
+    if (job.kind === "SUBMIT") {
+      const session = job.runAttempt.codingSession;
+      const existingSubmission = await tx.submissionAttempt.findUnique({ where: { codingSessionId: session.id } });
+      if (!existingSubmission) {
+        const submission = await tx.submissionAttempt.create({
+          data: {
+            taskId: session.taskId,
+            studentId: job.studentId,
+            codingSessionId: session.id,
+            resultSnapshotId: snapshot.id,
+            attemptNumber: session.attemptNumber,
+            idempotencyKey: job.idempotencyKey ?? job.id,
+            language: job.runAttempt.language,
+            sourceCodeSnapshot: job.runAttempt.sourceCodeSnapshot,
+            submittedAt: job.createdAt,
+          },
+        });
+        await tx.codingSession.update({
+          where: { id: session.id },
+          data: { status: "SUBMITTED", submittedAt: job.createdAt },
+        });
+        await createEvent(tx, {
+          codingSessionId: session.id,
+          submissionAttemptId: submission.id,
+          type: "SUBMISSION_CREATED",
+        });
+      }
+    }
+
+    await tx.executionJob.update({
+      where: { id: job.id },
+      data: {
+        status: "COMPLETED",
+        completedAt,
+        lockedAt: null,
+        lockedBy: null,
+        lastError: null,
+      },
+    });
+  }, transactionOptions);
+}
+
+export async function failClaimedExecutionJob(
+  jobId: string,
+  workerId: string,
+  message = "Execution worker could not complete this request.",
+) {
+  await prisma.executionJob.updateMany({
+    where: { id: jobId, status: "RUNNING", lockedBy: workerId },
+    data: { status: "FAILED", completedAt: new Date(), lockedAt: null, lockedBy: null, lastError: message },
+  });
 }
 
 export async function getSubmissionForTeacher(

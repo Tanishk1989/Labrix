@@ -34,6 +34,7 @@ model User {
   hintInteractions               HintInteraction[]          @relation("StudentHintInteractions")
   adminAuditLogsAdministered     AdminAuditLog[]            @relation("AdminAuditActor")
   aiGenerationAuditLogs          AiGenerationAuditLog[]     @relation("TeacherAiGenerations")
+  executionJobs                  ExecutionJob[]              @relation("StudentExecutionJobs")
 }
 
 model ExternalIdentity {
@@ -178,6 +179,7 @@ model CodingSession {
   task               Task                @relation(fields: [taskId], references: [id])
   submission         SubmissionAttempt?
   hintInteractions   HintInteraction[]
+  executionJobs      ExecutionJob[]
 
   @@unique([taskId, studentId, attemptNumber])
   @@index([taskId, studentId, status])
@@ -203,9 +205,44 @@ model RunAttempt {
   completedAt        DateTime?
   events             CodeEvent[]
   resultSnapshot     ResultSnapshot?
+  executionJob       ExecutionJob?
   codingSession      CodingSession   @relation(fields: [codingSessionId], references: [id])
 
   @@unique([codingSessionId, sequence])
+}
+
+model ExecutionJob {
+  id             String             @id @default(cuid())
+  runAttemptId   String             @unique
+  codingSessionId String
+  studentId      String
+  kind           ExecutionJobKind
+  status         ExecutionJobStatus @default(QUEUED)
+  idempotencyKey String?
+  attemptCount   Int                @default(0)
+  availableAt    DateTime           @default(now())
+  lockedAt       DateTime?
+  lockedBy       String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  lastError      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  runAttempt     RunAttempt         @relation(fields: [runAttemptId], references: [id], onDelete: Cascade)
+  codingSession  CodingSession      @relation(fields: [codingSessionId], references: [id], onDelete: Cascade)
+  student        User               @relation("StudentExecutionJobs", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, idempotencyKey])
+  @@index([status, availableAt, createdAt])
+  @@index([codingSessionId, status])
+}
+
+model ExecutionWorkerHeartbeat {
+  id          String   @id @default(cuid())
+  workerId    String   @unique
+  concurrency Int
+  startedAt   DateTime @default(now())
+  lastSeenAt  DateTime @updatedAt
 }
 
 model ResultSnapshot {
@@ -371,6 +408,20 @@ enum ExecutionMode {
   SIMULATED
   JAVA_DOCKER_LOCAL
   CPP_DOCKER_LOCAL
+  JAVA_DOCKER_REMOTE
+  CPP_DOCKER_REMOTE
+}
+
+enum ExecutionJobKind {
+  RUN
+  SUBMIT
+}
+
+enum ExecutionJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 enum CodeEventType {

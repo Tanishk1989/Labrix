@@ -29,11 +29,12 @@ function submittedAtLabel(value: string) {
 }
 
 function PracticalDeadline({ practical }: { practical: StudentDashboardPractical }) {
+  const overdue = practical.statusLabel === "Overdue";
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+    <span className={`inline-flex items-center gap-1.5 text-xs ${overdue ? "text-rose-300" : "text-[var(--text-secondary)]"}`}>
       <Clock3 size={13} aria-hidden="true" />
       {practical.deadline ? (
-        <time dateTime={practical.deadline}>Due {deadlineLabel(practical.deadline)}</time>
+        <time dateTime={practical.deadline}>{overdue ? "Overdue since" : "Due"} {deadlineLabel(practical.deadline)}</time>
       ) : "No deadline"}
     </span>
   );
@@ -95,7 +96,7 @@ export function StudentDashboard({ overview }: { overview: StudentOverview }) {
                   <h3 className="break-words text-2xl font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
                     {dashboard.nextUp.title}
                   </h3>
-                  <StatusBadge tone={dashboard.nextUp.statusLabel === "In progress" ? "warning" : "published"}>
+                  <StatusBadge tone={dashboard.nextUp.statusLabel === "Overdue" ? "danger" : dashboard.nextUp.statusLabel === "In progress" ? "warning" : "published"}>
                     {dashboard.nextUp.statusLabel}
                   </StatusBadge>
                 </div>
@@ -185,7 +186,7 @@ export function StudentDashboard({ overview }: { overview: StudentOverview }) {
               {dashboard.recentSubmissions.map((submission) => (
                 <li key={submission.id} className="list-none">
                   <Link
-                    href={`/submissions/${submission.id}`}
+                    href={`/submissions/${submission.id}?view=student`}
                     aria-label={`View ${submission.practicalTitle}, attempt ${submission.attemptNumber}`}
                     className="grid min-h-16 gap-3 px-4 py-3 rounded-[var(--radius-md)] transition-colors hover:bg-[var(--surface-hover)] focus-visible:bg-[var(--surface-hover)] active:bg-[var(--surface-elevated)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5"
                   >

@@ -61,7 +61,7 @@ export function buildStudentProgressViewModel(overview: StudentOverview) {
         : hasActiveStudentSession(practical)
           ? "Continue practical"
           : "Start practical",
-      actionHref: latest ? `/submissions/${latest.id}` : `/tasks/${practical.id}`,
+      actionHref: latest ? `/submissions/${latest.id}?view=student` : `/tasks/${practical.id}`,
     });
     grouped.set(classroom.id, group);
   }

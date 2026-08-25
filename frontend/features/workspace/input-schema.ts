@@ -14,3 +14,5 @@ export const draftInputSchema = z.object({
 export const submissionInputSchema = draftInputSchema.extend({
   idempotencyKey: z.string().uuid(),
 });
+
+export const executionJobInputSchema = z.object({ jobId: persistedIdSchema });

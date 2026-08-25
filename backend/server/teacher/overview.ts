@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { type RunResultState, type TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { curatedDemoClassroomId } from "@/server/actors/demo-scope";
 import { toTeacherReviewQueueStatus, type TeacherReviewQueueStatus } from "@/features/submission-review/review-queue";
 import { calculateSuggestedScore } from "@/server/execution/result-grading";
 import {
@@ -99,8 +100,9 @@ function percent(completed: number, total: number) {
 }
 
 async function loadTeacherOverview(teacherId: string): Promise<TeacherOverview> {
+  const demoClassroomId = curatedDemoClassroomId(teacherId);
   const classrooms = await prisma.classroom.findMany({
-    where: { ownerTeacherId: teacherId, status: "ACTIVE" },
+    where: { ownerTeacherId: teacherId, status: "ACTIVE", ...(demoClassroomId ? { id: demoClassroomId } : {}) },
     orderBy: { createdAt: "desc" },
     include: {
       memberships: {

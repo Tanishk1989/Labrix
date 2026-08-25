@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
+import { curatedDemoClassroomId } from "@/server/actors/demo-scope";
 import {
   CLASSROOM_MANAGEMENT_CACHE_TAG,
   STUDENT_OVERVIEW_CACHE_TAG,
@@ -14,8 +15,14 @@ function completion(submitted: number, total: number) {
 }
 
 async function loadStudentOverview(studentId: string) {
+  const demoClassroomId = curatedDemoClassroomId(studentId);
   const memberships = await prisma.classMembership.findMany({
-    where: { userId: studentId, role: "STUDENT", active: true, classroom: { status: "ACTIVE" } },
+    where: {
+      userId: studentId,
+      role: "STUDENT",
+      active: true,
+      classroom: { status: "ACTIVE", ...(demoClassroomId ? { id: demoClassroomId } : {}) },
+    },
     orderBy: { joinedAt: "desc" },
     include: {
       classroom: {

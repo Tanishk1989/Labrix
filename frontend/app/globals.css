@@ -20,7 +20,7 @@
 
   --color-text-primary: #f9fafb;
   --color-text-secondary: #9ca3af;
-  --color-text-muted: #64748b;
+  --color-text-muted: #8190a5;
   --color-text-disabled: #475569;
 
   --color-brand: #4f46e5;
@@ -1373,6 +1373,14 @@ a {
   font-size: 0.75rem;
 }
 
+.workspace-deadline-warning {
+  border-bottom: 1px solid var(--color-danger-border);
+  background: var(--color-danger-surface);
+  padding: 0.65rem 1rem;
+  color: #fecdd3;
+  font-size: 0.75rem;
+}
+
 .workspace-mobile-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1891,10 +1899,15 @@ a {
 
   .workspace-results {
     min-height: 0;
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 2;
     overflow-y: auto;
     border-top: 1px solid var(--color-border);
+  }
+
+  .workspace-hints {
+    grid-column: 2;
+    border-left: 1px solid var(--color-border);
   }
 
   .workspace-results-heading { border-bottom: 1px solid var(--color-border); }

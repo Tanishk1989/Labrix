@@ -70,11 +70,16 @@ function resultLabel(state: string, passedTests: number, totalTests: number) {
 
 export default async function SubmissionReviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ submissionId: string }>;
+  searchParams: Promise<{ view?: string | string[] }>;
 }) {
   const { submissionId } = await params;
-  const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
+  const requestedView = (await searchParams).view;
+  const actor = await resolveCurrentActorForPage({
+    demoActor: requestedView === "student" ? "student" : "teacher",
+  });
   if (actor.role === "STUDENT") {
     let studentSubmission;
     try {
@@ -202,19 +207,29 @@ export default async function SubmissionReviewPage({
               starterCode={DEFAULT_STARTER_CODES[review.language]}
             />
             <SubmissionTestResults result={review.result} />
-            <AcademicIntegrityPanel
-              processAnalysis={processAnalysis}
-              vivaDefense={vivaDefense}
-              studentName={review.student.name}
-              practicalTitle={review.task.title}
-              classroomName={review.task.classroom.name}
-              attemptNumber={review.attemptNumber}
-              submittedAt={review.submittedAt}
-              sourceCode={review.sourceCode}
-              language={review.language}
-              cohortSimilarity={review.cohortSimilarity}
-              peerComparisons={review.peerComparisons}
-            />
+            <details className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">
+                Oral defense and integrity tools
+              </summary>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Optional source heuristics, process signals, similarity context, and teacher prompts.
+              </p>
+              <div className="mt-5">
+                <AcademicIntegrityPanel
+                  processAnalysis={processAnalysis}
+                  vivaDefense={vivaDefense}
+                  studentName={review.student.name}
+                  practicalTitle={review.task.title}
+                  classroomName={review.task.classroom.name}
+                  attemptNumber={review.attemptNumber}
+                  submittedAt={review.submittedAt}
+                  sourceCode={review.sourceCode}
+                  language={review.language}
+                  cohortSimilarity={review.cohortSimilarity}
+                  peerComparisons={review.peerComparisons}
+                />
+              </div>
+            </details>
             <details className="border-y border-[var(--border)] py-4">
               <summary className="cursor-pointer text-sm font-semibold text-[var(--text-primary)]">Activity and attempt context · {review.events.length} events</summary>
               <div className="mt-5 grid gap-8 md:grid-cols-2">

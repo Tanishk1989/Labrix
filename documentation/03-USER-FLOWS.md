@@ -29,8 +29,8 @@ The Practicals page separates `To do`, `In progress`, `Submitted`, and `Feedback
 2. Labrix loads the existing active draft unchanged, or creates the first draft from the practical's starter code for the initial allowed language.
 3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
 4. Before the first save, switching language replaces an untouched default template with the matching language template. Edited or previously persisted source is retained.
-5. Run saves the current draft, records request/completion events, evaluates visible tests through the server-owned mock provider, and stores its result snapshot.
-6. Submit evaluates visible and hidden tests for the exact submitted source, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. The student sees visible details and only the hidden pass/total aggregate.
+5. Run saves the current draft and records a durable request. Local development may execute inline through the mock provider; production displays queue position while the Google Cloud worker evaluates visible tests and stores the result snapshot.
+6. Submit durably queues the exact submitted source, evaluates visible and hidden tests, then atomically creates an immutable submission, links the result snapshot, closes the session, and records `SUBMISSION_CREATED`. Browser closure or web deployment does not discard the queued job. The student sees visible details and only the hidden pass/total aggregate.
 7. Repeating the same request returns the same submission. Reloading after submission starts the next numbered attempt.
 8. Practical details explain autosave, languages, deadline, visible and hidden tests, permanent submission, and repeat attempts before coding begins. Submission results state that starting another attempt preserves the previous immutable submission.
 

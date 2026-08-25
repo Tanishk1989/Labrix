@@ -54,7 +54,7 @@ describe("student submission history view model", () => {
     expect(result.resultLabel).toBe("1 / 2 visible tests passed");
     expect(result.reviewLabel).toBe("Feedback available");
     expect(result.publishedMarks).toEqual({ awarded: 8, outOf: 10 });
-    expect(result.detailHref).toBe("/submissions/attempt-1");
+    expect(result.detailHref).toBe("/submissions/attempt-1?view=student");
     expect(result.practicalHref).toBe("/practicals/task-1");
     expect(JSON.stringify(result)).not.toContain("suggestedScore");
   });

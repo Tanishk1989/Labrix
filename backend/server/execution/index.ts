@@ -171,6 +171,7 @@ export function getServerExecutionProvider(
           "LABRIX_JAVA_RUNNER_URL",
         ),
         bearerToken,
+        executionMode: "java-docker-remote",
       });
     }
     return new CppHttpExecutionProvider({
@@ -179,6 +180,7 @@ export function getServerExecutionProvider(
         "LABRIX_CPP_RUNNER_URL",
       ),
       bearerToken,
+      executionMode: "cpp-docker-remote",
     });
   }
   throw new Error(`Unsupported LABRIX_EXECUTION_PROVIDER: ${mode}`);

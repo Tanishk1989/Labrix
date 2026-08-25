@@ -4,6 +4,16 @@ import type {
   ServerExecutionResult,
 } from "./provider";
 
+function hasObservableProgramOutput(sourceCode: string) {
+  const withoutComments = sourceCode
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/.*$/gm, " ");
+
+  return /\b(?:std::)?cout\b|\bprintf\s*\(|\bSystem\s*\.\s*out\s*\./.test(
+    withoutComments,
+  );
+}
+
 /** Deterministic simulation. It never compiles or executes student source. */
 export class ServerMockExecutionProvider implements ServerExecutionProvider {
   readonly executionMode = "simulated" as const;
@@ -37,12 +47,17 @@ export class ServerMockExecutionProvider implements ServerExecutionProvider {
       };
     }
 
-    const shouldFail = code.includes("fail_test");
+    // Simulation cannot establish correctness. At minimum, reject starter-like
+    // programs that have no observable output instead of returning a false pass.
+    const hasRequestedFailure = code.includes("fail_test");
+    const isOutputFreeStarter = !hasObservableProgramOutput(request.sourceCode);
     const testResults = request.tests.map((test, index) => ({
       testId: test.id,
-      passed: !shouldFail || index === 0,
+      passed: !isOutputFreeStarter && (!hasRequestedFailure || index === 0),
       actualOutput:
-        !shouldFail || index === 0 ? test.expectedOutput : "0",
+        !isOutputFreeStarter && (!hasRequestedFailure || index === 0)
+          ? test.expectedOutput
+          : "0",
       visibility: test.visibility,
     }));
 

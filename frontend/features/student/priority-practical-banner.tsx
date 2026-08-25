@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, Sparkles, X, Zap } from "lucide-react";
+import { AlertTriangle, ArrowRight, Clock, Sparkles, X, Zap } from "lucide-react";
 import type { StudentDashboardPractical } from "./student-dashboard-view-model";
 
 export function PriorityPracticalBanner({
@@ -13,6 +13,7 @@ export function PriorityPracticalBanner({
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed || !practical) return null;
+  const overdue = practical.statusLabel === "Overdue";
 
   return (
     <div
@@ -37,8 +38,8 @@ export function PriorityPracticalBanner({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 shadow-sm">
-                <Sparkles size={11} />
-                New Practical Assigned
+                {overdue ? <AlertTriangle size={11} /> : <Sparkles size={11} />}
+                {overdue ? "Overdue practical" : "Practical assigned"}
               </span>
               <span className="text-xs font-semibold text-white/50">
                 {practical.classroomName}
@@ -52,7 +53,9 @@ export function PriorityPracticalBanner({
             <p className="mt-1 text-xs text-white/60 flex items-center gap-2">
               <Clock size={12} className="text-white/40" />
               <span>
-                {practical.deadline ? `Due ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(practical.deadline))}` : "No strict deadline"}
+                {practical.deadline
+                  ? `${overdue ? "Overdue since" : "Due"} ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(practical.deadline))}`
+                  : "No strict deadline"}
               </span>
               <span>·</span>
               <span className="text-[var(--color-brand)] font-medium">Auto-Graded Test Cases Configured</span>

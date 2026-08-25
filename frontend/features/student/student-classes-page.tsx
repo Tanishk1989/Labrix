@@ -17,6 +17,7 @@ function deadlineLabel(value: string) {
 }
 
 function ClassWorkspace({ classroom }: { classroom: StudentClassWorkspace }) {
+  const nextWorkOverdue = classroom.nextWork?.statusLabel === "Overdue";
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm transition-all hover:border-[var(--border-strong)] hover:bg-[var(--surface-elevated)] sm:p-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -75,14 +76,14 @@ function ClassWorkspace({ classroom }: { classroom: StudentClassWorkspace }) {
             <p className="eyebrow">Next</p>
             <div className="mt-2 flex flex-wrap items-center gap-2.5">
               <h3 className="break-words text-sm font-semibold text-[var(--text-primary)]">{classroom.nextWork.title}</h3>
-              <StatusBadge tone={classroom.nextWork.statusLabel === "In progress" ? "warning" : "published"}>
+              <StatusBadge tone={nextWorkOverdue ? "danger" : classroom.nextWork.statusLabel === "In progress" ? "warning" : "published"}>
                 {classroom.nextWork.statusLabel}
               </StatusBadge>
             </div>
-            <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+            <p className={`mt-2 inline-flex items-center gap-1.5 text-xs ${nextWorkOverdue ? "text-rose-300" : "text-[var(--text-secondary)]"}`}>
               <Clock3 size={13} aria-hidden="true" />
               {classroom.nextWork.deadline ? (
-                <time dateTime={classroom.nextWork.deadline}>Due {deadlineLabel(classroom.nextWork.deadline)}</time>
+                <time dateTime={classroom.nextWork.deadline}>{nextWorkOverdue ? "Overdue since" : "Due"} {deadlineLabel(classroom.nextWork.deadline)}</time>
               ) : "No deadline"}
             </p>
           </div>

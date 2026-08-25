@@ -3,6 +3,7 @@ import type {
   ServerExecutionRequest,
   ServerExecutionResult,
 } from "./provider";
+import type { ExecutionMode } from "@/domain/execution/execution-mode";
 import {
   CPP_RUNNER_HTTP_TIMEOUT_MS,
   CPP_RUNNER_MAX_TESTS,
@@ -19,6 +20,7 @@ type FetchImplementation = typeof fetch;
 interface CppHttpExecutionProviderOptions {
   endpoint: string;
   bearerToken?: string;
+  executionMode?: Extract<ExecutionMode, "cpp-docker-local" | "cpp-docker-remote">;
   fetchImplementation?: FetchImplementation;
   requestTimeoutMs?: number;
 }
@@ -121,7 +123,7 @@ async function readBoundedResponse(response: Response) {
  * It never invokes C++, Docker, or a child process inside Next.js.
  */
 export class CppHttpExecutionProvider implements ServerExecutionProvider {
-  readonly executionMode = "cpp-docker-local" as const;
+  readonly executionMode: Extract<ExecutionMode, "cpp-docker-local" | "cpp-docker-remote">;
 
   private readonly endpoint: string;
   private readonly bearerToken?: string;
@@ -129,6 +131,7 @@ export class CppHttpExecutionProvider implements ServerExecutionProvider {
   private readonly requestTimeoutMs: number;
 
   constructor(options: CppHttpExecutionProviderOptions) {
+    this.executionMode = options.executionMode ?? "cpp-docker-local";
     this.endpoint = options.endpoint;
     this.bearerToken = options.bearerToken;
     this.fetchImplementation = options.fetchImplementation ?? fetch;

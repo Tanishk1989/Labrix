@@ -76,6 +76,39 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      runner-internal:
+        aliases:
+          - ${JAVA_RUNNER_DOMAIN:?Set the Java runner hostname}
+          - ${CPP_RUNNER_DOMAIN:?Set the C++ runner hostname}
+
+  execution-worker:
+    build:
+      context: ../..
+      dockerfile: deployment/runner/Dockerfile
+    command: ["node_modules/.bin/tsx", "backend/worker/execution-worker.ts"]
+    restart: unless-stopped
+    depends_on:
+      java-runner:
+        condition: service_healthy
+      cpp-runner:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set the pooled production database URL}
+      LABRIX_EXECUTION_PROVIDER: remote-docker
+      LABRIX_JAVA_RUNNER_URL: https://${JAVA_RUNNER_DOMAIN:?Set the Java runner hostname}/v1/execute/java
+      LABRIX_CPP_RUNNER_URL: https://${CPP_RUNNER_DOMAIN:?Set the C++ runner hostname}/v1/execute/cpp
+      LABRIX_RUNNER_BEARER_TOKEN: ${LABRIX_RUNNER_BEARER_TOKEN:?Set a 32+ character runner token}
+      EXECUTION_WORKER_CONCURRENCY: ${EXECUTION_WORKER_CONCURRENCY:-8}
+      EXECUTION_WORKER_POLL_MS: ${EXECUTION_WORKER_POLL_MS:-500}
+      EXECUTION_JOB_LEASE_MS: ${EXECUTION_JOB_LEASE_MS:-120000}
+      EXECUTION_JOB_MAX_ATTEMPTS: ${EXECUTION_JOB_MAX_ATTEMPTS:-3}
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid,nodev
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     networks: [runner-internal]
 
 networks:

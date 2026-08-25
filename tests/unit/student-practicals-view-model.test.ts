@@ -178,7 +178,7 @@ describe("student practical detail", () => {
 
     expect(view.latestSubmission).toMatchObject({
       feedbackAvailable: true,
-      href: "/submissions/submission-1",
+      href: "/submissions/submission-1?view=student",
     });
   });
 });

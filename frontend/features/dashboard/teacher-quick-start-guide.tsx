@@ -21,6 +21,7 @@ export function TeacherQuickStartGuide({
 }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const hasClassroom = overview.classrooms.length > 0;
   const hasStudents = overview.summary.distinctStudentCount > 0;
@@ -47,6 +48,33 @@ export function TeacherQuickStartGuide({
       setCopiedCode(code);
       setTimeout(() => setCopiedCode(null), 2500);
     }
+  }
+
+  if (allCompleted && !isExpanded) {
+    return (
+      <section
+        aria-labelledby="quickstart-heading"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 shadow-[var(--shadow-card)] sm:px-5"
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-emerald-400/10 text-emerald-300">
+            <CheckCircle2 size={14} aria-hidden="true" />
+          </span>
+          <div>
+            <h2 id="quickstart-heading" className="text-sm font-semibold text-[var(--text-primary)]">TRACE setup complete</h2>
+            <p className="text-xs text-[var(--text-secondary)]">Classroom, students, and published practicals are ready.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" className="button-secondary min-h-8 px-3 text-xs" onClick={() => setIsExpanded(true)}>
+            View setup details
+          </button>
+          <button type="button" className="icon-button size-8 min-h-8 min-w-8" onClick={() => setIsDismissed(true)} aria-label="Dismiss getting started guide">
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (

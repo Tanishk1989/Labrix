@@ -6,6 +6,11 @@ import {
   resolveCurrentActor,
 } from "@/server/actors/current-actor";
 import {
+  configuredExecutionDispatchMode,
+  enqueueStudentRun,
+  enqueueStudentSubmission,
+  ExecutionAlreadyQueuedError,
+  getStudentExecutionJob,
   runStudentDraft,
   saveStudentDraft,
   submitStudentDraft,
@@ -13,7 +18,7 @@ import {
 } from "@/server/attempts/service";
 import { ExecutionRequestGuardError } from "@/server/execution/request-guard";
 import { CLASSROOM_MANAGEMENT_CACHE_TAG } from "@/server/teacher/cache-tags";
-import { draftInputSchema, submissionInputSchema } from "./input-schema";
+import { draftInputSchema, executionJobInputSchema, submissionInputSchema } from "./input-schema";
 
 export async function saveDraftAction(input: unknown) {
   const parsed = draftInputSchema.safeParse(input);
@@ -45,10 +50,14 @@ export async function runDraftAction(input: unknown) {
       await resolveCurrentActor({ demoActor: "student" }),
       "STUDENT",
     );
+    if (configuredExecutionDispatchMode() === "queued") {
+      const job = await enqueueStudentRun({ studentId: actor.id, ...parsed.data });
+      return { ok: true as const, queued: true as const, job };
+    }
     const run = await runStudentDraft({ studentId: actor.id, ...parsed.data });
-    return { ok: true as const, run };
+    return { ok: true as const, queued: false as const, run };
   } catch (error) {
-    if (error instanceof ExecutionRequestGuardError) {
+    if (error instanceof ExecutionRequestGuardError || error instanceof ExecutionAlreadyQueuedError) {
       return { ok: false as const, message: error.message };
     }
     return {
@@ -68,22 +77,41 @@ export async function submitDraftAction(input: unknown) {
       await resolveCurrentActor({ demoActor: "student" }),
       "STUDENT",
     );
-    const submission = await submitStudentDraft({
-      studentId: actor.id,
-      ...parsed.data,
-    });
+    if (configuredExecutionDispatchMode() === "queued") {
+      const job = await enqueueStudentSubmission({ studentId: actor.id, ...parsed.data });
+      return { ok: true as const, queued: true as const, job };
+    }
+    const submission = await submitStudentDraft({ studentId: actor.id, ...parsed.data });
     updateTag(CLASSROOM_MANAGEMENT_CACHE_TAG);
-    return { ok: true as const, submission };
+    return { ok: true as const, queued: false as const, submission };
   } catch (error) {
     if (error instanceof SubmissionDeadlineError) {
       return { ok: false as const, message: error.message };
     }
-    if (error instanceof ExecutionRequestGuardError) {
+    if (error instanceof ExecutionRequestGuardError || error instanceof ExecutionAlreadyQueuedError) {
       return { ok: false as const, message: error.message };
     }
     return {
       ok: false as const,
       message: "The submission was not created. Your saved draft is unchanged.",
     };
+  }
+}
+
+export async function executionJobStatusAction(input: unknown) {
+  const parsed = executionJobInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false as const, message: "Invalid execution job." };
+  try {
+    const actor = requireActorRole(
+      await resolveCurrentActor({ demoActor: "student" }),
+      "STUDENT",
+    );
+    const job = await getStudentExecutionJob(actor.id, parsed.data.jobId);
+    if (job.status === "COMPLETED" && job.kind === "SUBMIT") {
+      updateTag(CLASSROOM_MANAGEMENT_CACHE_TAG);
+    }
+    return { ok: true as const, job };
+  } catch {
+    return { ok: false as const, message: "Execution status could not be loaded." };
   }
 }

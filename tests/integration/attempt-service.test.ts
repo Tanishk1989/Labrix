@@ -4,9 +4,14 @@ import { prisma } from "@/lib/db/prisma";
 import { getClassroomOverviewViewModel } from "@/features/classes/classroom-overview-view-model";
 import {
   getOrCreateStudentWorkspace,
+  claimNextExecutionJob,
+  enqueueStudentRun,
+  enqueueStudentSubmission,
+  getStudentExecutionJob,
   getSubmissionForStudent,
   getSubmissionForTeacher,
   runStudentDraft,
+  processClaimedExecutionJob,
   saveStudentDraft,
   submitStudentDraft,
 } from "@/server/attempts/service";
@@ -322,6 +327,39 @@ describe.sequential("persisted student-attempt service", () => {
         data: { sourceCodeSnapshot: "changed" },
       }),
     ).rejects.toThrow(/immutable Labrix record/);
+  });
+
+  it("durably queues and completes run and submission jobs", async () => {
+    const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
+    const queuedRun = await enqueueStudentRun({
+      studentId,
+      sessionId: workspace.session.id,
+      language: "JAVA",
+      sourceCode: "public class Main {}",
+    });
+    expect(queuedRun.status).toBe("QUEUED");
+    expect(queuedRun.queuePosition).toBeGreaterThan(0);
+
+    const claimedRun = await claimNextExecutionJob("integration-worker:1");
+    expect(claimedRun?.id).toBe(queuedRun.id);
+    await processClaimedExecutionJob(claimedRun!, passingProvider);
+    const completedRun = await getStudentExecutionJob(studentId, queuedRun.id);
+    expect(completedRun.status).toBe("COMPLETED");
+    expect(completedRun.run?.visibleTotalTests).toBe(1);
+
+    const queuedSubmission = await enqueueStudentSubmission({
+      studentId,
+      sessionId: workspace.session.id,
+      language: "JAVA",
+      sourceCode: "public class Main {}",
+      idempotencyKey: randomUUID(),
+    });
+    const claimedSubmission = await claimNextExecutionJob("integration-worker:2");
+    expect(claimedSubmission?.id).toBe(queuedSubmission.id);
+    await processClaimedExecutionJob(claimedSubmission!, passingProvider);
+    const completedSubmission = await getStudentExecutionJob(studentId, queuedSubmission.id);
+    expect(completedSubmission.status).toBe("COMPLETED");
+    expect(completedSubmission.submission?.result.hiddenTotalTests).toBe(1);
   });
 
   it("rejects an expired submission before running hidden tests", async () => {

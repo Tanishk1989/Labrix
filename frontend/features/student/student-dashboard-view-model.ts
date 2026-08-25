@@ -6,6 +6,17 @@ export function hasActiveStudentSession(practical: StudentPractical) {
   return practical.latestSession?.status === "ACTIVE";
 }
 
+export function isStudentPracticalOverdue(
+  practical: Pick<StudentPractical, "deadline" | "latestSubmission">,
+  now = new Date(),
+) {
+  return Boolean(
+    practical.deadline &&
+    practical.latestSubmission === null &&
+    new Date(practical.deadline).getTime() < now.getTime(),
+  );
+}
+
 export function orderStudentActionablePracticals(
   practicals: StudentPractical[],
 ) {
@@ -30,7 +41,7 @@ export type StudentDashboardPractical = {
   classroomName: string;
   classroomSubject: string;
   deadline: string | null;
-  statusLabel: "In progress" | "Not started";
+  statusLabel: "Overdue" | "In progress" | "Not started";
   actionLabel: "Continue practical" | "Start practical";
   href: string;
 };
@@ -59,15 +70,16 @@ export type StudentDashboardViewModel = {
   recentSubmissions: StudentDashboardSubmission[];
 };
 
-function practicalRow(practical: StudentPractical): StudentDashboardPractical {
+function practicalRow(practical: StudentPractical, now: Date): StudentDashboardPractical {
   const inProgress = hasActiveStudentSession(practical);
+  const overdue = isStudentPracticalOverdue(practical, now);
   return {
     id: practical.id,
     title: practical.title,
     classroomName: practical.classroom.name,
     classroomSubject: practical.classroom.subject,
     deadline: practical.deadline,
-    statusLabel: inProgress ? "In progress" : "Not started",
+    statusLabel: overdue ? "Overdue" : inProgress ? "In progress" : "Not started",
     actionLabel: inProgress ? "Continue practical" : "Start practical",
     href: `/tasks/${practical.id}`,
   };
@@ -100,9 +112,10 @@ function submissionResult(state: string, passed: number, total: number) {
  */
 export function buildStudentDashboardViewModel(
   overview: StudentOverview,
+  now = new Date(),
 ): StudentDashboardViewModel {
   const actionable = orderStudentActionablePracticals(overview.practicals)
-    .map(practicalRow);
+    .map((practical) => practicalRow(practical, now));
 
   const recentSubmissions = [...overview.submissions]
     .sort((left, right) => (
@@ -170,10 +183,14 @@ export function buildStudentDashboardViewModel(
 
   return {
     state: "ACTIONABLE",
-    headline: actionable[0].statusLabel === "In progress"
-      ? "Continue where you left off."
-      : "Ready to code?",
-    description: `${actionable.length} ${actionable.length === 1 ? "practical is" : "practicals are"} waiting for submission.`,
+    headline: actionable[0].statusLabel === "Overdue"
+      ? "An overdue practical needs attention."
+      : actionable[0].statusLabel === "In progress"
+        ? "Continue where you left off."
+        : "Ready to code?",
+    description: actionable[0].statusLabel === "Overdue"
+      ? `${actionable.length} ${actionable.length === 1 ? "practical is" : "practicals are"} still awaiting submission. Check your teacher’s late-work policy.`
+      : `${actionable.length} ${actionable.length === 1 ? "practical is" : "practicals are"} waiting for submission.`,
     nextUp: actionable[0],
     upcoming: actionable.slice(1),
     progress,

@@ -140,7 +140,7 @@ export function buildStudentPracticalDetailViewModel(practical: StudentPractical
           passedTests: latest.passedTests,
           totalTests: latest.totalTests,
           feedbackAvailable: latest.feedbackAvailable,
-          href: `/submissions/${latest.id}`,
+          href: `/submissions/${latest.id}?view=student`,
         }
       : null,
   };

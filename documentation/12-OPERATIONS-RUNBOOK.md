@@ -7,6 +7,8 @@ This runbook is the minimum operating procedure for a real class. Do not open en
 - `GET /api/health` must return HTTP 200 and `status: healthy`.
 - A 503 means the database, required configuration, or either production runner is unavailable. Stop new submissions and investigate; do not route around this check.
 - Java and C++ workers expose `GET /healthz`. Keep worker ports private and expose execution endpoints only through an HTTPS reverse proxy.
+- Production health must report at least one recent execution-worker heartbeat and nonzero queue capacity. Zero workers is a 503 even when both compiler endpoints answer.
+- Alert when the oldest queued job exceeds 45 seconds, any job remains running beyond its lease, or failed-job count increases.
 - Alert after two consecutive health failures or when database latency remains above 500 ms for five minutes.
 
 ## Backup schedule

@@ -82,4 +82,28 @@ public class Solution {
     expect(result.codeInsights.detectedFunctions).toContain("searchTarget");
     expect(result.codeInsights.estimatedComplexity).toContain("O(log N)");
   });
+
+  it("does not praise or invent structures for a failing Java wrapper", () => {
+    const result = generateVivaDefense({
+      sourceCode: "public class Main { public static void main(String[] args) { System.out.println(\"working\") } }",
+      language: "JAVA",
+      taskTitle: "Array Sum",
+      testPassRatio: { passed: 0, total: 3 },
+    });
+
+    expect(result.codeInsights.detectedDataStructures).toEqual([]);
+    expect(result.feedbackDraft).toContain("did not pass (0/3 tests)");
+    expect(result.feedbackDraft).not.toContain("Strong implementation");
+    expect(result.questions.map((question) => question.question).join(" ")).not.toContain("main logic routine");
+  });
+
+  it("does not treat sequential loops as nested quadratic work", () => {
+    const result = generateVivaDefense({
+      sourceCode: "for (int value : values) { read(value); } for (int i = 0; i < n; i++) { seen[values[i]] = i; }",
+      language: "CPP",
+      taskTitle: "Array Sum",
+    });
+
+    expect(result.codeInsights.estimatedComplexity).toBe("O(N) Linear Time");
+  });
 });

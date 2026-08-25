@@ -251,12 +251,12 @@ export class RedisRateLimiterStore implements RateLimiterStore {
 }
 
 // Global default store instance
+const upstashRestUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const upstashRestToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const defaultStore: RateLimiterStore =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new UpstashRateLimiterStore(
-        process.env.UPSTASH_REDIS_REST_URL,
-        process.env.UPSTASH_REDIS_REST_TOKEN,
-      )
+  upstashRestUrl && upstashRestToken
+    ? new UpstashRateLimiterStore(upstashRestUrl, upstashRestToken)
     : process.env.REDIS_URL
       ? new RedisRateLimiterStore(process.env.REDIS_URL)
       : new MemoryRateLimiterStore();

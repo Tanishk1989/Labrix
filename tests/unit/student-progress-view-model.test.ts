@@ -132,7 +132,7 @@ describe("student progress view model", () => {
     expect(view.classes[0].practicals.map((item) => [item.actionLabel, item.actionHref])).toEqual([
       ["Start practical", "/tasks/task-1"],
       ["Continue practical", "/tasks/task-1"],
-      ["View submission", "/submissions/submission-1"],
+      ["View submission", "/submissions/submission-1?view=student"],
     ]);
   });
 

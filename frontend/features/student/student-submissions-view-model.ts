@@ -25,7 +25,7 @@ export function createStudentSubmissionHistoryViewModel(overview: StudentOvervie
       resultLabel: resultLabel(submission),
       languageLabel: submission.language === "CPP" ? "C++" : "Java",
       reviewLabel: submission.feedbackAvailable ? "Feedback available" : "Teacher review pending",
-      detailHref: `/submissions/${submission.id}`,
+      detailHref: `/submissions/${submission.id}?view=student`,
       practicalHref: `/practicals/${submission.practical.id}`,
     }));
 }

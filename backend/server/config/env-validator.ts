@@ -63,15 +63,16 @@ export function validateEnvironment(): EnvValidationResult {
   }
 
   // 4. Rate Limiting
-  const upstashRateLimiting = Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
+  const upstashRestUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const upstashRestToken =
+    process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const upstashRateLimiting = Boolean(upstashRestUrl && upstashRestToken);
   if (isProduction && !isSupervisedLocalDemo && !upstashRateLimiting) {
-    if (!process.env.UPSTASH_REDIS_REST_URL) {
-      missingRequired.push("UPSTASH_REDIS_REST_URL");
+    if (!upstashRestUrl) {
+      missingRequired.push("UPSTASH_REDIS_REST_URL or KV_REST_API_URL");
     }
-    if (!process.env.UPSTASH_REDIS_REST_TOKEN) {
-      missingRequired.push("UPSTASH_REDIS_REST_TOKEN");
+    if (!upstashRestToken) {
+      missingRequired.push("UPSTASH_REDIS_REST_TOKEN or KV_REST_API_TOKEN");
     }
   }
   if (isSupervisedLocalDemo && !upstashRateLimiting) {
@@ -79,6 +80,9 @@ export function validateEnvironment(): EnvValidationResult {
   }
 
   // 5. Runner Configuration
+  if (isProduction && !isSupervisedLocalDemo && process.env.LABRIX_EXECUTION_DISPATCH !== "queued") {
+    missingRequired.push("LABRIX_EXECUTION_DISPATCH=queued");
+  }
   const configuredExecutionProvider = process.env.LABRIX_EXECUTION_PROVIDER;
   const supportedExecutionProvider = isProduction
     ? configuredExecutionProvider === "remote-docker" ||
