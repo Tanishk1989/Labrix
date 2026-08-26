@@ -5,14 +5,14 @@ loadEnvConfig(process.cwd());
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app https://challenges.cloudflare.com https://*.protect.clerk.com;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' data: blob: https://img.clerk.com https://images.clerk.dev;
-  connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app https://api.groq.com https://generativelanguage.googleapis.com;
+  connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app https://*.protect.clerk.com:* https://api.groq.com https://generativelanguage.googleapis.com;
   frame-ancestors 'self';
-  frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;
+  frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://*.protect.clerk.com;
   form-action 'self' https://*.clerk.accounts.dev https://*.clerk.com https://accounts.google.com https://github.com;
   base-uri 'self';
 `.replace(/\s{2,}/g, ' ').trim();
