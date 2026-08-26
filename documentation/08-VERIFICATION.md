@@ -1,6 +1,6 @@
 # Verification workflow
 
-Labrix separates fast checks from database-mutating verification. Unit tests and static checks are safe on any checkout; integration and full browser tests require a disposable PostgreSQL database that is not the configured development/demo database.
+TRACE separates fast checks from database-mutating verification. Unit tests and static checks are safe on any checkout; integration and full browser tests require a disposable PostgreSQL database that is not the configured development/demo database.
 
 ## Verification matrix
 
@@ -22,7 +22,7 @@ Labrix separates fast checks from database-mutating verification. Unit tests and
 
 ## Disposable database setup
 
-1. Create a temporary local PostgreSQL database or a disposable Neon branch. Do not reuse the normal Labrix demo/development database.
+1. Create a temporary local PostgreSQL database or a disposable Neon branch. Do not reuse the normal TRACE demo/development database.
 2. Put only these local values in ignored `.env.test.local`, or export them in the current shell:
 
    ```dotenv
@@ -70,7 +70,7 @@ npm run runner:cpp:pull
 npm run test:runner:cpp
 ```
 
-The suite starts the C++ worker on an ephemeral loopback port and verifies compile-once success across ordered visible/hidden inputs, compiler failure, non-zero native exit, timeout, fixed-limit validation, and single-flight rejection. It does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or run Playwright. Workspace/persistence acceptance is not part of Phase 16B.
+The suite starts the C++ worker on an ephemeral loopback port and verifies compile-once success across ordered visible/hidden inputs, compiler failure, non-zero native exit, timeout, fixed-limit validation, and single-flight rejection. It does not load Prisma, connect to PostgreSQL, mutate TRACE data, start Next.js, or run Playwright. Workspace/persistence acceptance is not part of Phase 16B.
 
 ## Local C++ workspace acceptance
 

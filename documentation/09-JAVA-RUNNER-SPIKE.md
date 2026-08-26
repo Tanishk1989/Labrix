@@ -30,7 +30,7 @@ npm run runner:java
 
 The service listens only on `http://127.0.0.1:4010`. Its execution endpoint is `/v1/execute/java`, and `GET /healthz` provides a non-executing local health check.
 
-Keep ordinary Labrix behavior with the default:
+Keep ordinary TRACE behavior with the default:
 
 ```dotenv
 LABRIX_EXECUTION_PROVIDER=mock
@@ -112,7 +112,7 @@ This suite starts the worker on an ephemeral loopback port and verifies through 
 5. altered safety limits rejected before Docker is contacted;
 6. a concurrent execution rejected instead of queued or run in parallel.
 
-The suite does not load Prisma, connect to PostgreSQL, or mutate Labrix data. Adapter unit tests remain separate and do not substitute for this container-backed proof.
+The suite does not load Prisma, connect to PostgreSQL, or mutate TRACE data. Adapter unit tests remain separate and do not substitute for this container-backed proof.
 
 ## Workspace acceptance
 

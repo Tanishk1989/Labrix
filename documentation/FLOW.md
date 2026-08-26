@@ -1,4 +1,4 @@
-# Labrix System Flow
+# TRACE System Flow
 
 This describes the behavior present in the repository. “Practical” is represented by the Prisma `Task` model. “Execution” means the configured provider; it is simulated by default.
 

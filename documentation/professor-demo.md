@@ -1,10 +1,10 @@
-# Labrix professor demonstration
+# TRACE professor demonstration
 
 > This walkthrough uses a deterministic, fictional semester scenario. Seeded attempts and feedback are sample records for evaluation; new **Run** actions use local Docker workers when the app is started with `demo:real`.
 
 ## Opening
 
-“Labrix is a teacher-first coding lab platform. It connects practical authoring, real code execution, immutable attempts, progress evidence, and teacher feedback in one workflow.”
+“TRACE is a teacher-first coding lab platform. It connects practical authoring, real code execution, immutable attempts, progress evidence, and teacher feedback in one workflow.”
 
 ## Before the demonstration
 
@@ -42,7 +42,7 @@ The fictional class is **BTech CSE · Semester III · Section A**, taught by **D
 
 ## Closing
 
-“Unlike a generic online compiler, Labrix preserves the teaching workflow: classroom, practical, coding session, execution feedback, immutable submission, evidence, and teacher review.”
+“Unlike a generic online compiler, TRACE preserves the teaching workflow: classroom, practical, coding session, execution feedback, immutable submission, evidence, and teacher review.”
 
 ## Recovery
 

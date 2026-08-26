@@ -1,6 +1,6 @@
-# TRACE / Labrix production deployment guide
+# TRACE production deployment guide
 
-This guide provides step-by-step instructions to deploy TRACE / Labrix to production on modern cloud infrastructure (Vercel / Railway + Neon PostgreSQL + Clerk + Groq).
+This guide provides step-by-step instructions to deploy TRACE to production on modern cloud infrastructure (Vercel / Railway + Neon PostgreSQL + Clerk + Groq).
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Provider classes
 
-Labrix currently has three selectable execution modes:
+TRACE currently has three selectable execution modes:
 
 | Configuration | Purpose | Production status |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=true
 
 Any missing value, alternate casing, or other value is rejected. This flag records operator acknowledgment only; it does not certify the worker as production-ready. Production deployments should leave the provider unset/`mock` until a separately approved production provider exists.
 
-The guard is evaluated server-side whenever Labrix resolves the configured execution provider, including workspace loading and Run/Submit service entry. Errors begin with `Invalid execution provider configuration` and identify the rejected provider or variable. Provider selection never falls back silently.
+The guard is evaluated server-side whenever TRACE resolves the configured execution provider, including workspace loading and Run/Submit service entry. Errors begin with `Invalid execution provider configuration` and identify the rejected provider or variable. Provider selection never falls back silently.
 
 ## Local URL boundary
 

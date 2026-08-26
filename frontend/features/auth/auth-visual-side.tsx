@@ -32,7 +32,7 @@ export function AuthVisualSide() {
             <TraceMark size={22} />
           </div>
           <span className="text-2xl font-bold tracking-tight text-white font-sans">
-            TRACE<span className="ml-1 text-xs font-mono font-medium tracking-widest text-indigo-400 uppercase">Lab OS</span>
+            TRACE
           </span>
         </Link>
       </div>

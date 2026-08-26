@@ -20,7 +20,7 @@ Canonical product, MVP, flow, architecture, evidence/AI, contribution, and decis
 ## Phase 2A — authentication architecture decision
 
 - Clerk proves identity and session validity.
-- Labrix PostgreSQL owns role, status, ownership, membership, and permissions.
+- TRACE PostgreSQL owns role, status, ownership, membership, and permissions.
 - Verified email/password is the first sign-in method; students self-register, while teachers are provisioned by an administrator or invitation process.
 
 **Status:** decision complete. Clerk integration status is tracked in the Phase 2B slices below.

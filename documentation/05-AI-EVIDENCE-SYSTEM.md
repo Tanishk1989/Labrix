@@ -4,7 +4,7 @@ Five foundation events are **implemented**: `SESSION_STARTED`, `DRAFT_SAVED`, `R
 
 ## Purpose and boundary
 
-Labrix should help a teacher understand a coding process and decide what to inspect or ask. It must not infer guilt, produce a cheating verdict, or make an academic decision automatically.
+TRACE should help a teacher understand a coding process and decide what to inspect or ask. It must not infer guilt, produce a cheating verdict, or make an academic decision automatically.
 
 Copy/paste remains available. A paste can be ordinary and legitimate; at most, approved metadata becomes one contextual fact among many.
 

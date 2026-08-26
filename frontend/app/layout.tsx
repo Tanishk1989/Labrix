@@ -22,7 +22,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "TRACE | Lab OS",
+    default: "TRACE",
     template: "%s · TRACE",
   },
   description:
@@ -49,6 +49,20 @@ export default function RootLayout({
           dividerRow: { display: "none" },
         },
       };
+  const clerkLocalization = {
+    signIn: {
+      start: {
+        title: "Sign in to TRACE",
+        titleCombined: "Continue to TRACE",
+      },
+    },
+    signUp: {
+      start: {
+        title: "Create your TRACE account",
+        titleCombined: "Create your TRACE account",
+      },
+    },
+  };
   const content = (
     <ThemeProvider>
       <IdentityModeProvider mode={mode}>
@@ -69,6 +83,7 @@ export default function RootLayout({
             signInFallbackRedirectUrl="/dashboard"
             signUpFallbackRedirectUrl="/dashboard"
             appearance={clerkAppearance as never}
+            localization={clerkLocalization}
           >
             {content}
           </ClerkProvider>

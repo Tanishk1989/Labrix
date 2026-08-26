@@ -14,7 +14,7 @@ export interface EnvValidationResult {
 }
 
 /**
- * Validates the runtime environment for TRACE / Labrix.
+ * Validates the runtime environment for TRACE.
  * Enforces production security invariants while maintaining smooth development defaults.
  */
 export function validateEnvironment(): EnvValidationResult {

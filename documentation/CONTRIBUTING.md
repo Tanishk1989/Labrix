@@ -1,6 +1,6 @@
 # Contributing
 
-Labrix uses a lightweight two-person workflow.
+TRACE uses a lightweight two-person workflow.
 
 1. **Issue or task:** describe the user problem, scope, product-status impact, dependencies, and exclusions. Link any unresolved decision in `documentation/07-DECISIONS.md`.
 2. **Review existing behavior:** read relevant user flows, architecture decisions, and current tests before changing code.

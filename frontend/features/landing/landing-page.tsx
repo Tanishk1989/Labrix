@@ -74,7 +74,7 @@ function LandingHeader() {
             <TraceMark size={19} />
           </span>
           <span className="text-sm font-semibold tracking-[-0.02em] text-white">
-            TRACE<span className="ml-1 font-mono text-[10px] font-medium tracking-[0.12em] text-white/60">LAB OS</span>
+            TRACE
           </span>
         </Link>
 

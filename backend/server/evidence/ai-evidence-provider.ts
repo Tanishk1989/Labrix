@@ -28,7 +28,7 @@ function buildPrompt(input: GenerateVivaInput): string {
       (input.topSimilarity.structuralSimilarityPercentage >= 75 ||
         input.topSimilarity.variableRenamingDetected));
 
-  return `You are the AI Academic Integrity & Viva Defense Assistant for TRACE/Labrix.
+  return `You are the AI Academic Integrity & Viva Defense Assistant for TRACE.
 Analyze the following student's submitted code and generate structured oral defense questions and constructive teacher feedback.
 
 TASK: "${input.taskTitle}"

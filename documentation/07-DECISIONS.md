@@ -6,11 +6,11 @@
 
 ### D-001 — Teacher-first workflow
 
-Labrix centers Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review.
+TRACE centers Classroom → Practical → Coding Session → Run/Feedback → Submission → Evidence → Teacher Review.
 
 ### D-002 — Evidence is not a verdict
 
-Labrix presents neutral, inspectable facts. It does not declare cheating, compute guilt, automate sanctions, or automatically block copy/paste.
+TRACE presents neutral, inspectable facts. It does not declare cheating, compute guilt, automate sanctions, or automatically block copy/paste.
 
 ### D-003 — Immutable attempts and persistent drafts
 
@@ -32,15 +32,15 @@ The MVP uses Next.js/React/TypeScript, Prisma/PostgreSQL, Monaco, Zod, Vitest, a
 
 Screen/webcam recording, gamification, mobile coding, cross-institution plagiarism, and automated guilt verdicts are outside the MVP.
 
-### D-008 — Clerk authentication with local Labrix authorization
+### D-008 — Clerk authentication with local TRACE authorization
 
-**Accepted 2026-08-09.** Clerk will prove identity and server-session validity only. Labrix PostgreSQL remains authoritative for platform role, `ACTIVE`/`DISABLED` account status, classroom ownership, membership, and product permissions. The server will map a Clerk subject through an optional provider-neutral `ExternalIdentity` record to an existing local `User`; email is not an authentication identity key and accounts are never linked automatically by matching email.
+**Accepted 2026-08-09.** Clerk will prove identity and server-session validity only. TRACE PostgreSQL remains authoritative for platform role, `ACTIVE`/`DISABLED` account status, classroom ownership, membership, and product permissions. The server will map a Clerk subject through an optional provider-neutral `ExternalIdentity` record to an existing local `User`; email is not an authentication identity key and accounts are never linked automatically by matching email.
 
 Initial authentication uses verified email and password with Clerk Hobby session defaults. Students may self-register locally as `STUDENT` and require a valid join code for classroom access. No browser role choice can grant `TEACHER`: a Clerk administrator assigns `public_metadata.role`, and the signed Clerk webhook creates or converts the local identity as an active teacher. User-editable unsafe metadata is ignored for authorization. Separate Clerk development and production instances are required. MFA and Clerk email invitations remain deferred. The fixed seeded demo resolver remains current during the transition and must be unavailable in production once authenticated resolution is implemented.
 
-### D-014 — Labrix is the canonical product name
+### D-014 — TRACE is the canonical product name
 
-**Accepted 2026-08-09.** Labrix is the only active product name. Pulse, CodePulse, and CodeClass are legacy names retained only in historical/migration context. Safe user-facing branding, package metadata, demo labels, seed labels, and storage prefixes use Labrix. Database tables, route parameters, environment variables, and unrelated technical identifiers are not renamed merely for branding.
+**Accepted 2026-08-09; amended 2026-08-26.** TRACE is the only active product name. Labrix, TRACE OS, TRACE Lab OS, Pulse, CodePulse, and CodeClass are legacy names retained only in historical or migration context. Safe user-facing branding, metadata, demo labels, and documentation use TRACE. Database names, storage keys, route parameters, environment variables, and unrelated technical identifiers are not renamed merely for branding because deployed infrastructure depends on them.
 
 ### D-016 — Persisted attempt model names and lifecycle
 
@@ -54,7 +54,7 @@ Initial authentication uses verified email and password with Clerk Hobby session
 
 **Accepted 2026-08-09; amended 2026-08-13.** `LABRIX_IDENTITY_MODE` must be explicitly `demo` or `clerk`; missing/invalid configuration fails, deployed production rejects `demo`, and Clerk failures never fall back. The supervised, loopback-bound professor-demo launcher may set the exact `LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD=true` acknowledgement solely to serve an optimized local Next.js build with seeded actors; the UI must identify that runtime as a local demo. This is not permission to deploy demo identity. In Clerk mode, the server-verified subject is mapped through `ExternalIdentity`, then PostgreSQL supplies account status and role. Existing service membership and ownership checks remain mandatory.
 
-Initial linking is a controlled non-public command using an existing Labrix user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated Labrix user. Automatic student onboarding and teacher provisioning require later accepted implementation work.
+Initial linking is a controlled non-public command using an existing TRACE user ID and verified Clerk subject. It never matches email, creates users, changes roles, or exposes a public linking endpoint. A signed-in but unlinked Clerk account is not an authenticated TRACE user. Automatic student onboarding and teacher provisioning require later accepted implementation work.
 
 ### D-019 — Attempt-scoped teacher review
 

@@ -1,10 +1,10 @@
-# Labrix product
+# TRACE product
 
 ## Purpose
 
-Labrix is a teacher-first, process-aware coding lab platform that captures the student’s coding journey and converts it into actionable evidence, feedback, and viva guidance for teachers.
+TRACE is a teacher-first, process-aware coding lab platform that captures the student’s coding journey and converts it into actionable evidence, feedback, and viva guidance for teachers.
 
-Pulse, CodePulse, and CodeClass are legacy names. Labrix is the only active product name.
+Labrix, TRACE OS, TRACE Lab OS, Pulse, CodePulse, and CodeClass are legacy names. TRACE is the only active product name.
 
 ## Core workflow
 
@@ -12,7 +12,7 @@ Pulse, CodePulse, and CodeClass are legacy names. Labrix is the only active prod
 
 - A teacher owns a classroom, publishes a practical, chooses languages, adds tests, and sets an optional deadline.
 - A student opens the practical, works in a persisted coding session, receives bounded run feedback, and creates an immutable submission attempt.
-- Labrix derives measurable process signals and presents evidence with context.
+- TRACE derives measurable process signals and presents evidence with context.
 - A teacher reviews the source, result snapshot, process evidence, and AI-assisted viva prompts, then exercises human judgment.
 
 ## Product principles

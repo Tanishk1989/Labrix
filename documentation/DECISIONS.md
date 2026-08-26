@@ -1,4 +1,4 @@
-# Labrix Engineering Decisions
+# TRACE Engineering Decisions
 
 This is a current-state decision record, not a future architecture proposal. It summarizes behavior verified in the repository. Historical rationale in `documentation/07-DECISIONS.md` is used only where the implementation still supports it.
 
@@ -8,11 +8,11 @@ Status: Accepted
 
 ### Context
 
-Labrix needs role-aware classroom pages, interactive coding UI, server-side authorization, persistence, and an execution boundary without maintaining a separate public application API.
+TRACE needs role-aware classroom pages, interactive coding UI, server-side authorization, persistence, and an execution boundary without maintaining a separate public application API.
 
 ### Decision
 
-Labrix uses Next.js 16 App Router and React 19. Server Components load persisted views; `"use server"` actions handle mutations. Server modules under `src/server` contain actor resolution, authorization-sensitive services, analytics, reviews, onboarding, and execution adapters. Client Components are limited to interactive UI such as Monaco, forms, dialogs, demo preview, and transient request state.
+TRACE uses Next.js 16 App Router and React 19. Server Components load persisted views; `"use server"` actions handle mutations. Server modules under `src/server` contain actor resolution, authorization-sensitive services, analytics, reviews, onboarding, and execution adapters. Client Components are limited to interactive UI such as Monaco, forms, dialogs, demo preview, and transient request state.
 
 There are no application `route.ts` HTTP endpoints. The only HTTP execution endpoint is in the separate local Java worker, not the Next.js application.
 
@@ -94,7 +94,7 @@ Status: Accepted
 
 ### Context
 
-External authentication proves who holds a session, but Labrix roles, account lifecycle, classroom ownership, and membership are application data.
+External authentication proves who holds a session, but TRACE roles, account lifecycle, classroom ownership, and membership are application data.
 
 ### Decision
 
@@ -116,7 +116,7 @@ This separates provider identity from product authorization and fails closed for
 ### Consequences
 
 - Clerk users require an explicit local mapping or successful student onboarding.
-- Controlled identity linking uses an existing Labrix user ID and verified Clerk subject; it does not create users or change roles.
+- Controlled identity linking uses an existing TRACE user ID and verified Clerk subject; it does not create users or change roles.
 - Clerk mode never falls back to demo identity.
 - Local `DISABLED` status blocks an otherwise valid external session.
 - Needs decision: administrator-controlled teacher provisioning and the production authentication security acceptance process are not implemented.
@@ -185,7 +185,7 @@ Status: Accepted
 
 ### Context
 
-A signed-in but unlinked Clerk account must not receive a Labrix role or access merely because its email is known.
+A signed-in but unlinked Clerk account must not receive a TRACE role or access merely because its email is known.
 
 ### Decision
 
@@ -422,7 +422,7 @@ Status: Accepted
 
 ### Context
 
-Labrix is intended to support teacher judgment without producing automated accusations or collecting invasive surveillance data.
+TRACE is intended to support teacher judgment without producing automated accusations or collecting invasive surveillance data.
 
 ### Decision
 

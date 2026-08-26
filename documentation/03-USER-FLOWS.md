@@ -17,7 +17,7 @@ flowchart LR
 
 1. The server resolves either the seeded demo teacher or an explicitly linked Clerk user whose local role is `TEACHER`.
 2. The teacher creates a practical with student-facing instructions, available languages, per-language starter code, optional visible/hidden automated tests, a marking setup, and an optional deadline. The form explains that automated results may suggest a score while teachers award final marks, summarizes the device-local deadline in readable language, and serializes it as an absolute instant before the server action.
-3. Labrix validates teacher ownership before saving a draft or publishing.
+3. TRACE validates teacher ownership before saving a draft or publishing.
 
 **Status:** persisted for the demo teacher and approved Clerk teachers. A Clerk teacher role creates a pending local request, emails the configured administrator, and remains blocked until signed-link approval. Complete practical management remains planned.
 
@@ -26,7 +26,7 @@ flowchart LR
 The Practicals page separates `To do`, `In progress`, `Submitted`, and `Feedback available`. These states describe the student workflow, while test outcomes and teacher review remain separate.
 
 1. The server resolves either the seeded demo student or an explicitly linked Clerk user whose local role is `STUDENT`, then verifies active classroom membership.
-2. Labrix loads the existing active draft unchanged, or creates the first draft from the practical's starter code for the initial allowed language.
+2. TRACE loads the existing active draft unchanged, or creates the first draft from the practical's starter code for the initial allowed language.
 3. Monaco edits autosave through a server action. Initial hydration and identical source/language versions are no-ops; actual edits show Saving, Saved, or Save failed and retain the browser buffer on failure.
 4. Before the first save, switching language replaces an untouched default template with the matching language template. Edited or previously persisted source is retained.
 5. Run saves the current draft and records a durable request. Local development may execute inline through the mock provider; production displays queue position while the Google Cloud worker evaluates visible tests and stores the result snapshot.
@@ -58,7 +58,7 @@ The Practicals page separates `To do`, `In progress`, `Submitted`, and `Feedback
 3. `Deactivate access` changes only `ClassMembership.active`; it does not delete the user, drafts, runs, submissions, results, events, or reviews.
 4. Student classroom and published-practical access immediately fails because every student read/action requires an active membership.
 5. `Reactivate access` is owner-only and changes the same membership row back to active, restoring classroom and practical access without duplicating or rewriting history.
-6. An inactive existing member cannot self-reactivate with a join code; Labrix directs the student to ask the classroom teacher.
+6. An inactive existing member cannot self-reactivate with a join code; TRACE directs the student to ask the classroom teacher.
 7. Each successful deactivation or reactivation atomically records the classroom, membership, student, acting teacher, action, and server timestamp in a teacher-only audit trail.
 8. Regenerating the unique join code invalidates the previous code without changing existing memberships or historical work.
 
@@ -68,9 +68,9 @@ The Practicals page separates `To do`, `In progress`, `Submitted`, and `Feedback
 
 **Current:** `LABRIX_IDENTITY_MODE` explicitly selects `demo` or `clerk`. Demo mode resolves fixed seeded actors and is rejected in deployed production. A supervised loopback-only professor-demo launcher may use the exact production-build acknowledgement solely to remove development UI from a local evaluation; it remains visibly labeled as a demo. **Preview as teacher/student** appears only on routes that render both seeded views and never changes authentication, authorization, or the actor used by role-specific actions. Clerk mode validates the server session, maps its subject through `ExternalIdentity`, denies disabled and pending-teacher accounts, enforces local role, then applies the existing membership/ownership checks. Browser-supplied user IDs and roles are ignored.
 
-**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated Labrix user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
+**Unlinked sign-up:** a valid new Clerk account reaches the unlinked-account state. It is not an authenticated TRACE user and receives no role or classroom access. Automatic student creation and join-code onboarding are planned.
 
-**Explicit local verification:** an administrator runs the non-public linking command with an existing Labrix user ID and verified Clerk subject. The command does not match email, create users, change roles, or create teachers.
+**Explicit local verification:** an administrator runs the non-public linking command with an existing TRACE user ID and verified Clerk subject. The command does not match email, create users, change roles, or create teachers.
 
 ## Failure and security behavior
 

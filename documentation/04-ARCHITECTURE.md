@@ -2,7 +2,7 @@
 
 ## Current vertical slice
 
-Labrix uses Next.js 16.3 App Router, React 19.2, strict TypeScript, Prisma 6/PostgreSQL, Monaco, Zod, Vitest, and Playwright.
+TRACE uses Next.js 16.3 App Router, React 19.2, strict TypeScript, Prisma 6/PostgreSQL, Monaco, Zod, Vitest, and Playwright.
 
 ```mermaid
 flowchart TB
@@ -31,7 +31,7 @@ Clerk is integrated behind a provider-neutral adapter. The identity foundation s
 flowchart LR
   C["Clerk-validated server session"] --> S["Provider subject"]
   S --> E["ExternalIdentity"]
-  E --> U["Labrix User"]
+  E --> U["TRACE User"]
   U --> P["Local account status, role, ownership, membership, and permissions"]
 ```
 

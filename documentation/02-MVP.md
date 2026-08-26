@@ -25,7 +25,7 @@ Status reflects repository behavior as of 2026-08-15.
 - Provider-neutral local identity persistence: `User.accountStatus` and optional `ExternalIdentity` mappings with database uniqueness by provider/subject and local user/provider.
 - Clerk SDK, Next.js 16 proxy integration, public sign-in/sign-up shell, sign-out/account control, and server-side Clerk session adapter.
 - A provider-neutral `resolveCurrentActor()` maps a server-verified Clerk subject to an explicitly linked local user and enforces local account status and role before existing resource authorization.
-- Controlled local/admin identity linking by explicit Labrix user ID and verified Clerk subject; no email matching or public linking endpoint.
+- Controlled local/admin identity linking by explicit TRACE user ID and verified Clerk subject; no email matching or public linking endpoint.
 - Unit, database integration, and critical browser tests.
 - Canonical persisted navigation for dashboard, classrooms, practicals, progress, submissions, workspace, and teacher review. Known legacy list/history URLs redirect to persisted equivalents; arbitrary unmatched URLs no longer render hard-coded product data.
 

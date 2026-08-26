@@ -93,7 +93,7 @@ The targeted suite starts the C++ HTTP worker on an ephemeral loopback port and 
 - altered safety limits rejected before Docker is contacted;
 - concurrent execution rejected rather than queued.
 
-The suite does not load Prisma, connect to PostgreSQL, mutate Labrix data, start Next.js, or replace the separate unit tests for provider selection and response validation.
+The suite does not load Prisma, connect to PostgreSQL, mutate TRACE data, start Next.js, or replace the separate unit tests for provider selection and response validation.
 
 ## Workspace acceptance
 
