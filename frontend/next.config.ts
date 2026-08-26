@@ -12,7 +12,8 @@ const cspHeader = `
   img-src 'self' data: blob: https://img.clerk.com https://images.clerk.dev;
   connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app https://api.groq.com https://generativelanguage.googleapis.com;
   frame-ancestors 'self';
-  form-action 'self';
+  frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;
+  form-action 'self' https://*.clerk.accounts.dev https://*.clerk.com https://accounts.google.com https://github.com;
   base-uri 'self';
 `.replace(/\s{2,}/g, ' ').trim();
 

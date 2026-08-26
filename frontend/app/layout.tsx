@@ -37,6 +37,18 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const mode = getIdentityMode();
+  const socialConnectionsEnabled =
+    process.env.NEXT_PUBLIC_CLERK_SOCIAL_CONNECTIONS_ENABLED === "true";
+  const clerkAppearance = socialConnectionsEnabled
+    ? dark
+    : {
+        ...dark,
+        elements: {
+          ...dark.elements,
+          socialButtonsBlockButton: { display: "none" },
+          dividerRow: { display: "none" },
+        },
+      };
   const content = (
     <ThemeProvider>
       <IdentityModeProvider mode={mode}>
@@ -56,7 +68,7 @@ export default function RootLayout({
             signUpUrl="/sign-up"
             signInFallbackRedirectUrl="/dashboard"
             signUpFallbackRedirectUrl="/dashboard"
-            appearance={dark as never}
+            appearance={clerkAppearance as never}
           >
             {content}
           </ClerkProvider>
