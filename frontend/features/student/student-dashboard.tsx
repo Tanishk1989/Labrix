@@ -1,43 +1,48 @@
 import Link from "next/link";
-import { ArrowRight, Clock3 } from "lucide-react";
-import { PageHeader, ProgressBar, StatusBadge } from "@/components/design-system";
+import Image from "next/image";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  CalendarDays,
+  Check,
+  Clock3,
+  LockKeyhole,
+  MessageCircleMore,
+  Play,
+  TrendingUp,
+} from "lucide-react";
+import { PageHeader } from "@/components/design-system";
 import { JoinClassroomButton } from "@/features/classes/classroom-setup-actions";
-import { PriorityPracticalBanner } from "./priority-practical-banner";
 import type { StudentOverview } from "@/server/student/overview";
 import {
   buildStudentDashboardViewModel,
   type StudentDashboardPractical,
 } from "./student-dashboard-view-model";
 
-function deadlineLabel(value: string | null) {
+function dateTimeLabel(value: string | null) {
   if (!value) return "No deadline";
   return new Intl.DateTimeFormat("en-IN", {
     day: "numeric",
     month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function submittedAtLabel(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
-function PracticalDeadline({ practical }: { practical: StudentDashboardPractical }) {
-  const overdue = practical.statusLabel === "Overdue";
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs ${overdue ? "text-rose-300" : "text-[var(--text-secondary)]"}`}>
-      <Clock3 size={13} aria-hidden="true" />
-      {practical.deadline ? (
-        <time dateTime={practical.deadline}>{overdue ? "Overdue since" : "Due"} {deadlineLabel(practical.deadline)}</time>
-      ) : "No deadline"}
-    </span>
-  );
+function longDateLabel() {
+  return new Intl.DateTimeFormat("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
+}
+
+function isDueThisWeek(practical: StudentDashboardPractical) {
+  if (!practical.deadline) return false;
+  const now = Date.now();
+  const deadline = new Date(practical.deadline).getTime();
+  return deadline >= now && deadline <= now + 7 * 24 * 60 * 60 * 1000;
 }
 
 export function StudentDashboard({ overview }: { overview: StudentOverview }) {
@@ -45,15 +50,11 @@ export function StudentDashboard({ overview }: { overview: StudentOverview }) {
 
   if (dashboard.state === "NO_CLASSES") {
     return (
-      <div className="space-y-10">
+      <div className="space-y-10 py-10">
         <PageHeader eyebrow="Home" title={dashboard.headline} description={dashboard.description} actions={<JoinClassroomButton />} />
         <section aria-labelledby="no-classes-heading" className="border-y border-[var(--border)] py-12 sm:py-16">
-          <h2 id="no-classes-heading" className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            No classes yet
-          </h2>
-          <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--text-secondary)]">
-            Join a class using the code provided by your teacher.
-          </p>
+          <h2 id="no-classes-heading" className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">No classes yet</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--text-secondary)]">Join a class using the code provided by your teacher.</p>
         </section>
       </div>
     );
@@ -61,157 +62,119 @@ export function StudentDashboard({ overview }: { overview: StudentOverview }) {
 
   if (dashboard.state === "NO_PRACTICALS") {
     return (
-      <div className="space-y-10">
+      <div className="space-y-10 py-10">
         <PageHeader eyebrow="Home" title={dashboard.headline} description={dashboard.description} actions={<Link href="/classes" className="button min-h-11">View classes</Link>} />
         <section aria-labelledby="no-practicals-heading" className="border-y border-[var(--border)] py-12 sm:py-16">
-          <h2 id="no-practicals-heading" className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Nothing waiting for you
-          </h2>
-          <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--text-secondary)]">
-            Published work will appear here when your teacher makes it available.
-          </p>
+          <h2 id="no-practicals-heading" className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Nothing waiting for you</h2>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--text-secondary)]">Published work will appear here when your teacher makes it available.</p>
         </section>
       </div>
     );
   }
 
+  const actionable = dashboard.nextUp ? [dashboard.nextUp, ...dashboard.upcoming] : [];
+  const dueThisWeek = actionable.filter(isDueThisWeek).length;
+  const feedback = overview.submissions.find((submission) => submission.feedbackAvailable) ?? null;
+  const feedbackCount = overview.submissions.filter((submission) => submission.feedbackAvailable).length;
+  const pathItems = overview.practicals.slice(0, 3).map((practical) => {
+    const isActive = dashboard.nextUp?.id === practical.id;
+    const complete = Boolean(practical.latestSubmission);
+    return {
+      id: practical.id,
+      title: practical.title,
+      state: complete ? "complete" : isActive ? "active" : "locked",
+      detail: complete
+        ? `${practical.latestSubmission?.passedTests ?? 0} / ${practical.latestSubmission?.totalTests ?? practical.visibleTestCount} tests passed`
+        : isActive
+          ? `${practical.visibleTestCount} visible tests`
+          : "Next up",
+    } as const;
+  });
+
   return (
-    <div className="space-y-8 sm:space-y-10">
-      <PageHeader eyebrow="Home" title={dashboard.headline} description={dashboard.description} actions={dashboard.nextUp ? <Link href={dashboard.nextUp.href} className="button min-h-11">{dashboard.nextUp.actionLabel} <ArrowRight size={14} aria-hidden="true" /></Link> : <Link href="/submissions" className="button min-h-11">View submissions</Link>} />
-
-      {dashboard.nextUp ? (
-        <PriorityPracticalBanner practical={dashboard.nextUp} />
-      ) : null}
-
-      {dashboard.nextUp ? (
-        <section aria-labelledby="next-up-heading">
-          <p className="eyebrow">Primary work</p>
-          <h2 id="next-up-heading" className="mt-1 text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Next up
-          </h2>
-          <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm transition-all hover:border-[var(--border-strong)] hover:bg-[var(--surface-elevated)] sm:p-8">
-            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h3 className="break-words text-2xl font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
-                    {dashboard.nextUp.title}
-                  </h3>
-                  <StatusBadge tone={dashboard.nextUp.statusLabel === "Overdue" ? "danger" : dashboard.nextUp.statusLabel === "In progress" ? "warning" : "published"}>
-                    {dashboard.nextUp.statusLabel}
-                  </StatusBadge>
-                </div>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  {dashboard.nextUp.classroomSubject} · {dashboard.nextUp.classroomName}
-                </p>
-                <div className="mt-4"><PracticalDeadline practical={dashboard.nextUp} /></div>
-              </div>
-              <Link href={dashboard.nextUp.href} className="button-secondary min-h-11 self-start md:self-auto">
-                {dashboard.nextUp.actionLabel} <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-            </div>
+    <div className="student-focus-dashboard">
+      <section className="student-focus-hero" aria-labelledby="student-focus-heading">
+        <div className="student-focus-copy">
+          <p className="faculty-kicker">Welcome back, student</p>
+          <h1 id="student-focus-heading">Ready for your<br /><em>next challenge?</em></h1>
+          <p className="student-focus-description">Keep the momentum going—continue where you left off and strengthen your problem-solving skills.</p>
+          <div className="student-focus-actions">
+            {dashboard.nextUp ? (
+              <Link href={dashboard.nextUp.href} className="faculty-primary-action"><Play size={17} aria-hidden="true" /> {dashboard.nextUp.actionLabel}</Link>
+            ) : (
+              <Link href="/submissions" className="faculty-primary-action">View submissions</Link>
+            )}
+            <Link href="/practicals" className="faculty-secondary-action">View all practicals <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
-        </section>
-      ) : (
-        <section aria-labelledby="up-to-date-heading" className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm sm:p-8">
-          <h2 id="up-to-date-heading" className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            All current work is submitted
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-            You can review your recent submissions or revisit a practical at any time.
-          </p>
-          <Link href="/submissions" className="button-secondary mt-5 min-h-11">View submissions</Link>
-        </section>
-      )}
+          <p className="faculty-date"><CalendarDays size={14} aria-hidden="true" /> {longDateLabel()}</p>
+        </div>
 
-      {dashboard.upcoming.length ? (
-        <section aria-labelledby="upcoming-heading">
-          <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h2 id="upcoming-heading" className="text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Upcoming</h2>
-            <Link href="/practicals" className="text-link">View all</Link>
-          </div>
-          <ul className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-sm divide-y divide-[var(--border)]">
-            {dashboard.upcoming.map((practical) => (
-              <li key={practical.id} className="list-none">
-                <Link
-                  href={practical.href}
-                  aria-label={`${practical.actionLabel}: ${practical.title}`}
-                  className="group grid min-h-16 gap-3 px-4 py-3 rounded-[var(--radius-md)] transition-colors hover:bg-[var(--surface-hover)] focus-visible:bg-[var(--surface-hover)] active:bg-[var(--surface-elevated)] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-6"
-                >
-                  <span className="min-w-0">
-                    <span className="block break-words text-sm font-semibold text-[var(--text-primary)]">{practical.title}</span>
-                    <span className="mt-1 block break-words text-xs text-[var(--text-muted)]">{practical.classroomName}</span>
-                  </span>
-                  <PracticalDeadline practical={practical} />
-                  <span className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-[var(--brand-accent)] group-hover:text-[var(--text-primary)]">
-                    {practical.actionLabel} <ArrowRight size={13} aria-hidden="true" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+        <Image className="student-focus-campus" src="/assets/trace-campus-lines.png" alt="" width={1200} height={760} priority />
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start">
-        <section aria-labelledby="student-progress-heading" className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
-          <p className="eyebrow">Published practicals</p>
-          <h2 id="student-progress-heading" className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Your progress
-          </h2>
-          <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-            {dashboard.progress.submitted} of {dashboard.progress.total}
-          </p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">practicals submitted</p>
-          <div className="mt-5">
-            <ProgressBar
-              value={dashboard.progress.percentage}
-              label={`${dashboard.progress.percentage}% submitted`}
-              showPercentage={false}
-            />
-          </div>
-          <Link href="/progress" className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-[var(--brand-accent)] hover:text-[var(--text-primary)]">
-            View progress <ArrowRight size={13} aria-hidden="true" />
-          </Link>
-        </section>
+        <aside className="student-next-up" aria-labelledby="student-next-up-heading">
+          <p className="faculty-kicker">{dashboard.nextUp ? "Next up" : "Current status"}</p>
+          {dashboard.nextUp ? (
+            <>
+              <h2 id="student-next-up-heading">{dashboard.nextUp.title}</h2>
+              <p className="student-next-class"><BookOpenCheck size={16} aria-hidden="true" /> {dashboard.nextUp.classroomSubject} <span>·</span> {dashboard.nextUp.classroomName}</p>
+              <dl>
+                <div><dt><CalendarDays size={16} aria-hidden="true" /> Deadline</dt><dd className={dashboard.nextUp.statusLabel === "Overdue" ? "student-danger-text" : ""}>{dateTimeLabel(dashboard.nextUp.deadline)}</dd></div>
+                <div><dt><Clock3 size={16} aria-hidden="true" /> Status</dt><dd><span className={`student-status-dot student-status-${dashboard.nextUp.statusLabel.toLowerCase().replace(" ", "-")}`} />{dashboard.nextUp.statusLabel}</dd></div>
+                <div><dt><TrendingUp size={16} aria-hidden="true" /> Test coverage</dt><dd>{overview.practicals.find((item) => item.id === dashboard.nextUp?.id)?.visibleTestCount ?? 0} visible tests</dd></div>
+              </dl>
+              <Link href={dashboard.nextUp.href} className="student-next-action"><span>{dashboard.nextUp.actionLabel}</span><ArrowRight size={18} aria-hidden="true" /></Link>
+            </>
+          ) : (
+            <>
+              <h2 id="student-next-up-heading">All current work is submitted.</h2>
+              <p className="student-next-empty">Review your recent attempts or check progress while you wait for the next practical.</p>
+              <Link href="/submissions" className="student-next-action"><span>View submissions</span><ArrowRight size={18} aria-hidden="true" /></Link>
+            </>
+          )}
+        </aside>
+      </section>
 
-        <section aria-labelledby="recent-submissions-heading">
-          <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h2 id="recent-submissions-heading" className="text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-              Recent submissions
-            </h2>
-            {dashboard.recentSubmissions.length ? <Link href="/submissions" className="text-link">View all</Link> : null}
-          </div>
-          {dashboard.recentSubmissions.length ? (
-            <ol className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-sm divide-y divide-[var(--border)]">
-              {dashboard.recentSubmissions.map((submission) => (
-                <li key={submission.id} className="list-none">
-                  <Link
-                    href={`/submissions/${submission.id}?view=student`}
-                    aria-label={`View ${submission.practicalTitle}, attempt ${submission.attemptNumber}`}
-                    className="grid min-h-16 gap-3 px-4 py-3 rounded-[var(--radius-md)] transition-colors hover:bg-[var(--surface-hover)] focus-visible:bg-[var(--surface-hover)] active:bg-[var(--surface-elevated)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5"
-                  >
-                    <span className="min-w-0">
-                      <span className="block break-words text-sm font-semibold text-[var(--text-primary)]">{submission.practicalTitle}</span>
-                      <span className="mt-1 block break-words text-xs text-[var(--text-muted)]">
-                        {submission.classroomName} · Attempt #{submission.attemptNumber} · <time dateTime={submission.submittedAt}>{submittedAtLabel(submission.submittedAt)}</time>
-                      </span>
-                    </span>
-                    <StatusBadge tone={submission.resultTone}>{submission.resultLabel}</StatusBadge>
-                  </Link>
+      <section className="student-focus-metrics" aria-label="Student overview">
+        <div><CalendarDays size={23} aria-hidden="true" /><strong>{dueThisWeek}</strong><span><b>Practicals due</b><small>This week</small></span></div>
+        <div><MessageCircleMore size={23} aria-hidden="true" /><strong>{feedbackCount}</strong><span><b>Feedback available</b><small>{feedbackCount ? "Review and improve" : "Nothing new"}</small></span></div>
+        <div><TrendingUp size={23} aria-hidden="true" /><strong>{dashboard.progress.percentage}%</strong><span><b>Class progress</b><small>{dashboard.progress.submitted} of {dashboard.progress.total} submitted</small></span></div>
+      </section>
+
+      <section className="student-focus-lower">
+        <article className="student-learning-path" aria-labelledby="learning-path-heading">
+          <p className="faculty-kicker">Your learning path</p>
+          <h2 id="learning-path-heading" className="sr-only">Your learning path</h2>
+          {pathItems.length ? (
+            <ol>
+              {pathItems.map((item, index) => (
+                <li key={item.id} className={`student-path-item student-path-${item.state}`}>
+                  <span className="student-path-marker" aria-hidden="true">{item.state === "complete" ? <Check size={20} /> : item.state === "locked" ? <LockKeyhole size={15} /> : index + 1}</span>
+                  <Link href={item.state === "complete" ? `/practicals/${item.id}` : `/tasks/${item.id}`}>{item.title}</Link>
+                  <b>{item.state === "complete" ? "Complete" : item.state === "active" ? "In progress" : "Next up"}</b>
+                  <small>{item.detail}</small>
                 </li>
               ))}
             </ol>
+          ) : <p className="student-next-empty">Your learning path will appear here as practicals are published.</p>}
+          <Link href="/progress" className="faculty-text-link">View full progress <ArrowRight size={14} aria-hidden="true" /></Link>
+        </article>
+
+        <aside className="student-feedback-card" aria-labelledby="student-feedback-heading">
+          <p className="faculty-kicker">Teacher feedback</p>
+          {feedback ? (
+            <>
+              <div className="student-feedback-author"><span aria-hidden="true"><MessageCircleMore size={19} /></span><div><h2 id="student-feedback-heading">Feedback is ready</h2><p>{feedback.practical.title} · Attempt #{feedback.attemptNumber}</p></div></div>
+              <p className="student-feedback-summary">Your teacher has published feedback on this submission. Review it before your next attempt.</p>
+              <Link href={`/submissions/${feedback.id}?view=student`} className="faculty-text-link">View feedback <ArrowRight size={14} aria-hidden="true" /></Link>
+            </>
           ) : (
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">No submissions yet</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                Your submitted attempts will appear here.
-              </p>
-              <Link href="/practicals" className="button-secondary mt-5 min-h-11">View practicals</Link>
-            </div>
+            <>
+              <div className="student-feedback-author"><span aria-hidden="true"><MessageCircleMore size={19} /></span><div><h2 id="student-feedback-heading">No new feedback</h2><p>Your published reviews will appear here.</p></div></div>
+              <Link href="/submissions" className="faculty-text-link">View submissions <ArrowRight size={14} aria-hidden="true" /></Link>
+            </>
           )}
-        </section>
-      </div>
+        </aside>
+      </section>
     </div>
   );
 }

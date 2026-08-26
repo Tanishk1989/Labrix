@@ -91,7 +91,7 @@ function Wordmark({ onNavigate }: { onNavigate?: () => void }) {
         <TraceMark size={18} />
       </div>
       <span className="text-sm font-bold tracking-tight text-white">
-        TRACE<span className="text-white/40 font-mono text-[11px] font-normal ml-1">OS</span>
+        TRACE
       </span>
     </Link>
   );
@@ -243,7 +243,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
       <div className="editorial-shell" onClickCapture={showPendingForInternalLink} onSubmitCapture={showPendingForGetForm}>
         {navigationPending ? <div className="shell-navigation-progress" role="status" aria-label="Opening page"><span /></div> : null}
         <header className="editorial-app-header">
-          <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 lg:px-10">
+          <div className="mx-auto flex h-full max-w-[88rem] items-center justify-between px-5 sm:px-6 lg:px-8">
             {/* Unified Left Navigation Cluster */}
             <div className="flex items-center gap-5">
               <Wordmark />

@@ -36,16 +36,16 @@ export const themePresets: Record<
   }
 > = {
   titanium: {
-    name: "Titanium Prism",
-    description: "Pitch Black & Electric Cyan / Cobalt (Raycast Style)",
-    accentColor: "#00f0ff",
-    accentGlow: "rgba(0, 240, 255, 0.25)",
-    canvasBg: "#000000",
-    surfaceBg: "#08080c",
-    surfaceElevated: "#101016",
-    brandHover: "#38bdf8",
-    borderSubtle: "rgba(255, 255, 255, 0.10)",
-    spotlightRgb: "0, 240, 255",
+    name: "Faculty Cobalt",
+    description: "Obsidian ink & scholarly cobalt",
+    accentColor: "#315cf5",
+    accentGlow: "rgba(49, 92, 245, 0.24)",
+    canvasBg: "#060912",
+    surfaceBg: "#0b101b",
+    surfaceElevated: "#111724",
+    brandHover: "#5275ff",
+    borderSubtle: "rgba(224, 229, 241, 0.12)",
+    spotlightRgb: "49, 92, 245",
   },
   sakura: {
     name: "Neon Sakura",
