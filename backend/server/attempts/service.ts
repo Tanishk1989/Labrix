@@ -1181,6 +1181,39 @@ export async function failClaimedExecutionJob(
   });
 }
 
+export async function retryOrFailClaimedExecutionJob(input: {
+  jobId: string;
+  workerId: string;
+  attemptCount: number;
+  maxAttempts: number;
+}) {
+  const shouldRetry = input.attemptCount < input.maxAttempts;
+  const result = await prisma.executionJob.updateMany({
+    where: {
+      id: input.jobId,
+      status: "RUNNING",
+      lockedBy: input.workerId,
+      attemptCount: input.attemptCount,
+    },
+    data: shouldRetry
+      ? {
+          status: "QUEUED",
+          availableAt: new Date(Date.now() + 2 ** input.attemptCount * 1_000),
+          lockedAt: null,
+          lockedBy: null,
+          lastError: "Runner unavailable; retrying safely.",
+        }
+      : {
+          status: "FAILED",
+          completedAt: new Date(),
+          lockedAt: null,
+          lockedBy: null,
+          lastError: "Execution failed after safe retries.",
+        },
+  });
+  return result.count === 0 ? "NOT_OWNED" : shouldRetry ? "REQUEUED" : "FAILED";
+}
+
 export async function getSubmissionForTeacher(
   teacherId: string,
   submissionId: string,
@@ -1489,18 +1522,18 @@ export async function getTeacherClassroomProgress(
 
   const tasks = classroom.tasks;
   const primaryTask = tasks[0] ?? null;
-
-  const students = await Promise.all(
-    classroom.memberships.map(async ({ user }) => {
-      const submissions = await prisma.submissionAttempt.findMany({
+  const taskIds = tasks.map((task) => task.id);
+  const studentIds = classroom.memberships.map(({ user }) => user.id);
+  const allSubmissions = taskIds.length && studentIds.length
+    ? await prisma.submissionAttempt.findMany({
         where: {
-          taskId: { in: tasks.map((t) => t.id) },
-          studentId: user.id,
+          taskId: { in: taskIds },
+          studentId: { in: studentIds },
         },
-        orderBy: { attemptNumber: "desc" },
         select: {
           id: true,
           taskId: true,
+          studentId: true,
           attemptNumber: true,
           submittedAt: true,
           language: true,
@@ -1508,9 +1541,20 @@ export async function getTeacherClassroomProgress(
             select: { passedTests: true, totalTests: true },
           },
         },
-      });
+      })
+    : [];
+  const submissionsByStudent = new Map<string, Map<string, (typeof allSubmissions)[number]>>();
+  for (const submission of allSubmissions) {
+    const byTask = submissionsByStudent.get(submission.studentId) ?? new Map();
+    const current = byTask.get(submission.taskId);
+    if (!current || submission.attemptNumber > current.attemptNumber) {
+      byTask.set(submission.taskId, submission);
+    }
+    submissionsByStudent.set(submission.studentId, byTask);
+  }
 
-      const submissionByTask = new Map(submissions.map((s) => [s.taskId, s]));
+  const students = classroom.memberships.map(({ user }) => {
+      const submissionByTask = submissionsByStudent.get(user.id) ?? new Map();
       const primarySubmission = primaryTask
         ? submissionByTask.get(primaryTask.id) ?? null
         : null;
@@ -1548,8 +1592,7 @@ export async function getTeacherClassroomProgress(
         submittedCount: practicalsProgress.filter((p) => p.submission !== null).length,
         totalPracticalsCount: tasks.length,
       };
-    }),
-  );
+    });
 
   return {
     classroom: { id: classroom.id, name: classroom.name },

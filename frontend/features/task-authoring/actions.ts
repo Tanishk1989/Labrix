@@ -15,8 +15,6 @@ import {
   createPracticalPublishSchema,
   type CreatePracticalFormValues,
 } from "./schema";
-import { broadcastTo, type NotificationEvent } from "@/lib/notification-bus";
-import { prisma } from "@/lib/db/prisma";
 
 type Result = { ok: true; taskId: string } | { ok: false; message: string };
 
@@ -71,31 +69,6 @@ async function persist(
     revalidatePath(`/classes/${classroomId}`);
     revalidatePath("/practicals");
     updateTag(CLASSROOM_MANAGEMENT_CACHE_TAG);
-
-    // 🔔 Real-time SSE broadcast when practical is published
-    if (publish && task.status === "PUBLISHED") {
-      try {
-        // Get all enrolled active student user IDs for this classroom
-        const memberships = await prisma.classMembership.findMany({
-          where: { classroomId, role: "STUDENT", active: true },
-          select: { userId: true },
-        });
-        const studentIds = memberships.map((m) => m.userId);
-
-        if (studentIds.length > 0) {
-          const event: NotificationEvent = {
-            type: "PRACTICAL_PUBLISHED",
-            title: "⚡ New Practical Assigned",
-            body: `"${data.title}" is now live — start coding!`,
-            href: `/practicals/${task.taskId}`,
-            timestamp: new Date().toISOString(),
-          };
-          broadcastTo(studentIds, event);
-        }
-      } catch {
-        // Notification broadcast is non-critical — never fail the main action
-      }
-    }
 
     return { ok: true, taskId: task.taskId };
   } catch (error) {

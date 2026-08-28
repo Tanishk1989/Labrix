@@ -13,7 +13,7 @@ Labrix, TRACE OS, TRACE Lab OS, Pulse, CodePulse, and CodeClass are legacy names
 - A teacher owns a classroom, publishes a practical, chooses languages, adds tests, and sets an optional deadline.
 - A student opens the practical, works in a persisted coding session, receives bounded run feedback, and creates an immutable submission attempt.
 - TRACE derives measurable process signals and presents evidence with context.
-- A teacher reviews the source, result snapshot, process evidence, and AI-assisted viva prompts, then exercises human judgment.
+- A teacher reviews the source, result snapshot, process evidence, and deterministic source-grounded oral-defense prompts, then exercises human judgment.
 
 ## Product principles
 

@@ -107,7 +107,6 @@ export function CreatePracticalForm({
     };
     const result = await publishTask(classroomId, taskId, submissionValues);
     setIsSaving(false);
-    setIsSaving(false);
     if (result.ok) {
       router.push(`/classes/${classroomId}`);
     } else {
@@ -482,9 +481,10 @@ export function CreatePracticalForm({
                 type="button"
                 onClick={handlePublish}
                 disabled={isSaving || !isReadyToPublish}
+                aria-busy={isSaving || undefined}
                 className="button button-brand text-xs"
               >
-                {isPublished ? "Save and keep published" : "Publish practical"}
+                {isSaving ? "Publishing…" : isPublished ? "Save and keep published" : "Publish practical"}
               </button>
             )}
           </div>

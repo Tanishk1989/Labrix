@@ -20,7 +20,7 @@ export function postSignInErrorDestination(
     return intent ? `/sign-in?role=${intent}` : "/sign-in";
   }
   if (error instanceof UnlinkedActorError) {
-    return intent === "teacher" ? "/unauthorized" : "/unlinked-account";
+    return intent ? `/account-setup?role=${intent}` : "/account-setup";
   }
   if (error instanceof DisabledAccountError) return "/disabled-account";
   if (error instanceof InvalidExternalIdentityError) return "/unauthorized";

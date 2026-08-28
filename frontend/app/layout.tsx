@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { IdentityModeProvider } from "@/components/identity-mode-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { NotificationProvider } from "@/components/notification-provider";
 import { getIdentityMode } from "@/server/actors/identity-mode";
 import "./globals.css";
 
@@ -66,9 +65,7 @@ export default function RootLayout({
   const content = (
     <ThemeProvider>
       <IdentityModeProvider mode={mode}>
-        <NotificationProvider>
-          {children}
-        </NotificationProvider>
+        {children}
       </IdentityModeProvider>
     </ThemeProvider>
   );

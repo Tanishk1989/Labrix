@@ -69,6 +69,7 @@ credentials*.json
 secrets*.json
 
 # local databases
+.labrix/
 *.db
 *.db-journal
 *.sqlite

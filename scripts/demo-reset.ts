@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
 import { getDemoDatabaseUrl } from "./demo-env";
 
 const databaseUrl = getDemoDatabaseUrl();
@@ -11,5 +12,23 @@ if (!["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)) {
   console.error("Demo reset refused: only a loopback development database may be reset.");
   process.exit(1);
 }
-const result = spawnSync("cmd.exe", ["/d", "/s", "/c", "npm.cmd run db:seed"], { stdio: "inherit", env: { ...process.env, DATABASE_URL: databaseUrl } });
-process.exit(result.status ?? 1);
+
+const prismaCli = resolve(process.cwd(), "node_modules", "prisma", "build", "index.js");
+const tsxCli = resolve(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
+const environment = { ...process.env, DATABASE_URL: databaseUrl };
+
+const reset = spawnSync(process.execPath, [
+  prismaCli,
+  "migrate",
+  "reset",
+  "--force",
+  "--skip-generate",
+  "--schema=backend/prisma/schema.prisma",
+], { stdio: "inherit", env: environment });
+if (reset.status !== 0) process.exit(reset.status ?? 1);
+
+const check = spawnSync(process.execPath, [
+  tsxCli,
+  resolve(process.cwd(), "scripts/demo-check.ts"),
+], { stdio: "inherit", env: environment });
+process.exit(check.status ?? 1);

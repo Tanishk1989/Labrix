@@ -28,11 +28,32 @@ export function resolveConfiguredDatabaseUrl(input: {
   );
 }
 
-export function getDemoDatabaseUrl() {
+export const localDemoDatabaseUrl =
+  "postgresql://labrix:labrix-local-only@127.0.0.1:54329/labrix?schema=public&connection_limit=5";
+
+export function resolveDemoDatabaseUrl(input: {
+  demoDatabaseUrl?: string;
+  localDatabaseUrl?: string;
+}) {
+  return input.demoDatabaseUrl ?? input.localDatabaseUrl ?? localDemoDatabaseUrl;
+}
+
+export function getConfiguredDatabaseUrl() {
   return resolveConfiguredDatabaseUrl({
     demoDatabaseUrl: process.env.LABRIX_DEMO_DATABASE_URL,
     processDatabaseUrl: process.env.DATABASE_URL,
     localFileDatabaseUrl: readDatabaseUrl(".env.local"),
     envFileDatabaseUrl: readDatabaseUrl(".env"),
+  });
+}
+
+export function getDemoDatabaseUrl() {
+  // Demo commands are deliberately isolated from DATABASE_URL so an ordinary
+  // development or production connection can never be checked or reset by a
+  // demo helper. LABRIX_DEMO_DATABASE_URL remains an explicit operator escape
+  // hatch for a separately provisioned demo database.
+  return resolveDemoDatabaseUrl({
+    demoDatabaseUrl: process.env.LABRIX_DEMO_DATABASE_URL,
+    localDatabaseUrl: localDemoDatabaseUrl,
   });
 }

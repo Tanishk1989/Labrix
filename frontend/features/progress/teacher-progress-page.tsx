@@ -6,8 +6,6 @@ import {
   buildTeacherProgressViewModel,
   type TeacherProgressViewModel,
 } from "./teacher-progress-view-model";
-import { buildClassWeaknessHeatmap } from "./weakness-heatmap";
-import { WeaknessHeatmapMatrix } from "./weakness-heatmap-matrix";
 
 function dateTimeLabel(value: string) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -244,7 +242,6 @@ function StudentProgressList({ view }: { view: TeacherProgressViewModel }) {
 
 export function TeacherProgressPage({ overview, classroomId }: { overview: TeacherOverview; classroomId?: string }) {
   const view = buildTeacherProgressViewModel(overview, classroomId);
-  const weaknessSummary = buildClassWeaknessHeatmap(overview, classroomId);
 
   if (!view.classroomSelectionAvailable) {
     return (
@@ -291,7 +288,6 @@ export function TeacherProgressPage({ overview, classroomId }: { overview: Teach
       ) : (
         <>
           <ProgressSummary view={view} />
-          <WeaknessHeatmapMatrix summary={weaknessSummary} />
           <PracticalProgress view={view} />
           <CompletionAttention view={view} />
           <StudentProgressList view={view} />

@@ -19,6 +19,7 @@ import type {
 } from "@/server/attempts/service";
 import { executionJobStatusAction, runDraftAction, saveDraftAction, submitDraftAction } from "./actions";
 import { draftVersionChanged, type DraftVersion } from "./draft-version";
+import { executionPollDelay } from "./execution-polling";
 import {
   clearLocalDraftMirror,
   loadLocalDraftMirror,
@@ -104,6 +105,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const templateSwitchAllowed = useRef(workspace.draft.revision === 0);
   const wasOffline = useRef(false);
   const statusPollFailures = useRef(0);
+  const completedStatusPolls = useRef(0);
 
   const showResults = useCallback(() => {
     setActivePanel("results");
@@ -113,7 +115,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   }, []);
 
   useEffect(() => {
-    if (!executionJob || !["QUEUED", "RUNNING"].includes(executionJob.status)) return;
+    if (!executionJob || (executionJob.status !== "QUEUED" && executionJob.status !== "RUNNING")) return;
     let cancelled = false;
     const timer = window.setTimeout(() => startTransition(async () => {
       const result = await executionJobStatusAction({ jobId: executionJob.id });
@@ -131,6 +133,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
         return;
       }
       statusPollFailures.current = 0;
+      completedStatusPolls.current += 1;
       setExecutionJob(result.job);
       if (result.job.status === "COMPLETED") {
         if (result.job.run) setRun(result.job.run);
@@ -150,7 +153,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
         setRunning(false);
         setSubmitting(false);
       }
-    }), executionJob.status === "QUEUED" ? 2_000 : 1_500);
+    }), executionPollDelay(executionJob.status, completedStatusPolls.current));
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
@@ -242,6 +245,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       return;
     }
     setRunning(true);
+    completedStatusPolls.current = 0;
     setExecutionJob(undefined);
     setRunFailure(undefined);
     setRun(undefined);
@@ -306,6 +310,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
       return;
     }
     setSubmitting(true);
+    completedStatusPolls.current = 0;
     setExecutionJob(undefined);
     setSubmissionFailure(undefined);
     idempotencyKey.current ??= crypto.randomUUID();
@@ -437,7 +442,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
             type="button"
             className="button workspace-submit-button"
             onClick={() => setConfirmSubmit(true)}
-            disabled={running || submitting || Boolean(submission)}
+            disabled={running || submitting || Boolean(submission) || overdue}
             aria-busy={submitting}
             aria-haspopup="dialog"
             aria-expanded={confirmSubmit}
@@ -456,7 +461,7 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
 
       {overdue ? (
         <p role="status" className="workspace-deadline-warning">
-          This deadline has passed. TRACE can still record an attempt; check your teacher’s late-work policy before submitting.
+          This deadline has passed. New submissions are closed; you can still run visible tests and review your saved draft.
         </p>
       ) : null}
 

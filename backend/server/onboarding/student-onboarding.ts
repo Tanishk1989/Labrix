@@ -157,10 +157,15 @@ export async function onboardStudent(
 
     const emailOwner = await db.user.findUnique({
       where: { email: profile.email },
-      select: { id: true },
+      select: { accountStatus: true },
     });
-    return emailOwner
-      ? { ok: false, code: "EMAIL_IN_USE" }
-      : { ok: false, code: "CONFLICT" };
+    if (emailOwner) {
+      if (emailOwner.accountStatus === AccountStatus.DISABLED) {
+        return { ok: false, code: "DISABLED_ACCOUNT" };
+      }
+      return { ok: false, code: "EMAIL_IN_USE" };
+    }
+
+    return { ok: false, code: "CONFLICT" };
   }
 }

@@ -13,7 +13,10 @@ export default async function AuthCompletePage({
   const intent = parseSignInIntent((await searchParams).role);
 
   try {
-    await resolveCurrentActor();
+    const actor = await resolveCurrentActor();
+    if (intent === "teacher" && actor.role === "STUDENT") {
+      redirect("/account-setup?role=teacher");
+    }
   } catch (error) {
     const destination = postSignInErrorDestination(error, intent);
     if (destination) redirect(destination);

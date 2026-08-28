@@ -34,7 +34,7 @@ export async function getClerkOnboardingProfile() {
       name:
         user.fullName?.trim() ||
         primaryEmail.emailAddress.split("@")[0] ||
-        "TRACE Student",
+        "TRACE User",
       email: primaryEmail.emailAddress,
     },
   };

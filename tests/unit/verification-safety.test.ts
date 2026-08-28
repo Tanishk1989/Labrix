@@ -39,6 +39,16 @@ describe("verification database safety", () => {
     })).toThrow("must differ from the configured development/demo database");
   });
 
+  it("rejects every explicitly protected database", () => {
+    expect(() => requireDisposableTestDatabase({
+      allowMutation: "true",
+      testDatabaseUrl,
+      protectedDatabaseUrls: [
+        "postgresql://demo:credentials@localhost:5432/labrix_test?schema=public",
+      ],
+    })).toThrow("must differ from every development and demo database");
+  });
+
   it("requires the child process to use the test URL", () => {
     expect(() => requireDisposableTestDatabase({
       allowMutation: "true",

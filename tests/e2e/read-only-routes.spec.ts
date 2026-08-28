@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("read-only professor route smoke check", async ({ page }) => {
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Keep your practicals moving." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepare. Challenge. Elevate." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Reviews", exact: true })).toHaveAttribute("href", "/submissions");
 

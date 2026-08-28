@@ -207,7 +207,7 @@ function TeacherSubmissionsContent({
 }: {
   overview: TeacherOverview;
   params: SubmissionSearchParams;
-  plagiarismReport: CohortPlagiarismReport;
+  plagiarismReport: CohortPlagiarismReport | null;
 }) {
   const rawFilter = firstValue(params.review);
   const isPlagiarismTab = rawFilter === "PLAGIARISM";
@@ -282,14 +282,14 @@ function TeacherSubmissionsContent({
         overview={overview}
         params={params}
         reviewFilter={reviewFilter}
-        flaggedPairsCount={plagiarismReport.flaggedPairsCount}
+        flaggedPairsCount={plagiarismReport?.flaggedPairsCount ?? 0}
       />
 
       {!isPlagiarismTab && (
         <ReviewFilters overview={overview} params={params} reviewFilter={reviewFilter} />
       )}
 
-      {isPlagiarismTab ? (
+      {isPlagiarismTab && plagiarismReport ? (
         <CohortPlagiarismAudit
           report={plagiarismReport}
           selectedClassroomId={classroom}
@@ -323,6 +323,31 @@ export default async function SubmissionsPage({
   const params = await searchParams;
   const classroomId = firstValue(params.classroom);
   const practicalId = firstValue(params.practical);
+  const needsPlagiarismReport = firstValue(params.review) === "PLAGIARISM";
+
+  if (actor.source === "external-identity") {
+    if (actor.role === "TEACHER") {
+      const [teacherOverview, plagiarismReport] = await Promise.all([
+        getTeacherOverview(actor.id),
+        needsPlagiarismReport
+          ? getCohortPlagiarismReport(actor.id, { classroomId, taskId: practicalId })
+          : Promise.resolve(null),
+      ]);
+      return (
+        <DemoShell actor={actor}>
+          <TeacherSubmissionsContent overview={teacherOverview} params={params} plagiarismReport={plagiarismReport} />
+        </DemoShell>
+      );
+    }
+
+    const studentOverview = await getStudentOverview(actor.id);
+    return (
+      <DemoShell actor={actor}>
+        <StudentSubmissionsPage overview={studentOverview} classroomId={classroomId} />
+      </DemoShell>
+    );
+  }
+
   const studentTargetId = actor.source === "seeded-demo-session"
     ? (await resolveDemoStudentActor()).id
     : actor.id;
@@ -330,10 +355,9 @@ export default async function SubmissionsPage({
   const [teacherOverview, studentOverview, plagiarismReport] = await Promise.all([
     getTeacherOverview(actor.id),
     getStudentOverview(studentTargetId),
-    getCohortPlagiarismReport(actor.id, {
-      classroomId,
-      taskId: practicalId,
-    }),
+    needsPlagiarismReport
+      ? getCohortPlagiarismReport(actor.id, { classroomId, taskId: practicalId })
+      : Promise.resolve(null),
   ]);
 
   return (

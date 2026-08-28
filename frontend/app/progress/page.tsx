@@ -15,6 +15,17 @@ export default async function TeacherProgressPage({
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   const params = await searchParams;
   const classroomId = Array.isArray(params.classroom) ? params.classroom[0] : params.classroom;
+
+  if (actor.source === "external-identity") {
+    if (actor.role === "TEACHER") {
+      const teacherOverview = await getTeacherOverview(actor.id);
+      return <DemoShell actor={actor}><TeacherProgress overview={teacherOverview} classroomId={classroomId} /></DemoShell>;
+    }
+
+    const studentOverview = await getStudentOverview(actor.id);
+    return <DemoShell actor={actor}><StudentProgressPage overview={studentOverview} classroomId={classroomId} /></DemoShell>;
+  }
+
   const studentTargetId = actor.source === "seeded-demo-session"
     ? (await resolveDemoStudentActor()).id
     : actor.id;

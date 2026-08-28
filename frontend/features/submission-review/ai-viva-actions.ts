@@ -6,7 +6,9 @@ import {
   resolveCurrentActor,
 } from "@/server/actors/current-actor";
 import { generateVivaDefenseWithAI } from "@/server/evidence/ai-evidence-provider";
-import type { GenerateVivaInput, VivaGenerationResult } from "@/server/evidence/viva-generator";
+import { analyzeAttemptProcess } from "@/server/evidence/integrity-engine";
+import type { VivaGenerationResult } from "@/server/evidence/viva-generator";
+import { logEvent } from "@/server/observability/logger";
 
 export interface RequestAiVivaResult {
   ok: boolean;
@@ -20,7 +22,6 @@ export interface RequestAiVivaResult {
  */
 export async function requestAiVivaDefense(
   submissionAttemptId: string,
-  input: GenerateVivaInput,
 ): Promise<RequestAiVivaResult> {
   try {
     const teacher = requireActorRole(
@@ -37,6 +38,13 @@ export async function requestAiVivaDefense(
             classroom: true,
           },
         },
+        resultSnapshot: true,
+        codingSession: {
+          include: {
+            events: { orderBy: { sequence: "asc" } },
+            _count: { select: { runs: true } },
+          },
+        },
       },
     });
 
@@ -51,7 +59,32 @@ export async function requestAiVivaDefense(
       };
     }
 
-    const result = await generateVivaDefenseWithAI(input, {
+    const submittedAt = submission.submittedAt.toISOString();
+    const processAnalysis = analyzeAttemptProcess({
+      events: submission.codingSession.events.map((event) => ({
+        id: event.id,
+        sequence: event.sequence,
+        type: event.type,
+        runAttemptId: event.runAttemptId,
+        submissionAttemptId: event.submissionAttemptId,
+        occurredAt: event.occurredAt.toISOString(),
+      })),
+      sourceCode: submission.sourceCodeSnapshot,
+      runCount: submission.codingSession._count.runs,
+      passedTests: submission.resultSnapshot.passedTests,
+      totalTests: submission.resultSnapshot.totalTests,
+      submittedAt,
+    });
+    const result = await generateVivaDefenseWithAI({
+      sourceCode: submission.sourceCodeSnapshot,
+      language: submission.language,
+      taskTitle: submission.task.title,
+      processAnalysis,
+      testPassRatio: {
+        passed: submission.resultSnapshot.passedTests,
+        total: submission.resultSnapshot.totalTests,
+      },
+    }, {
       teacherId: teacher.id,
       submissionAttemptId: submission.id,
       allowAiAssistance: true,
@@ -59,7 +92,9 @@ export async function requestAiVivaDefense(
 
     return { ok: true, data: result };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to generate AI viva questions.";
-    return { ok: false, message };
+    logEvent("error", "ai_viva_action_failed", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { ok: false, message: "The oral-defense assistant is unavailable. Try again later." };
   }
 }

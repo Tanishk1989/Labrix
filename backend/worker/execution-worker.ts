@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   claimNextExecutionJob,
-  failClaimedExecutionJob,
   processClaimedExecutionJob,
+  retryOrFailClaimedExecutionJob,
 } from "../server/attempts/service";
 import { getServerExecutionProvider } from "../server/execution";
 import { prisma } from "../lib/db/prisma";
@@ -46,7 +46,12 @@ async function processOneJob(job: NonNullable<Awaited<ReturnType<typeof claimNex
       workerId,
       error: error instanceof Error ? error.message : "Unknown worker error",
     });
-    await failClaimedExecutionJob(job.id, job.lockedBy ?? workerId);
+    await retryOrFailClaimedExecutionJob({
+      jobId: job.id,
+      workerId: job.lockedBy ?? workerId,
+      attemptCount: job.attemptCount,
+      maxAttempts,
+    });
   }
 }
 

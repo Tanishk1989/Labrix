@@ -233,7 +233,7 @@ async function runAllTests() {
     const isOk = isProtectedRedirect(res.statusCode, res.headers.location, res.body);
     results.push({
       category: "Teacher & Student Flows",
-      name: "Submissions & AI Defense Reviews (/submissions)",
+      name: "Submissions & Oral Defense Reviews (/submissions)",
       url: `${BASE_URL}/submissions`,
       status: isOk ? "PASSED" : "FAILED",
       httpCode: res.statusCode,
@@ -355,7 +355,7 @@ async function runAllTests() {
   // 11. 404 Error Handling
   try {
     const res = await fetchUrl("/some-non-existent-slug-xyz");
-    const isOk = res.statusCode === 404 || res.statusCode === 200;
+    const isOk = res.statusCode === 404;
     results.push({
       category: "Resilience & Security",
       name: "404 Error Boundary Handling",
@@ -398,6 +398,7 @@ async function runAllTests() {
   console.log(`======================================================`);
   console.log(`🏁 SUMMARY: ${passed} Passed, ${failed} Failed out of ${results.length} tests`);
   console.log(`======================================================\n`);
+  process.exitCode = failed === 0 ? 0 : 1;
 }
 
 runAllTests();

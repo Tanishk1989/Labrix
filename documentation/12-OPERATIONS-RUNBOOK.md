@@ -44,7 +44,7 @@ The restore refuses to run without the matching checksum metadata and the exact 
 
 1. Disable enrollment or submission access at the edge if integrity or privacy is at risk.
 2. Preserve JSON application logs, Clerk delivery IDs, runner health, database metrics, and relevant immutable audit rows.
-3. Rotate affected Clerk, runner, Upstash, or AI credentials. Never paste secrets into tickets or chat.
+3. Rotate affected Clerk, runner, or Upstash credentials. If the optional external AI integration has been explicitly enabled, rotate that provider credential too. Never paste secrets into tickets or chat.
 4. Identify affected users and timestamps from server-owned audit records, not browser claims.
 5. Restore service only after health and the role-specific smoke tests pass.
 6. Record impact, cause, remediation, and follow-up owner. Follow institutional breach-notification rules.

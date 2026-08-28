@@ -11,6 +11,17 @@ import { getStudentOverview } from "@/server/student/overview";
 export default async function ClassesPage() {
   await connection();
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
+
+  if (actor.source === "external-identity") {
+    if (actor.role === "TEACHER") {
+      const teacherViewModel = await getMyClassesViewModel(actor.id, "TEACHER");
+      return <DemoShell actor={actor}><MyClassesPage viewModel={teacherViewModel} /></DemoShell>;
+    }
+
+    const studentOverview = await getStudentOverview(actor.id);
+    return <DemoShell actor={actor}><StudentClassesPage overview={studentOverview} allowJoin /></DemoShell>;
+  }
+
   const studentTargetId = actor.source === "seeded-demo-session"
     ? (await resolveDemoStudentActor()).id
     : actor.id;

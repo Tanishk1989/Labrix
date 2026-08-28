@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { CPP_RUNNER_IMAGE } from "../backend/runner/cpp/docker-executor";
 import { JAVA_RUNNER_IMAGE } from "../backend/runner/java/docker-executor";
-import { getDemoDatabaseUrl } from "./demo-env";
+import { localDemoDatabaseUrl } from "./demo-env";
 
 const services = [
   {
@@ -127,10 +127,13 @@ async function main() {
 
   const tsxCli = resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs");
   const nextCli = resolve(process.cwd(), "node_modules/next/dist/bin/next");
-  const databaseUrl = getDemoDatabaseUrl();
-  if (!databaseUrl) {
-    throw new Error("Professor demo DATABASE_URL is not configured.");
-  }
+  const databaseUrl = localDemoDatabaseUrl;
+  runPreparation(
+    "isolated local database",
+    process.execPath,
+    [tsxCli, resolve(process.cwd(), "scripts/local-database.ts"), "prepare"],
+    { ...process.env, DATABASE_URL: databaseUrl },
+  );
   const appEnvironment = professorDemoEnvironment(databaseUrl);
 
   runPreparation(

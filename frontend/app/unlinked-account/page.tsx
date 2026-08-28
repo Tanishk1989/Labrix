@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { AuthStatePage } from "@/components/auth-state-page";
-import { StudentOnboardingForm } from "@/features/onboarding/student-onboarding-form";
 import { DisabledAccountError } from "@/server/actors/account-status";
 import {
   resolveCurrentActor,
@@ -31,5 +30,5 @@ export default async function UnlinkedAccountPage() {
     else if (!(error instanceof UnlinkedActorError)) throw error;
   }
   if (destination) redirect(destination);
-  return <StudentOnboardingForm />;
+  redirect("/account-setup");
 }

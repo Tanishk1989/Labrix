@@ -2,16 +2,19 @@
 
 ## Provider classes
 
-TRACE currently has three selectable execution modes:
+TRACE currently has five selectable execution modes:
 
 | Configuration | Purpose | Production status |
 | --- | --- | --- |
-| unset or `mock` | Deterministic simulated feedback; no language execution | Default in every environment |
+| unset or `mock` | Deterministic simulated feedback; no language execution | Development and test only; rejected in production |
 | `java-http` | Separate loopback-only local Java Docker worker | Development/test proof only |
 | `cpp-http` | Separate loopback-only local C++ Docker worker | Development/test proof only |
 | `local-docker` | Language-routed Java and C++ loopback workers | Supervised local demo only |
+| `remote-docker` | Authenticated HTTPS runners selected by the durable execution worker | Required production provider |
 
-There is no production execution provider yet. The local workers are single-host, single-flight proofs without the queues, scaling, availability policy, isolation review, observability, image lifecycle, incident response, or abuse testing required for production.
+Production uses durable PostgreSQL jobs, leased worker claims, bounded retries,
+authenticated HTTPS endpoints, and dedicated Docker runner infrastructure. Local
+provider modes remain development-only and are never promoted by configuration fallback.
 
 ## Fail-closed production guard
 
@@ -21,7 +24,7 @@ When `NODE_ENV=production`, selecting `java-http`, `cpp-http`, or `local-docker`
 LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=true
 ```
 
-Any missing value, alternate casing, or other value is rejected. This flag records operator acknowledgment only; it does not certify the worker as production-ready. Production deployments should leave the provider unset/`mock` until a separately approved production provider exists.
+Any missing value, alternate casing, or other value is rejected. This flag records operator acknowledgment only; it does not certify a local worker for deployment. Ordinary production must use `remote-docker`, a 32+ character bearer token, both HTTPS runner URLs, and `LABRIX_EXECUTION_DISPATCH=queued`.
 
 The guard is evaluated server-side whenever TRACE resolves the configured execution provider, including workspace loading and Run/Submit service entry. Errors begin with `Invalid execution provider configuration` and identify the rejected provider or variable. Provider selection never falls back silently.
 

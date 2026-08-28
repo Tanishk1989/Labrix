@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveConfiguredDatabaseUrl } from "../../scripts/demo-env";
+import {
+  localDemoDatabaseUrl,
+  resolveConfiguredDatabaseUrl,
+  resolveDemoDatabaseUrl,
+} from "../../scripts/demo-env";
 
 describe("database URL resolution", () => {
   it("prefers an explicit demo override", () => {
@@ -27,5 +31,19 @@ describe("database URL resolution", () => {
     expect(resolveConfiguredDatabaseUrl({
       envFileDatabaseUrl: "postgresql://fallback",
     })).toBe("postgresql://fallback");
+  });
+});
+
+describe("demo database URL resolution", () => {
+  it("uses the isolated local database by default", () => {
+    expect(resolveDemoDatabaseUrl({ localDatabaseUrl: localDemoDatabaseUrl }))
+      .toBe(localDemoDatabaseUrl);
+  });
+
+  it("allows only the explicit demo override to replace the local default", () => {
+    expect(resolveDemoDatabaseUrl({
+      demoDatabaseUrl: "postgresql://demo.example/trace_demo",
+      localDatabaseUrl: localDemoDatabaseUrl,
+    })).toBe("postgresql://demo.example/trace_demo");
   });
 });

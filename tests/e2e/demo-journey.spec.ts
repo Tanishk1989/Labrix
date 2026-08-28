@@ -22,11 +22,12 @@ test("professor demo: teacher, student, and teacher progress journey", async ({ 
   await expect(page.getByText(/Simulated execution/)).toBeVisible();
 
   await page.getByRole("button", { name: /^Run tests/ }).click();
-  await expect(page.getByText("1 of 2 visible tests passed")).toBeVisible();
+  await expect(page.getByText("0 of 2 visible tests passed")).toBeVisible();
   const editor = page.locator(".monaco-editor .view-lines");
   await editor.click();
   await page.keyboard.press("Control+A");
-  await page.keyboard.type("#include <iostream>\nusing namespace std;\nint main() { return 0; }");
+  await page.keyboard.insertText("#include <iostream>\nusing namespace std;\nint main() { cout << 0; return 0; }");
+  await expect(page.getByText("Saving changes…")).toBeVisible();
   await expect(page.getByText("All changes saved")).toBeVisible();
   await page.getByRole("button", { name: /^Run tests/ }).click();
   await expect(page.getByText("All visible tests passed")).toBeVisible();

@@ -1,6 +1,6 @@
 # MVP and implementation status
 
-Status reflects repository behavior as of 2026-08-15.
+Status reflects repository behavior as of 2026-08-27.
 
 ## Implemented
 
@@ -44,11 +44,10 @@ Status reflects repository behavior as of 2026-08-15.
 
 ## Planned
 
-- Automatic local `STUDENT` creation after verified Clerk sign-up and classroom membership through a valid join code.
 - Clerk email invitations, MFA, and social-login acceptance remain outside this slice. Signed Clerk lifecycle webhooks and administrator-controlled public metadata handle teacher provisioning.
 - Complete staging capacity validation and operational alert delivery for the isolated production queue.
 - Versioned deterministic evidence signals beyond the five foundation events.
-- AI-assisted explanation, feedback drafting, evidence summaries, and implementation-specific viva guidance with provenance and human review.
+- External AI-assisted explanation and feedback generation. The MVP ships deterministic source-based oral-defense prompts without sending student code to a third party.
 - Concurrency, retention/deletion, deadline/timezone, accessibility, and operations hardening.
 
 ## Out of scope for the MVP

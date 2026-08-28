@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, Clock3, Plus, Users } from "lucide-react";
 import { EmptyState, ProgressBar, StatusBadge } from "@/components/design-system";
 import { JoinCode } from "@/components/interactive-design-system";
-import { LiveLabMonitor } from "./live-lab-monitor";
 import type { ClassroomOverviewViewModel } from "./classroom-overview-view-model";
 
 function dateLabel(value: string | null) {
@@ -36,10 +35,6 @@ export function ClassroomOverviewPage({ classroom }: { classroom: ClassroomOverv
         <Link href={`/submissions?classroom=${encodeURIComponent(classroom.id)}`} className="tab-item">Review</Link>
         <Link href={`/progress?classroom=${encodeURIComponent(classroom.id)}`} className="tab-item">Progress</Link>
       </nav>
-
-      {task ? (
-        <LiveLabMonitor taskTitle={task.title} classroomId={classroom.id} />
-      ) : null}
 
       <div id="overview" className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
         <div className="space-y-5">

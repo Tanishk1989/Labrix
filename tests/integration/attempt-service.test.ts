@@ -12,6 +12,7 @@ import {
   getSubmissionForTeacher,
   runStudentDraft,
   processClaimedExecutionJob,
+  retryOrFailClaimedExecutionJob,
   saveStudentDraft,
   submitStudentDraft,
 } from "@/server/attempts/service";
@@ -360,6 +361,41 @@ describe.sequential("persisted student-attempt service", () => {
     const completedSubmission = await getStudentExecutionJob(studentId, queuedSubmission.id);
     expect(completedSubmission.status).toBe("COMPLETED");
     expect(completedSubmission.submission?.result.hiddenTotalTests).toBe(1);
+  });
+
+  it("requeues transient worker failures and fails only after the retry budget", async () => {
+    const workspace = await getOrCreateStudentWorkspace(studentId, taskId);
+    const queued = await enqueueStudentRun({
+      studentId,
+      sessionId: workspace.session.id,
+      language: "JAVA",
+      sourceCode: "public class Main {}",
+    });
+    const firstClaim = await claimNextExecutionJob("retry-worker:1");
+    expect(firstClaim?.id).toBe(queued.id);
+    await expect(retryOrFailClaimedExecutionJob({
+      jobId: firstClaim!.id,
+      workerId: firstClaim!.lockedBy!,
+      attemptCount: firstClaim!.attemptCount,
+      maxAttempts: 2,
+    })).resolves.toBe("REQUEUED");
+    await prisma.executionJob.update({
+      where: { id: queued.id },
+      data: { availableAt: new Date(0) },
+    });
+
+    const secondClaim = await claimNextExecutionJob("retry-worker:2");
+    expect(secondClaim?.id).toBe(queued.id);
+    await expect(retryOrFailClaimedExecutionJob({
+      jobId: secondClaim!.id,
+      workerId: secondClaim!.lockedBy!,
+      attemptCount: secondClaim!.attemptCount,
+      maxAttempts: 2,
+    })).resolves.toBe("FAILED");
+    await expect(getStudentExecutionJob(studentId, queued.id)).resolves.toMatchObject({
+      status: "FAILED",
+      message: "Execution failed after safe retries.",
+    });
   });
 
   it("rejects an expired submission before running hidden tests", async () => {

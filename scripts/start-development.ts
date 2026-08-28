@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-import { getDemoDatabaseUrl } from "./demo-env";
+import { getConfiguredDatabaseUrl } from "./demo-env";
 
-const databaseUrl = getDemoDatabaseUrl();
+const databaseUrl = getConfiguredDatabaseUrl();
 if (!databaseUrl) {
   console.error(
     "Development startup stopped: DATABASE_URL is not configured. Add it to .env.local, or use npm run dev:local for the bundled PostgreSQL container.",

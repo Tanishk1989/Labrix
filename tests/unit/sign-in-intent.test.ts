@@ -23,11 +23,13 @@ describe("sign-in intent", () => {
       .toBe("/sign-in?role=teacher");
   });
 
-  it("allows student onboarding but never self-provisions a teacher", () => {
+  it("routes either selected role to verified account setup", () => {
     expect(postSignInErrorDestination(new UnlinkedActorError(), "student"))
-      .toBe("/unlinked-account");
+      .toBe("/account-setup?role=student");
     expect(postSignInErrorDestination(new UnlinkedActorError(), "teacher"))
-      .toBe("/unauthorized");
+      .toBe("/account-setup?role=teacher");
+    expect(postSignInErrorDestination(new UnlinkedActorError(), null))
+      .toBe("/account-setup");
   });
 
   it("routes unsafe and disabled identities to bounded account states", () => {

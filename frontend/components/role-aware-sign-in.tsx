@@ -54,7 +54,7 @@ export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
         </div>
 
         <p className="mt-5 text-xs leading-5 text-slate-500">
-          Your approved TRACE role is verified after sign-in. Choosing an option does not change account permissions.
+          Both roles are available immediately. An existing Student can choose Teacher to promote the account.
         </p>
       </section>
     );

@@ -36,7 +36,6 @@ function ClassroomDialog({ mode, close }: { mode: "create" | "join"; close: () =
     }
     close();
     router.push(`/classes/${result.classroomId}`);
-    router.refresh();
   }
 
   const title = mode === "create" ? "Create classroom" : "Join classroom";

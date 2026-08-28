@@ -59,7 +59,7 @@ export function validateEnvironment(): EnvValidationResult {
   const geminiAiEnabled = Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
 
   if (!groqAiEnabled && !geminiAiEnabled) {
-    warnings.push("No AI API keys configured (GROQ_API_KEY or GEMINI_API_KEY). Running deterministic AST fallback.");
+    warnings.push("No AI API keys configured (GROQ_API_KEY or GEMINI_API_KEY). Using deterministic source-based oral-defense prompts.");
   }
 
   // 4. Rate Limiting

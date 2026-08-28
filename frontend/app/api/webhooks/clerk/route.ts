@@ -5,7 +5,6 @@ import { RATE_LIMIT_CONFIGS } from "@/server/security/rate-limit-configs";
 import {
   clerkUserDataSchema,
   clerkWebhookEnvelopeSchema,
-  getClerkAssignedRole,
   isClerkUserEventType,
   verifyClerkWebhookSignature,
 } from "@/server/onboarding/clerk-webhook";
@@ -69,56 +68,19 @@ export async function POST(req: NextRequest) {
   const primaryEmail =
     data.email_addresses?.find((e) => e.id === data.primary_email_address_id)
       ?.email_address ??
-    data.email_addresses?.[0]?.email_address ??
-    `${clerkUserId}@placeholder.trace`;
+    data.email_addresses?.[0]?.email_address;
 
   const fullName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim() || "TRACE User";
-  const metadataRole = data.public_metadata?.role;
-  // Only Clerk public metadata, controlled by an administrator, may grant the
-  // teacher role. User-editable unsafe metadata is intentionally ignored.
-  const assignedRole = getClerkAssignedRole(data);
-
   try {
     switch (type) {
       case "user.created": {
-        await prisma.$transaction(async (tx) => {
-          const existingIdentity = await tx.externalIdentity.findUnique({
-            where: {
-              provider_providerSubject: {
-                provider: "clerk",
-                providerSubject: clerkUserId,
-              },
-            },
-          });
-          if (existingIdentity) return;
-
-          const emailOwner = await tx.user.findUnique({
-            where: { email: primaryEmail },
-            select: { id: true },
-          });
-          if (emailOwner) {
-            throw new Error("A TRACE account already owns this email address.");
-          }
-
-          const user = await tx.user.create({
-            data: {
-              name: fullName,
-              email: primaryEmail,
-              platformRole: assignedRole,
-              accountStatus: "ACTIVE",
-            },
-          });
-
-          await tx.externalIdentity.create({
-            data: {
-              userId: user.id,
-              provider: "clerk",
-              providerSubject: clerkUserId,
-            },
-          });
-
+        // Account creation is completed by the authenticated role-setup action,
+        // never by mutable webhook metadata or delivery ordering.
+        return NextResponse.json({
+          success: true,
+          action: "awaiting_role_onboarding",
+          userId: clerkUserId,
         });
-        return NextResponse.json({ success: true, action: "created", userId: clerkUserId });
       }
 
       case "user.updated": {
@@ -136,20 +98,15 @@ export async function POST(req: NextRequest) {
             where: { id: identity.userId },
             data: {
               name: fullName,
-              email: primaryEmail,
-              ...(metadataRole
-                ? {
-                    platformRole: metadataRole,
-                    accountStatus: "ACTIVE" as const,
-                    teacherApprovalRequestedAt: null,
-                    teacherApprovalNotifiedAt: null,
-                    teacherApprovedAt: null,
-                  }
-                : {}),
+              ...(primaryEmail ? { email: primaryEmail } : {}),
             },
           });
         }
-        return NextResponse.json({ success: true, action: "updated", userId: clerkUserId });
+        return NextResponse.json({
+          success: true,
+          action: identity ? "updated" : "awaiting_role_onboarding",
+          userId: clerkUserId,
+        });
       }
 
       case "user.deleted": {

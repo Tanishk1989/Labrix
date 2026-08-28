@@ -3,6 +3,7 @@ export type DatabaseSafetyInput = {
   testDatabaseUrl: string | undefined;
   activeDatabaseUrl?: string | undefined;
   configuredDatabaseUrl?: string | undefined;
+  protectedDatabaseUrls?: Array<string | undefined>;
 };
 
 export class VerificationSafetyError extends Error {
@@ -55,6 +56,18 @@ export function requireDisposableTestDatabase(input: DatabaseSafetyInput) {
     if (databaseIdentity(configuredDatabaseUrl) === databaseIdentity(testDatabaseUrl)) {
       throw new VerificationSafetyError(
         "The disposable test database must differ from the configured development/demo database.",
+      );
+    }
+  }
+  for (const protectedValue of input.protectedDatabaseUrls ?? []) {
+    if (!protectedValue?.trim()) continue;
+    const protectedDatabaseUrl = normalizedDatabaseUrl(
+      protectedValue.trim(),
+      "protected database URL",
+    );
+    if (databaseIdentity(protectedDatabaseUrl) === databaseIdentity(testDatabaseUrl)) {
+      throw new VerificationSafetyError(
+        "The disposable test database must differ from every development and demo database.",
       );
     }
   }

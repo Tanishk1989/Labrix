@@ -56,6 +56,7 @@ services:
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:?Set the Upstash REST URL}
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?Set the Upstash REST token}
       LABRIX_EXECUTION_PROVIDER: remote-docker
+      LABRIX_EXECUTION_DISPATCH: queued
       LABRIX_JAVA_RUNNER_URL: ${LABRIX_JAVA_RUNNER_URL:?Set the HTTPS Java runner endpoint}
       LABRIX_CPP_RUNNER_URL: ${LABRIX_CPP_RUNNER_URL:?Set the HTTPS C++ runner endpoint}
       LABRIX_RUNNER_BEARER_TOKEN: ${LABRIX_RUNNER_BEARER_TOKEN:?Set a random runner bearer token of at least 32 characters}

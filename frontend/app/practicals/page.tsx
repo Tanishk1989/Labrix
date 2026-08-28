@@ -369,6 +369,25 @@ export default async function PracticalsOverviewPage({
 }) {
   const actor = await resolveCurrentActorForPage({ demoActor: "teacher" });
   const params = await searchParams;
+
+  if (actor.source === "external-identity") {
+    if (actor.role === "TEACHER") {
+      const teacherOverview = await getTeacherOverview(actor.id);
+      return (
+        <DemoShell actor={actor}>
+          <TeacherPracticalsContent overview={teacherOverview} params={params} />
+        </DemoShell>
+      );
+    }
+
+    const studentOverview = await getStudentOverview(actor.id);
+    return (
+      <DemoShell actor={actor}>
+        <StudentPracticalsPage overview={studentOverview} allowJoin classroomId={params.classroom} status={params.status} />
+      </DemoShell>
+    );
+  }
+
   const studentTargetId = actor.source === "seeded-demo-session"
     ? (await resolveDemoStudentActor()).id
     : actor.id;

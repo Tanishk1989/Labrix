@@ -4,6 +4,7 @@ import {
   configuredDevelopmentDatabaseUrl,
   verificationValue,
 } from "./verification-env";
+import { localDemoDatabaseUrl } from "./demo-env";
 import {
   requireDisposableTestDatabase,
   VerificationSafetyError,
@@ -27,12 +28,15 @@ let childEnvironment = { ...process.env };
 if (target === "read-only") {
   childEnvironment = {
     ...childEnvironment,
+    DATABASE_URL: localDemoDatabaseUrl,
     LABRIX_E2E_READ_ONLY: "true",
     LABRIX_IDENTITY_MODE: "demo",
   };
   commandArguments = [
     resolve(process.cwd(), "node_modules/@playwright/test/cli.js"),
     "test",
+    "--config",
+    "tests/playwright.config.ts",
     "tests/e2e/read-only-routes.spec.ts",
     ...forwardedArguments,
   ];
@@ -42,6 +46,7 @@ if (target === "read-only") {
       allowMutation: verificationValue("LABRIX_ALLOW_TEST_DATABASE_MUTATION"),
       testDatabaseUrl: verificationValue("LABRIX_TEST_DATABASE_URL"),
       configuredDatabaseUrl: configuredDevelopmentDatabaseUrl(),
+      protectedDatabaseUrls: [localDemoDatabaseUrl],
     });
     childEnvironment = {
       ...childEnvironment,

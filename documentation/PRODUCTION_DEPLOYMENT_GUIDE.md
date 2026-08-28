@@ -1,6 +1,8 @@
 # TRACE production deployment guide
 
-This guide provides step-by-step instructions to deploy TRACE to production on modern cloud infrastructure (Vercel / Railway + Neon PostgreSQL + Clerk + Groq).
+This guide deploys TRACE with a serverless web application, Clerk, PostgreSQL,
+Upstash rate limiting, and a dedicated Linux execution host. External AI is not
+required for the MVP; the active review UI uses deterministic source-based oral-defense prompts.
 
 ---
 
@@ -11,9 +13,10 @@ flowchart TD
     User([Students & Teachers]) --> Vercel[Vercel / Next.js Web App]
     Vercel --> Clerk[Clerk Auth & Webhooks]
     Vercel --> Neon[(Neon Serverless PostgreSQL)]
-    Vercel --> Groq[Groq AI Llama 3.3 70B]
     Vercel --> Upstash[(Upstash Redis Rate Limiting)]
-    Vercel --> RunnerWorker[Dedicated Docker Runner EC2/Hetzner]
+    Vercel --> Queue[(PostgreSQL Execution Jobs)]
+    Worker[Dedicated Execution Worker] --> Queue
+    Worker --> Runner[Authenticated Java and C++ Runners]
 ```
 
 ---
@@ -33,7 +36,7 @@ flowchart TD
 ## 🔐 Step 2: Clerk Authentication & Realtime Webhook Sync
 
 1. Create a production application on [Clerk.com](https://clerk.com).
-2. Enable Email & Google social sign-in.
+2. Enable Email, Google, and GitHub sign-in. Set `NEXT_PUBLIC_CLERK_SOCIAL_CONNECTIONS_ENABLED=true` so the configured social buttons are visible.
 3. In Clerk Dashboard $\rightarrow$ **Webhooks**:
    - Add Endpoint: `https://your-domain.com/api/webhooks/clerk`
    - Subscribe to events:
@@ -44,16 +47,7 @@ flowchart TD
 
 ---
 
-## ⚡ Step 3: AI Inference Setup (Groq API)
-
-1. Sign up on [Groq Console](https://console.groq.com).
-2. Generate an API Key $\rightarrow$ Set as `GROQ_API_KEY`.
-3. Set model: `GROQ_AI_REVIEW_MODEL="openai/gpt-oss-20b"` or `"llama-3.3-70b-versatile"`.
-4. *(Optional)* Add `GEMINI_API_KEY` for secondary failover redundancy.
-
----
-
-## 🚢 Step 4: Deploying to Vercel (Recommended)
+## 🚢 Step 3: Deploying to Vercel (Recommended)
 
 1. Import your GitHub repository into [Vercel](https://vercel.com).
 2. Set Framework Preset to **Next.js**.
@@ -66,31 +60,29 @@ flowchart TD
 | Environment Variable | Value / Description |
 | :--- | :--- |
 | `DATABASE_URL` | Pooled Postgres connection URL |
-| `DIRECT_URL` | Direct non-pooled Postgres connection URL |
 | `LABRIX_IDENTITY_MODE` | `clerk` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
 | `CLERK_SECRET_KEY` | `sk_live_...` |
 | `CLERK_WEBHOOK_SECRET` | `whsec_...` |
-| `GROQ_API_KEY` | `gsk_...` |
-| `GROQ_AI_REVIEW_MODEL` | `openai/gpt-oss-20b` |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST credential |
 | `LABRIX_EXECUTION_PROVIDER` | `remote-docker` |
+| `LABRIX_EXECUTION_DISPATCH` | `queued` |
 | `LABRIX_JAVA_RUNNER_URL` | Public or private HTTPS execution endpoint |
 | `LABRIX_CPP_RUNNER_URL` | Public or private HTTPS execution endpoint |
 | `LABRIX_RUNNER_BEARER_TOKEN` | Shared random credential, at least 32 characters |
 | `NODE_ENV` | `production` |
 
-6. Click **Deploy**. Vercel will automatically build and publish your high-performance edge deployment.
+6. Deploy. Do not open enrollment until the worker heartbeat and runner checks are healthy.
 
 ---
 
-## 🛡️ Step 5: Untrusted Code Runner Worker (For Real Execution)
+## 🛡️ Step 4: Untrusted Code Runner and Execution Worker
 
 For executing untrusted student C++ and Java code in isolated containers:
 
 1. Provision a dedicated Linux Docker host. Do not colocate the runners with business data or the database.
-2. Follow the versioned deployment bundle in `deployment/runner/README.md`. It starts both workers behind automatic HTTPS and applies container resource limits.
+2. Follow `deployment/runner/README.md`. The bundle starts both authenticated runners, Caddy, and the durable execution worker.
 3. Set Vercel's `LABRIX_EXECUTION_PROVIDER` to `remote-docker`, point both runner URL variables at their HTTPS origins, and use the same random 32+ character bearer token on Vercel and the runner host.
 4. Verify the public boundary before enabling a class:
    ```bash
@@ -101,7 +93,7 @@ Never expose the Docker daemon or either runner execution endpoint without beare
 
 ---
 
-## 🩺 Step 6: Production Health & Observability Check
+## 🩺 Step 5: Production Health & Observability Check
 
 Verify your live deployment by hitting the health check endpoint:
 ```bash
@@ -113,21 +105,22 @@ Expected output:
 {
   "status": "healthy",
   "version": "0.1.0",
-  "uptime": 12450.2,
+  "uptime": 12450,
   "database": {
     "status": "connected",
     "latencyMs": 8
   },
-  "environment": "production",
-  "systemConfig": {
-    "isValid": true,
-    "mode": "clerk",
-    "features": {
-      "groqAiEnabled": true,
-      "geminiAiEnabled": false,
-      "upstashRateLimiting": true,
-      "runnerConfigured": true
-    }
+  "configuration": {
+    "status": "valid",
+    "warnings": [],
+    "missingRequired": []
+  },
+  "executionQueue": {
+    "queued": 0,
+    "running": 0,
+    "failed": 0,
+    "workersOnline": 1,
+    "capacity": 8
   }
 }
 ```

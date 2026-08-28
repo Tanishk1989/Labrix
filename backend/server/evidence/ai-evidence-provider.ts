@@ -1,5 +1,7 @@
 import "server-only";
 
+import { z } from "zod";
+
 import {
   generateVivaDefense,
   type GenerateVivaInput,
@@ -20,6 +22,48 @@ const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
 const AI_CACHE = new Map<string, { result: VivaGenerationResult; expiresAt: number }>();
+
+const aiResponseSchema = z.object({
+  questions: z.array(z.object({
+    id: z.string().trim().min(1).max(100),
+    category: z.enum([
+      "IMPLEMENTATION_CHOICE",
+      "COMPLEXITY_EDGE_CASES",
+      "MODIFICATION_CHALLENGE",
+      "PROCESS_GROUNDED_PROBE",
+    ]),
+    title: z.string().trim().min(1).max(200),
+    question: z.string().trim().min(1).max(1_500),
+    expectedAnswerHint: z.string().trim().min(1).max(1_500),
+    rubricFocus: z.string().trim().min(1).max(300),
+  }).strict()).length(4),
+  feedbackDraft: z.string().trim().min(1).max(4_000),
+  codeInsights: z.object({
+    detectedFunctions: z.array(z.string().trim().min(1).max(200)).max(30),
+    detectedDataStructures: z.array(z.string().trim().min(1).max(200)).max(30),
+    detectedPatterns: z.array(z.string().trim().min(1).max(300)).max(30),
+    estimatedComplexity: z.string().trim().min(1).max(300),
+  }).strict(),
+}).strict();
+
+function parseAiResponse(
+  rawContent: string,
+  input: GenerateVivaInput,
+  model: string,
+): VivaGenerationResult | null {
+  const decoded = aiResponseSchema.safeParse(JSON.parse(rawContent));
+  if (!decoded.success) return null;
+  return {
+    questions: decoded.data.questions,
+    feedbackDraft: decoded.data.feedbackDraft,
+    codeInsights: { language: input.language, ...decoded.data.codeInsights },
+    provenance: {
+      model,
+      generatedAt: new Date().toISOString(),
+      groundedInAST: false,
+    },
+  };
+}
 
 function buildPrompt(input: GenerateVivaInput): string {
   const isAnomalous =
@@ -141,26 +185,7 @@ async function callGroqAI(
     const rawContent = data.choices?.[0]?.message?.content;
     if (!rawContent) return null;
 
-    const parsed = JSON.parse(rawContent);
-    return {
-      questions: parsed.questions,
-      feedbackDraft: parsed.feedbackDraft,
-      codeInsights: {
-        language: input.language,
-        detectedFunctions: parsed.codeInsights?.detectedFunctions ?? ["main"],
-        detectedDataStructures:
-          parsed.codeInsights?.detectedDataStructures ?? ["Variables"],
-        detectedPatterns:
-          parsed.codeInsights?.detectedPatterns ?? ["Iteration"],
-        estimatedComplexity:
-          parsed.codeInsights?.estimatedComplexity ?? "O(N) Linear Time",
-      },
-      provenance: {
-        model: `Groq (${GROQ_MODEL})`,
-        generatedAt: new Date().toISOString(),
-        groundedInAST: true,
-      },
-    };
+    return parseAiResponse(rawContent, input, `Groq (${GROQ_MODEL})`);
   } catch (err) {
     clearTimeout(timeoutId);
     logEvent("warn", "ai_provider_request_failed", {
@@ -203,26 +228,7 @@ async function callGeminiAI(
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!rawText) return null;
 
-    const parsed = JSON.parse(rawText);
-    return {
-      questions: parsed.questions,
-      feedbackDraft: parsed.feedbackDraft,
-      codeInsights: {
-        language: input.language,
-        detectedFunctions: parsed.codeInsights?.detectedFunctions ?? ["main"],
-        detectedDataStructures:
-          parsed.codeInsights?.detectedDataStructures ?? ["Variables"],
-        detectedPatterns:
-          parsed.codeInsights?.detectedPatterns ?? ["Iteration"],
-        estimatedComplexity:
-          parsed.codeInsights?.estimatedComplexity ?? "O(N) Linear Time",
-      },
-      provenance: {
-        model: "Google Gemini 1.5 Flash",
-        generatedAt: new Date().toISOString(),
-        groundedInAST: true,
-      },
-    };
+    return parseAiResponse(rawText, input, "Google Gemini 1.5 Flash");
   } catch (err) {
     clearTimeout(timeoutId);
     logEvent("warn", "ai_provider_request_failed", {
