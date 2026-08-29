@@ -32,7 +32,7 @@ export function StudentPracticalDetailPage({ practical }: { practical: StudentPr
         ]}
         title={view.title}
         description={`${view.classroom.subject} · ${view.classroom.name}`}
-        actions={(
+        actions={view.workspaceHref ? (
           <Link
             href={view.workspaceHref}
             aria-label={`${view.workspaceActionLabel} ${view.title}`}
@@ -40,6 +40,10 @@ export function StudentPracticalDetailPage({ practical }: { practical: StudentPr
           >
             {view.workspaceActionLabel} <ArrowRight size={14} aria-hidden="true" />
           </Link>
+        ) : (
+          <span className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] border border-[var(--border)] px-4 text-sm font-semibold text-[var(--text-muted)]">
+            {view.workspaceActionLabel}
+          </span>
         )}
       />
 
@@ -60,7 +64,7 @@ export function StudentPracticalDetailPage({ practical }: { practical: StudentPr
           <h2 id="before-start-heading" className="mt-1 text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">How your work is saved</h2>
           <ul className="mt-4 space-y-2 text-sm leading-6 text-[var(--text-secondary)]">
             <li>Available languages: <strong className="font-semibold text-[var(--text-primary)]">{view.allowedLanguages.map(languageLabel).join(" or ")}</strong>.</li>
-            <li>{view.deadline ? <>Submit by <strong className="font-semibold text-[var(--text-primary)]">{dateLabel(view.deadline)}</strong>.</> : "There is no submission deadline."}</li>
+            <li>{view.deadline ? <>{view.workspaceHref ? "Submit by" : "Submission closed on"} <strong className="font-semibold text-[var(--text-primary)]">{dateLabel(view.deadline)}</strong>.</> : "There is no submission deadline."}</li>
             <li>Your code is saved automatically while you work.</li>
             <li><strong className="font-semibold text-[var(--text-primary)]">Run visible tests</strong> gives practice feedback and does not submit your work.</li>
             <li><strong className="font-semibold text-[var(--text-primary)]">Submit attempt</strong> records a permanent copy and also checks any hidden tests.</li>

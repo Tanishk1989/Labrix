@@ -1,21 +1,15 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { IdentityModeProvider } from "@/components/identity-mode-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getIdentityMode } from "@/server/actors/identity-mode";
 import "./globals.css";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -70,7 +64,7 @@ export default function RootLayout({
     </ThemeProvider>
   );
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
+    <html lang="en" className={manrope.variable}>
       <body>
         {mode === "clerk" && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
           <ClerkProvider

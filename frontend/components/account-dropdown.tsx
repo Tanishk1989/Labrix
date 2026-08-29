@@ -96,7 +96,7 @@ export function AccountDropdown({
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 py-1 px-1.5 text-xs font-medium text-white/90 transition-all hover:text-white cursor-pointer group focus:outline-none"
+        className="flex min-h-11 items-center gap-2 py-1 px-1.5 text-xs font-medium text-white/90 transition-all hover:text-white cursor-pointer group focus:outline-none"
       >
         {/* User Info */}
         <div className="flex flex-col items-end text-right leading-tight">

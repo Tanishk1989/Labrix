@@ -346,7 +346,7 @@ async function loadTeacherOverview(teacherId: string): Promise<TeacherOverview> 
 
 const getCachedTeacherOverview = unstable_cache(
   loadTeacherOverview,
-  ["teacher-overview-v1"],
+  ["teacher-overview-v2"],
   {
     tags: [TEACHER_OVERVIEW_CACHE_TAG, CLASSROOM_MANAGEMENT_CACHE_TAG],
     revalidate: 60,

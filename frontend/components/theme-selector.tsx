@@ -26,7 +26,7 @@ export function ThemeSelector() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex size-7 items-center justify-center rounded-lg hover:bg-white/[0.08] transition-colors"
+        className="flex size-11 items-center justify-center rounded-lg hover:bg-white/[0.08] transition-colors"
         aria-label="Change Theme Preset"
         title={`Theme: ${currentPreset.name}`}
       >

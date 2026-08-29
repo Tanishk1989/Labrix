@@ -46,6 +46,7 @@ export function StudentPracticalsPage({
   const practicals = view.practicals.filter((practical) =>
     matchesStudentPracticalFilter(practical.state, filter));
   const tabs: Array<{ value: StudentPracticalFilter; label: string }> = [
+    { value: "ALL", label: "All" },
     { value: "TO_DO", label: "To do" },
     { value: "IN_PROGRESS", label: "In progress" },
     { value: "SUBMITTED", label: "Submitted" },
@@ -147,7 +148,7 @@ export function StudentPracticalsPage({
         <section className="border-y border-[var(--border)] py-12 sm:py-16">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Nothing here yet</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">Practicals will move into this view as your work progresses.</p>
-          <Link href="/practicals?status=TO_DO" className="button-secondary mt-6 min-h-11">View practicals to do</Link>
+          <Link href="/practicals?status=ALL" className="button-secondary mt-6 min-h-11">View all practicals</Link>
         </section>
       )}
     </div>

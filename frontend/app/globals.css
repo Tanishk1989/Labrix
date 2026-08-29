@@ -3,9 +3,9 @@
 :root {
   color-scheme: dark;
 
-  /* Typography System (Geist + Inter + Plus Jakarta Sans) */
-  --font-sans: 'Geist', 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-heading: 'Geist', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  /* Typography System — one clear, modern family across product surfaces */
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-heading: var(--font-manrope), system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Obsidian & Electric Cobalt + LecturePulse Ambient Palette */
@@ -54,7 +54,7 @@
   --radius-2xl: 1rem;
   --radius-full: 999px;
   --control-height-sm: 2rem;
-  --control-height-md: 2.375rem;
+  --control-height-md: 2.75rem;
   --control-height-lg: 2.75rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -1279,6 +1279,9 @@ a {
 .workspace-title-group { min-width: 0; }
 
 .workspace-back-link {
+  display: inline-flex;
+  min-height: var(--control-height-lg);
+  align-items: center;
   color: var(--color-text-muted);
   font-size: 0.6875rem;
   font-weight: 650;
@@ -1326,7 +1329,7 @@ a {
 
 .workspace-toolbar-actions .button,
 .workspace-toolbar-actions .button-secondary {
-  min-height: var(--control-height-sm);
+  min-height: var(--control-height-lg);
   padding-inline: 0.8rem;
 }
 
@@ -1350,7 +1353,7 @@ a {
 .workspace-language-control .input {
   width: auto;
   min-width: 6rem;
-  min-height: var(--control-height-sm);
+  min-height: var(--control-height-lg);
   padding-block: 0.3rem;
 }
 

@@ -152,8 +152,25 @@ describe("student dashboard view model", () => {
 
     expect(dashboard).toMatchObject({
       headline: "An overdue practical needs attention.",
-      nextUp: { statusLabel: "Overdue" },
+      nextUp: {
+        statusLabel: "Overdue",
+        actionLabel: "Review practical",
+        href: "/practicals/practical-1",
+      },
     });
+  });
+
+  it("prioritizes work that can still be submitted over expired work", () => {
+    const dashboard = buildStudentDashboardViewModel(overview({
+      practicals: [
+        practical({ id: "expired", deadline: "2026-08-15T10:00:00.000Z" }),
+        practical({ id: "open", deadline: "2026-09-15T10:00:00.000Z" }),
+      ],
+      summary: { classCount: 1, practicalCount: 2, submittedPracticalCount: 0, completionPercentage: 0 },
+    }), new Date("2026-08-25T10:00:00.000Z"));
+
+    expect(dashboard.nextUp?.id).toBe("open");
+    expect(dashboard.upcoming.map((item) => item.id)).toEqual(["expired"]);
   });
 
   it("orders unsubmitted work by deadline and preserves DTO order for ties", () => {
@@ -165,7 +182,7 @@ describe("student dashboard view model", () => {
         practical({ id: "earlier-b", title: "Earlier B", deadline: "2026-08-15T10:00:00.000Z" }),
       ],
       summary: { classCount: 1, practicalCount: 4, submittedPracticalCount: 0, completionPercentage: 0 },
-    }));
+    }), new Date("2026-08-01T10:00:00.000Z"));
 
     expect(dashboard.nextUp?.id).toBe("earlier-a");
     expect(dashboard.upcoming.map((item) => item.id)).toEqual(["earlier-b", "later", "no-deadline"]);

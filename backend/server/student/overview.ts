@@ -149,7 +149,7 @@ async function loadStudentOverview(studentId: string) {
 
 const getCachedStudentOverview = unstable_cache(
   loadStudentOverview,
-  ["student-overview-v1"],
+  ["student-overview-v2"],
   {
     tags: [STUDENT_OVERVIEW_CACHE_TAG, CLASSROOM_MANAGEMENT_CACHE_TAG],
     revalidate: 60,

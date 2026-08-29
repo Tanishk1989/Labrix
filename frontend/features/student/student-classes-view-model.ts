@@ -19,7 +19,7 @@ export type StudentClassWorkspace = {
     title: string;
     deadline: string | null;
     statusLabel: "Overdue" | "In progress" | "Not started";
-    actionLabel: "Continue" | "Start";
+    actionLabel: "Continue" | "Start" | "Review";
     href: string;
   } | null;
 };
@@ -40,7 +40,7 @@ export function buildStudentClassesViewModel(
       const submittedCount = practicals.filter(
         (practical) => practical.latestSubmission !== null,
       ).length;
-      const nextPractical = orderStudentActionablePracticals(practicals)[0] ?? null;
+      const nextPractical = orderStudentActionablePracticals(practicals, now)[0] ?? null;
       const publishedCount = practicals.length;
 
       return {
@@ -66,8 +66,12 @@ export function buildStudentClassesViewModel(
               statusLabel: isStudentPracticalOverdue(nextPractical, now)
                 ? "Overdue"
                 : hasActiveStudentSession(nextPractical) ? "In progress" : "Not started",
-              actionLabel: hasActiveStudentSession(nextPractical) ? "Continue" : "Start",
-              href: `/tasks/${nextPractical.id}`,
+              actionLabel: isStudentPracticalOverdue(nextPractical, now)
+                ? "Review"
+                : hasActiveStudentSession(nextPractical) ? "Continue" : "Start",
+              href: isStudentPracticalOverdue(nextPractical, now)
+                ? `/practicals/${nextPractical.id}`
+                : `/tasks/${nextPractical.id}`,
             }
           : null,
       };

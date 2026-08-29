@@ -31,33 +31,18 @@ async function checkRunner(endpoint: string | undefined) {
 }
 
 export async function GET() {
-  const startTime = Date.now();
   const configuration = validateEnvironment();
   const shouldCheckRunners =
     process.env.NODE_ENV === "production" &&
     configuration.features.runnerConfigured;
-  let dbStatus = "connected";
-  let dbLatencyMs = 0;
-
   try {
-    const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
-    dbLatencyMs = Date.now() - dbStart;
   } catch (dbError) {
     console.error("Database health check failed:", dbError);
-    dbStatus = "error";
     return NextResponse.json(
       {
         status: "degraded",
-        uptime: process.uptime(),
         timestamp: new Date().toISOString(),
-        database: {
-          status: "error",
-        },
-        configuration: {
-          status: configuration.isValid ? "valid" : "warning",
-          warnings: configuration.warnings,
-        },
       },
       { status: 503 },
     );
@@ -71,17 +56,12 @@ export async function GET() {
     : [{ status: "not-checked" as const }, { status: "not-checked" as const }];
 
   const queueEnabled = configuredQueueHealth(configuration.isValid);
-  const queue = queueEnabled
-    ? await prisma.executionJob.groupBy({ by: ["status"], _count: { _all: true } })
-    : [];
   const activeWorkers = queueEnabled
     ? await prisma.executionWorkerHeartbeat.findMany({
         where: { lastSeenAt: { gt: new Date(Date.now() - 30_000) } },
         select: { workerId: true, concurrency: true, lastSeenAt: true },
       })
     : [];
-  const queueCounts = Object.fromEntries(queue.map((entry) => [entry.status.toLowerCase(), entry._count._all]));
-
   const runnersHealthy =
     !shouldCheckRunners ||
     (javaRunner.status === "connected" && cppRunner.status === "connected");
@@ -91,30 +71,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: healthy ? "healthy" : "degraded",
-      version: "0.1.0",
-      uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
-      latencyMs: Date.now() - startTime,
-      database: {
-        status: dbStatus,
-        latencyMs: dbLatencyMs,
-      },
-      configuration: {
-        status: configuration.isValid ? "valid" : "warning",
-        warnings: configuration.warnings,
-        missingRequired: configuration.missingRequired,
-      },
-      runners: {
-        java: javaRunner,
-        cpp: cppRunner,
-      },
-      executionQueue: {
-        queued: queueCounts.queued ?? 0,
-        running: queueCounts.running ?? 0,
-        failed: queueCounts.failed ?? 0,
-        workersOnline: activeWorkers.length,
-        capacity: activeWorkers.reduce((sum, worker) => sum + worker.concurrency, 0),
-      },
     },
     {
       status: healthy ? 200 : 503,

@@ -19,11 +19,15 @@ export function isStudentPracticalOverdue(
 
 export function orderStudentActionablePracticals(
   practicals: StudentPractical[],
+  now = new Date(),
 ) {
   return practicals
     .map((practical, index) => ({ practical, index }))
     .filter(({ practical }) => practical.latestSubmission === null)
     .sort((left, right) => {
+      const leftOverdue = isStudentPracticalOverdue(left.practical, now);
+      const rightOverdue = isStudentPracticalOverdue(right.practical, now);
+      if (leftOverdue !== rightOverdue) return leftOverdue ? 1 : -1;
       const leftDeadline = left.practical.deadline
         ? new Date(left.practical.deadline).getTime()
         : Number.POSITIVE_INFINITY;
@@ -42,7 +46,7 @@ export type StudentDashboardPractical = {
   classroomSubject: string;
   deadline: string | null;
   statusLabel: "Overdue" | "In progress" | "Not started";
-  actionLabel: "Continue practical" | "Start practical";
+  actionLabel: "Continue practical" | "Start practical" | "Review practical";
   href: string;
 };
 
@@ -80,8 +84,10 @@ function practicalRow(practical: StudentPractical, now: Date): StudentDashboardP
     classroomSubject: practical.classroom.subject,
     deadline: practical.deadline,
     statusLabel: overdue ? "Overdue" : inProgress ? "In progress" : "Not started",
-    actionLabel: inProgress ? "Continue practical" : "Start practical",
-    href: `/tasks/${practical.id}`,
+    actionLabel: overdue
+      ? "Review practical"
+      : inProgress ? "Continue practical" : "Start practical",
+    href: overdue ? `/practicals/${practical.id}` : `/tasks/${practical.id}`,
   };
 }
 
@@ -114,7 +120,7 @@ export function buildStudentDashboardViewModel(
   overview: StudentOverview,
   now = new Date(),
 ): StudentDashboardViewModel {
-  const actionable = orderStudentActionablePracticals(overview.practicals)
+  const actionable = orderStudentActionablePracticals(overview.practicals, now)
     .map((practical) => practicalRow(practical, now));
 
   const recentSubmissions = [...overview.submissions]

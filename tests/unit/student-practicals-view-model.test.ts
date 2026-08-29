@@ -82,10 +82,12 @@ function overview(overrides: Partial<StudentOverview> = {}): StudentOverview {
 }
 
 describe("student practical discovery", () => {
-  it("normalizes and separates the four student work views", () => {
-    expect(normalizeStudentPracticalFilter()).toBe("TO_DO");
-    expect(normalizeStudentPracticalFilter("unexpected")).toBe("TO_DO");
+  it("normalizes and separates the five student work views", () => {
+    expect(normalizeStudentPracticalFilter()).toBe("ALL");
+    expect(normalizeStudentPracticalFilter("unexpected")).toBe("ALL");
+    expect(normalizeStudentPracticalFilter("TO_DO")).toBe("TO_DO");
     expect(normalizeStudentPracticalFilter("FEEDBACK")).toBe("FEEDBACK");
+    expect(matchesStudentPracticalFilter("IN_PROGRESS", "ALL")).toBe(true);
     expect(matchesStudentPracticalFilter("NOT_SUBMITTED", "TO_DO")).toBe(true);
     expect(matchesStudentPracticalFilter("IN_PROGRESS", "TO_DO")).toBe(false);
     expect(matchesStudentPracticalFilter("SUBMITTED", "SUBMITTED")).toBe(true);
@@ -103,7 +105,7 @@ describe("student practical discovery", () => {
         practical({ id: "later", deadline: "2026-08-20T10:00:00.000Z" }),
         practical({ id: "earlier", deadline: "2026-08-14T10:00:00.000Z" }),
       ],
-    }));
+    }), new Date("2026-08-01T10:00:00.000Z"));
 
     expect(view.practicals.map((item) => item.id)).toEqual(["earlier", "later", "none"]);
   });
@@ -179,6 +181,19 @@ describe("student practical detail", () => {
     expect(view.latestSubmission).toMatchObject({
       feedbackAvailable: true,
       href: "/submissions/submission-1?view=student",
+    });
+  });
+
+  it("replaces the workspace link with a clear closed state after the deadline", () => {
+    const view = buildStudentPracticalDetailViewModel(
+      practical({ deadline: "2026-08-15T10:00:00.000Z" }),
+      new Date("2026-08-29T10:00:00.000Z"),
+    );
+
+    expect(view).toMatchObject({
+      statusLabel: "Deadline passed",
+      workspaceActionLabel: "Submission closed",
+      workspaceHref: null,
     });
   });
 });

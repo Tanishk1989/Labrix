@@ -1,6 +1,7 @@
 import type { StudentOverview } from "@/server/student/overview";
 import {
   hasActiveStudentSession,
+  isStudentPracticalOverdue,
   orderStudentActionablePracticals,
 } from "./student-dashboard-view-model";
 
@@ -12,18 +13,19 @@ export type StudentPracticalState =
   | "SUBMITTED"
   | "FEEDBACK_AVAILABLE";
 
-export type StudentPracticalFilter = "TO_DO" | "IN_PROGRESS" | "SUBMITTED" | "FEEDBACK";
+export type StudentPracticalFilter = "ALL" | "TO_DO" | "IN_PROGRESS" | "SUBMITTED" | "FEEDBACK";
 
 export function normalizeStudentPracticalFilter(value?: string): StudentPracticalFilter {
-  return value === "IN_PROGRESS" || value === "SUBMITTED" || value === "FEEDBACK"
+  return value === "TO_DO" || value === "IN_PROGRESS" || value === "SUBMITTED" || value === "FEEDBACK"
     ? value
-    : "TO_DO";
+    : "ALL";
 }
 
 export function matchesStudentPracticalFilter(
   state: StudentPracticalState,
   filter: StudentPracticalFilter,
 ) {
+  if (filter === "ALL") return true;
   if (filter === "TO_DO") return state === "NOT_SUBMITTED";
   if (filter === "FEEDBACK") return state === "FEEDBACK_AVAILABLE";
   return state === filter;
@@ -38,7 +40,7 @@ export type StudentPracticalRow = {
   latestSubmittedAt: string | null;
   state: StudentPracticalState;
   statusLabel: string;
-  actionLabel: "Start practical" | "Continue practical" | "View practical";
+  actionLabel: "Start practical" | "Continue practical" | "Review practical" | "View practical";
   href: string;
 };
 
@@ -49,8 +51,9 @@ function stateFor(practical: StudentPractical): StudentPracticalState {
   return "NOT_SUBMITTED";
 }
 
-function practicalRow(practical: StudentPractical): StudentPracticalRow {
+function practicalRow(practical: StudentPractical, now: Date): StudentPracticalRow {
   const state = stateFor(practical);
+  const overdue = isStudentPracticalOverdue(practical, now);
   const statusLabel = state === "FEEDBACK_AVAILABLE"
     ? "Feedback available"
     : state === "SUBMITTED"
@@ -66,8 +69,10 @@ function practicalRow(practical: StudentPractical): StudentPracticalRow {
     deadline: practical.deadline,
     latestSubmittedAt: practical.latestSubmission?.submittedAt ?? null,
     state,
-    statusLabel,
-    actionLabel: state === "IN_PROGRESS"
+    statusLabel: overdue ? "Deadline passed" : statusLabel,
+    actionLabel: overdue
+      ? "Review practical"
+      : state === "IN_PROGRESS"
       ? "Continue practical"
       : state === "NOT_SUBMITTED"
         ? "Start practical"
@@ -81,8 +86,8 @@ function practicalRow(practical: StudentPractical): StudentPracticalRow {
  * Submitted work follows, newest submission first, with DTO order as a stable
  * tie-breaker.
  */
-export function buildStudentPracticalsViewModel(overview: StudentOverview) {
-  const actionable = orderStudentActionablePracticals(overview.practicals);
+export function buildStudentPracticalsViewModel(overview: StudentOverview, now = new Date()) {
+  const actionable = orderStudentActionablePracticals(overview.practicals, now);
   const actionableIds = new Set(actionable.map((practical) => practical.id));
   const submitted = overview.practicals
     .map((practical, index) => ({ practical, index }))
@@ -104,13 +109,14 @@ export function buildStudentPracticalsViewModel(overview: StudentOverview) {
       : overview.practicals.length === 0
         ? "NO_PRACTICALS" as const
         : "READY" as const,
-    practicals: [...actionable, ...submitted].map(practicalRow),
+    practicals: [...actionable, ...submitted].map((practical) => practicalRow(practical, now)),
   };
 }
 
-export function buildStudentPracticalDetailViewModel(practical: StudentPractical) {
+export function buildStudentPracticalDetailViewModel(practical: StudentPractical, now = new Date()) {
   const state = stateFor(practical);
   const latest = practical.latestSubmission;
+  const overdue = isStudentPracticalOverdue(practical, now);
   return {
     id: practical.id,
     title: practical.title,
@@ -121,17 +127,21 @@ export function buildStudentPracticalDetailViewModel(practical: StudentPractical
     allowedLanguages: practical.allowedLanguages,
     visibleTests: practical.visibleTests,
     state,
-    statusLabel: state === "FEEDBACK_AVAILABLE"
+    statusLabel: overdue
+      ? "Deadline passed"
+      : state === "FEEDBACK_AVAILABLE"
       ? "Feedback available"
       : state === "SUBMITTED"
         ? "Submitted"
         : state === "IN_PROGRESS"
           ? "In progress"
           : "Not submitted",
-    workspaceActionLabel: hasActiveStudentSession(practical)
-      ? "Continue coding"
-      : "Start coding",
-    workspaceHref: `/tasks/${practical.id}`,
+    workspaceActionLabel: overdue
+      ? "Submission closed"
+      : hasActiveStudentSession(practical)
+        ? "Continue coding"
+        : "Start coding",
+    workspaceHref: overdue ? null : `/tasks/${practical.id}`,
     latestSubmission: latest
       ? {
           id: latest.id,

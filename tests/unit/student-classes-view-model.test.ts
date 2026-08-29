@@ -107,7 +107,7 @@ describe("student Classes view model", () => {
         submittedPractical({ id: "submitted" }),
         practical({ id: "waiting" }),
       ],
-    }));
+    }), new Date("2026-08-01T10:00:00.000Z"));
 
     expect(view.classes[0]).toMatchObject({
       state: "IN_PROGRESS",
@@ -125,7 +125,7 @@ describe("student Classes view model", () => {
         practical({ id: "later", title: "Trees", deadline: "2026-08-20T10:00:00.000Z" }),
         practical({ id: "earlier", title: "Queue", deadline: "2026-08-14T10:00:00.000Z" }),
       ],
-    }));
+    }), new Date("2026-08-01T10:00:00.000Z"));
 
     expect(view.classes[0].nextWork).toMatchObject({ id: "earlier", title: "Queue" });
   });
@@ -145,6 +145,18 @@ describe("student Classes view model", () => {
     expect(view.classes[0].nextWork).toMatchObject({
       statusLabel: "In progress",
       actionLabel: "Continue",
+    });
+  });
+
+  it("opens overdue work in review mode instead of a blocked workspace", () => {
+    const view = buildStudentClassesViewModel(overview({
+      practicals: [practical({ deadline: "2026-08-15T10:00:00.000Z" })],
+    }), new Date("2026-08-25T10:00:00.000Z"));
+
+    expect(view.classes[0].nextWork).toMatchObject({
+      statusLabel: "Overdue",
+      actionLabel: "Review",
+      href: "/practicals/practical-1",
     });
   });
 

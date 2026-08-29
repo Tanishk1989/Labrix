@@ -3,7 +3,7 @@ import { loadEnvConfig } from "@next/env";
 
 loadEnvConfig(process.cwd());
 
-const cspHeader = `
+const developmentCspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://cdn.jsdelivr.net https://clerk.trace-seven-alpha.vercel.app https://challenges.cloudflare.com https://*.protect.clerk.com;
   worker-src 'self' blob:;
@@ -18,10 +18,10 @@ const cspHeader = `
 `.replace(/\s{2,}/g, ' ').trim();
 
 const securityHeaders = [
-  {
+  ...(process.env.NODE_ENV === "production" ? [] : [{
     key: "Content-Security-Policy",
-    value: cspHeader,
-  },
+    value: developmentCspHeader,
+  }]),
   {
     key: "X-DNS-Prefetch-Control",
     value: "on",

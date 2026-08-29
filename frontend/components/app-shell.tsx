@@ -64,7 +64,7 @@ export function DemoRoleControl({ role, setRole }: { role: DemoRole; setRole: (r
     <div className="inline-flex items-center shrink-0">
       <select
         aria-label="Preview as"
-        className="rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white cursor-pointer outline-none"
+        className="min-h-11 rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white cursor-pointer outline-none"
         value={role}
         onChange={(event) => {
           const nextRole = event.target.value as DemoRole;
@@ -242,7 +242,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
     <DemoRoleContext.Provider value={role}>
       <div className="editorial-shell" onClickCapture={showPendingForInternalLink} onSubmitCapture={showPendingForGetForm}>
         {navigationPending ? <div className="shell-navigation-progress" role="status" aria-label="Opening page"><span /></div> : null}
-        <header className="editorial-app-header">
+        <header className="editorial-app-header" inert={drawerOpen} aria-hidden={drawerOpen || undefined}>
           <div className="mx-auto flex h-full max-w-[88rem] items-center justify-between px-5 sm:px-6 lg:px-8">
             {/* Unified Left Navigation Cluster */}
             <div className="flex items-center gap-5">
@@ -275,6 +275,8 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
             <button
               type="button"
               aria-label="Open navigation"
+              aria-expanded={drawerOpen}
+              aria-controls="mobile-navigation-drawer"
               className="icon-button editorial-menu-button lg:hidden"
               onClick={() => setDrawerOpen(true)}
             >
@@ -282,11 +284,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
             </button>
           </div>
         </header>
-        <main className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>
+        <main inert={drawerOpen} aria-hidden={drawerOpen || undefined} className={`editorial-page-canvas ${isCodingWorkspace ? "editorial-page-canvas-workspace" : ""}`}>{children}</main>
         {drawerOpen ? (
           <div className="shell-drawer-layer">
             <button aria-label="Close navigation" className="shell-drawer-backdrop" onClick={() => setDrawerOpen(false)} />
-            <aside ref={drawerRef} className="editorial-mobile-drawer" aria-label="Mobile navigation">
+            <aside id="mobile-navigation-drawer" ref={drawerRef} className="editorial-mobile-drawer" role="dialog" aria-modal="true" aria-labelledby="mobile-navigation-title">
+              <h2 id="mobile-navigation-title" className="sr-only">Navigation and account controls</h2>
               <div className="editorial-drawer-header"><Wordmark onNavigate={() => setDrawerOpen(false)} /><button type="button" className="icon-button" aria-label="Close navigation" onClick={() => setDrawerOpen(false)}><X size={17} strokeWidth={1.75} aria-hidden="true" /></button></div>
               <MobileNavigation role={effectiveRole} onNavigate={() => setDrawerOpen(false)} />
               <div className="editorial-drawer-footer">
