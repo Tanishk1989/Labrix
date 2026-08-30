@@ -353,12 +353,61 @@ async function main() {
     { testId: "brackets-hidden-1", passed: true, actualOutput: "true", visibility: "HIDDEN" },
   ], review: { feedback: "Correct stack discipline and good use of Deque. Before publishing, I want to add a note about separating bracket matching into a small helper method.", marksAwarded: 18, status: SubmissionReviewStatus.DRAFT, criterionScores: [10, 5, 3] } });
 
+  const pulseNow = new Date();
+  const minutesAgo = (minutes: number) => new Date(pulseNow.getTime() - minutes * 60_000);
   await prisma.codingSession.create({
-    data: { id: "demo-session-aarav-brackets-active", taskId: "balanced-brackets", studentId: "demo-student-1", attemptNumber: 1, status: CodingSessionStatus.ACTIVE, language: AllowedLanguage.CPP, startedAt: new Date("2026-08-12T07:10:00Z"), updatedAt: new Date("2026-08-12T07:28:00Z"), draft: { create: { id: "demo-draft-aarav-brackets-active", sourceCode: "#include <iostream>\n#include <stack>\nusing namespace std;\n\nint main() {\n  // Continue bracket matching here.\n}\n", revision: 2, createdAt: new Date("2026-08-12T07:10:00Z"), updatedAt: new Date("2026-08-12T07:28:00Z") } } },
+    data: { id: "demo-session-aarav-brackets-active", taskId: "balanced-brackets", studentId: "demo-student-1", attemptNumber: 1, status: CodingSessionStatus.ACTIVE, language: AllowedLanguage.CPP, startedAt: minutesAgo(18), updatedAt: minutesAgo(2), draft: { create: { id: "demo-draft-aarav-brackets-active", sourceCode: "#include <iostream>\n#include <stack>\nusing namespace std;\n\nint main() {\n  // Continue bracket matching here.\n}\n", revision: 2, createdAt: minutesAgo(18), updatedAt: minutesAgo(2) } } },
   });
   await prisma.codeEvent.createMany({ data: [
-    { id: "demo-event-aarav-brackets-1", codingSessionId: "demo-session-aarav-brackets-active", sequence: 1, type: CodeEventType.SESSION_STARTED, occurredAt: new Date("2026-08-12T07:10:00Z") },
-    { id: "demo-event-aarav-brackets-2", codingSessionId: "demo-session-aarav-brackets-active", sequence: 2, type: CodeEventType.DRAFT_SAVED, occurredAt: new Date("2026-08-12T07:28:00Z") },
+    { id: "demo-event-aarav-brackets-1", codingSessionId: "demo-session-aarav-brackets-active", sequence: 1, type: CodeEventType.SESSION_STARTED, occurredAt: minutesAgo(18) },
+    { id: "demo-event-aarav-brackets-2", codingSessionId: "demo-session-aarav-brackets-active", sequence: 2, type: CodeEventType.DRAFT_SAVED, occurredAt: minutesAgo(2) },
+  ] });
+
+  await prisma.codingSession.create({
+    data: {
+      id: "demo-session-diya-brackets-active",
+      taskId: "balanced-brackets",
+      studentId: "demo-student-2",
+      attemptNumber: 2,
+      status: CodingSessionStatus.ACTIVE,
+      language: AllowedLanguage.JAVA,
+      startedAt: minutesAgo(24),
+      updatedAt: minutesAgo(6),
+      draft: { create: { id: "demo-draft-diya-brackets-active", sourceCode: "public class Main {\n  public static void main(String[] args) {\n    // Revising bracket matching after failed tests.\n  }\n}\n", revision: 3, createdAt: minutesAgo(24), updatedAt: minutesAgo(6) } },
+    },
+  });
+  for (const [index, requestedMinutesAgo] of [11, 7].entries()) {
+    const runId = `demo-run-diya-brackets-pulse-${index + 1}`;
+    await prisma.runAttempt.create({
+      data: {
+        id: runId,
+        codingSessionId: "demo-session-diya-brackets-active",
+        sequence: index + 1,
+        language: AllowedLanguage.JAVA,
+        sourceCodeSnapshot: "public class Main { public static void main(String[] args) {} }",
+        requestedAt: minutesAgo(requestedMinutesAgo),
+        completedAt: minutesAgo(requestedMinutesAgo - 1),
+        resultSnapshot: {
+          create: {
+            id: `demo-result-diya-brackets-pulse-${index + 1}`,
+            state: RunResultState.COMPLETED,
+            passedTests: index,
+            totalTests: 2,
+            visiblePassedTests: index,
+            visibleTotalTests: 2,
+            testResults: [],
+            executionMode: ExecutionMode.SIMULATED,
+          },
+        },
+      },
+    });
+  }
+  await prisma.codeEvent.createMany({ data: [
+    { id: "demo-event-diya-brackets-pulse-1", codingSessionId: "demo-session-diya-brackets-active", sequence: 1, type: CodeEventType.SESSION_STARTED, occurredAt: minutesAgo(24) },
+    { id: "demo-event-diya-brackets-pulse-2", codingSessionId: "demo-session-diya-brackets-active", sequence: 2, type: CodeEventType.RUN_REQUESTED, runAttemptId: "demo-run-diya-brackets-pulse-1", occurredAt: minutesAgo(11) },
+    { id: "demo-event-diya-brackets-pulse-3", codingSessionId: "demo-session-diya-brackets-active", sequence: 3, type: CodeEventType.RUN_COMPLETED, runAttemptId: "demo-run-diya-brackets-pulse-1", occurredAt: minutesAgo(10) },
+    { id: "demo-event-diya-brackets-pulse-4", codingSessionId: "demo-session-diya-brackets-active", sequence: 4, type: CodeEventType.RUN_REQUESTED, runAttemptId: "demo-run-diya-brackets-pulse-2", occurredAt: minutesAgo(7) },
+    { id: "demo-event-diya-brackets-pulse-5", codingSessionId: "demo-session-diya-brackets-active", sequence: 5, type: CodeEventType.RUN_COMPLETED, runAttemptId: "demo-run-diya-brackets-pulse-2", occurredAt: minutesAgo(6) },
   ] });
 }
 

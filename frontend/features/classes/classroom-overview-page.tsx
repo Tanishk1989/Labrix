@@ -30,6 +30,7 @@ export function ClassroomOverviewPage({ classroom }: { classroom: ClassroomOverv
 
       <nav aria-label="Classroom sections" className="tabs overflow-x-auto">
         <a href="#overview" aria-current="page" className="tab-item tab-item-active">Overview</a>
+        <Link href={`/classes/${classroom.id}/pulse`} className="tab-item">Live pulse</Link>
         <a href="#practicals" className="tab-item">Practicals</a>
         <Link href={`/classes/${classroom.id}/students`} className="tab-item">Students</Link>
         <Link href={`/submissions?classroom=${encodeURIComponent(classroom.id)}`} className="tab-item">Review</Link>

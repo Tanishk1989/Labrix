@@ -294,7 +294,7 @@ async function ClassroomStudentsContent({
         eyebrow="Classroom roster"
         title={`${roster.name} students`}
         description="Manage who can enter this classroom. Learning progress is kept on the separate class progress page."
-        actions={<Link href={`/progress?classroom=${encodeURIComponent(classroomId)}`} className="button min-h-11">View class progress</Link>}
+        actions={<div className="flex flex-wrap gap-2"><Link href={`/classes/${classroomId}/pulse`} className="button min-h-11">Open live pulse</Link><Link href={`/progress?classroom=${encodeURIComponent(classroomId)}`} className="button-secondary min-h-11">View class progress</Link></div>}
       />
 
       <nav aria-label="Student and access views" className="flex overflow-x-auto border-b border-[var(--border)]">

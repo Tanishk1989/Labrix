@@ -23,6 +23,15 @@ test("read-only professor route smoke check", async ({ page }) => {
 
   await page.goto("/classes/dsa-2026");
   await expect(page.getByRole("heading", { name: "DSA Practical Lab" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Live pulse" })).toHaveAttribute("href", "/classes/dsa-2026/pulse");
+
+  await page.goto("/classes/dsa-2026/pulse");
+  await expect(page.getByRole("heading", { name: "Live Lab Pulse" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Live lab summary" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Coding now" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Diya Sharma" })).toBeVisible();
+  await expect(page.getByText("2 consecutive test runs need correction.")).toBeVisible();
 
   await page.goto("/classes/dsa-2026/students");
   await expect(page.getByRole("heading", { name: "DSA Practical Lab students" })).toBeVisible();
