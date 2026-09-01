@@ -38,15 +38,12 @@ jobs:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder_key_for_ci_build"
       CLERK_SECRET_KEY: "sk_test_placeholder_secret_for_ci_build"
       CLERK_WEBHOOK_SECRET: "whsec_dGVzdC1vbmx5LWNpLXdlYmhvb2stc2VjcmV0"
-      UPSTASH_REDIS_REST_URL: "https://ci-placeholder.upstash.io"
-      UPSTASH_REDIS_REST_TOKEN: "ci-placeholder-token"
-
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js 20.x
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: "npm"
@@ -87,5 +84,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Next.js Production Build
+        env:
+          UPSTASH_REDIS_REST_URL: "https://ci-placeholder.upstash.io"
+          UPSTASH_REDIS_REST_TOKEN: "ci-placeholder-token"
         run: npm run build
 

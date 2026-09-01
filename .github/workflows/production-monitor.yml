@@ -14,8 +14,8 @@ jobs:
       TRACE_DIAGNOSTICS_TOKEN: ${{ secrets.TRACE_DIAGNOSTICS_TOKEN }}
       TRACE_CLUB_MIN_EXECUTION_CAPACITY: "8"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
