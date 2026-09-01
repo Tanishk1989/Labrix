@@ -57,6 +57,7 @@ if (target === "read-only") {
     if (target === "e2e") {
       childEnvironment.LABRIX_E2E_ISOLATED = "true";
       childEnvironment.LABRIX_IDENTITY_MODE = "demo";
+      childEnvironment.LABRIX_EXECUTION_PROVIDER = "mock";
     }
   } catch (error) {
     console.error(

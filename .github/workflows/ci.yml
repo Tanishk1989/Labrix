@@ -30,14 +30,6 @@ jobs:
       DATABASE_URL: "postgresql://labrix:labrix-ci-password@localhost:5432/labrix_ci?schema=public"
       LABRIX_TEST_DATABASE_URL: "postgresql://labrix:labrix-ci-password@localhost:5432/labrix_test?schema=public"
       LABRIX_ALLOW_TEST_DATABASE_MUTATION: "true"
-      LABRIX_IDENTITY_MODE: "clerk"
-      LABRIX_EXECUTION_PROVIDER: "remote-docker"
-      LABRIX_JAVA_RUNNER_URL: "https://java-runner.example.test/v1/execute/java"
-      LABRIX_CPP_RUNNER_URL: "https://cpp-runner.example.test/v1/execute/cpp"
-      LABRIX_RUNNER_BEARER_TOKEN: "ci-only-runner-token-at-least-32-characters"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder_key_for_ci_build"
-      CLERK_SECRET_KEY: "sk_test_placeholder_secret_for_ci_build"
-      CLERK_WEBHOOK_SECRET: "whsec_dGVzdC1vbmx5LWNpLXdlYmhvb2stc2VjcmV0"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -85,6 +77,14 @@ jobs:
 
       - name: Next.js Production Build
         env:
+          LABRIX_IDENTITY_MODE: "clerk"
+          LABRIX_EXECUTION_PROVIDER: "remote-docker"
+          LABRIX_JAVA_RUNNER_URL: "https://java-runner.example.test/v1/execute/java"
+          LABRIX_CPP_RUNNER_URL: "https://cpp-runner.example.test/v1/execute/cpp"
+          LABRIX_RUNNER_BEARER_TOKEN: "ci-only-runner-token-at-least-32-characters"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder_key_for_ci_build"
+          CLERK_SECRET_KEY: "sk_test_placeholder_secret_for_ci_build"
+          CLERK_WEBHOOK_SECRET: "whsec_dGVzdC1vbmx5LWNpLXdlYmhvb2stc2VjcmV0"
           UPSTASH_REDIS_REST_URL: "https://ci-placeholder.upstash.io"
           UPSTASH_REDIS_REST_TOKEN: "ci-placeholder-token"
         run: npm run build
