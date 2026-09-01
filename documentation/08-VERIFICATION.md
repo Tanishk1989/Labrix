@@ -17,6 +17,8 @@ TRACE separates fast checks from database-mutating verification. Unit tests and 
 | Read-only acceptance | `npm run test:acceptance:read-only` | Reads the configured demo database; never opens a workspace or clicks Run/Submit | Safe route smoke check when seeded demo data is available |
 | Full Playwright | `npm run test:e2e` | Edits drafts and creates run/submission records | Only against a disposable database |
 | Manual acceptance | Follow the relevant route checklist | Depends on actions taken | UX, authentication, and professor-demo confirmation |
+| Club capacity | `npm run verify:club-capacity` | Sends configured public web and direct runner rehearsal traffic | Before a 40–50 student pilot and after capacity changes |
+| Pre-class gate | `npm run verify:preclass` | Read-only health/operations checks | Immediately before opening a real class |
 
 `npm run test:all` runs unit tests followed by guarded integration tests. It therefore requires the disposable database configuration below.
 
@@ -60,6 +62,19 @@ npm run test:integration -- tests/integration/submission-review.test.ts
 The read-only acceptance command checks dashboard, classes, classroom progress, and review-queue routes. It intentionally excludes the coding workspace because opening or interacting with that page can create or change persisted attempt state.
 
 Full Playwright refuses to reuse an already-running server. This prevents an isolated test command from silently connecting to a server that was started with the shared demo database.
+
+## Club capacity rehearsal
+
+`verify:club-capacity` defaults to 50 students, three public web requests per
+student, and a synchronized 50-request Java/C++ burst. It requires both runner
+URLs, the runner bearer token, and the private diagnostics token; missing runner
+or worker-capacity evidence is `BLOCKED`, never a pass. Default gates are at most
+1% web failures, web p95 at most 2 seconds, zero runner failures, runner p95 at
+most 60 seconds, and at least eight online execution-worker slots.
+
+The direct runner burst proves compiler-host capacity but does not impersonate
+50 Clerk identities. A real teacher/student join, autosave, Run, Submit, reload,
+and review smoke remains a separate required pre-class check.
 
 ## Local C++ runner smoke
 

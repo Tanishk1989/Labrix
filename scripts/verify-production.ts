@@ -101,7 +101,7 @@ async function runAllTests() {
       json = JSON.parse(res.body);
     } catch {}
 
-    const isOk = res.statusCode === 200 && Boolean(json?.status);
+    const isOk = res.statusCode === 200 && json?.status === "healthy";
     results.push({
       category: "API & Backend Health",
       name: "GET /api/health Endpoint Check",
@@ -110,8 +110,22 @@ async function runAllTests() {
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
       details: json
-        ? `Status: ${String(json.status)} | DB: ${String(json.database || json.db || "connected")} | Env: ${String(json.environment || "production")}`
+        ? `Status: ${String(json.status)} | Release: ${String(json.release || "unknown")}`
         : `Body: ${res.body.slice(0, 80)}`,
+    });
+    const publicKeys = json ? Object.keys(json) : [];
+    const exposedDiagnostics = ["database", "configuration", "runners", "executionQueue"]
+      .filter((key) => publicKeys.includes(key));
+    results.push({
+      category: "Resilience & Security",
+      name: "Public health response minimizes operational details",
+      url: `${BASE_URL}/api/health`,
+      status: exposedDiagnostics.length === 0 ? "PASSED" : "FAILED",
+      httpCode: res.statusCode,
+      latencyMs: res.latencyMs,
+      details: exposedDiagnostics.length === 0
+        ? "Detailed database, runner, configuration, and queue state is not public"
+        : `Public response exposes: ${exposedDiagnostics.join(", ")}`,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -139,6 +153,27 @@ async function runAllTests() {
       httpCode: res.statusCode,
       latencyMs: res.latencyMs,
       details: isRedirect ? "Root entry route rendered or redirected to dashboard" : "Unexpected root route response",
+    });
+    const csp = res.headers["content-security-policy"];
+    const hasSecurityHeaders = Boolean(
+      csp &&
+      res.headers["strict-transport-security"] &&
+      res.headers["x-content-type-options"] === "nosniff" &&
+      res.headers["referrer-policy"],
+    );
+    const productionAllowsEval = typeof csp === "string" && csp.includes("'unsafe-eval'");
+    results.push({
+      category: "Resilience & Security",
+      name: "Production security headers",
+      url: `${BASE_URL}/`,
+      status: hasSecurityHeaders && !productionAllowsEval ? "PASSED" : "FAILED",
+      httpCode: res.statusCode,
+      latencyMs: res.latencyMs,
+      details: !hasSecurityHeaders
+        ? "One or more required security headers are missing"
+        : productionAllowsEval
+          ? "Production Content Security Policy permits unsafe-eval"
+          : "CSP, HSTS, nosniff, and referrer policy are present",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

@@ -89,6 +89,7 @@ LABRIX_CPP_RUNNER_URL=https://cpp-runner.example.com/v1/execute/cpp
 LABRIX_RUNNER_BEARER_TOKEN=<same generated runner token>
 LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION=false
 LABRIX_ALLOW_DEMO_IDENTITY_IN_PRODUCTION_BUILD=false
+TRACE_DIAGNOSTICS_TOKEN=<separate generated 32+ character token>
 ```
 
 An older Vercel Redis integration may expose the equivalent variables as
@@ -101,10 +102,11 @@ Use the remaining optional production variables from `.env.production.example` o
 ```sh
 curl --fail https://java-runner.example.com/healthz
 curl --fail https://cpp-runner.example.com/healthz
-LABRIX_PRODUCTION_URL=https://your-app.vercel.app npm run verify:production
+TRACE_BASE_URL=https://your-app.vercel.app npm run verify:production
 npm run verify:runners:remote
 LABRIX_LOAD_TEST_BASE_URL=https://your-app.vercel.app npm run load:test:web
 npm run load:test:runners
+npm run verify:club-capacity
 ```
 
 The application health response must show a connected database, two connected runners, at least one execution worker online, and nonzero execution capacity.

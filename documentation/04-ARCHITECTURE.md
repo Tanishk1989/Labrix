@@ -87,6 +87,15 @@ Each server execution provider exposes a runtime descriptor: the default mock is
 
 Production Run and Submit actions return after creating a durable `ExecutionJob`. The workspace polls an authorization-checked status action and displays queued/running state. A separate worker claims jobs with `FOR UPDATE SKIP LOCKED`, writes a database heartbeat, retries bounded infrastructure failures, and atomically creates the immutable result and optional submission. A partial unique index permits only one queued/running job per coding session, while submission idempotency survives browser retries and deployments.
 
+Opening or refreshing an active workspace queries for its existing queued/running
+job and resumes authorization-checked polling. A temporary polling outage therefore
+does not make a durable job disappear or invite a duplicate Run/Submit request.
+
+`/api/health` is a minimal public liveness response with the deployed release
+identifier. `/api/health/details` exposes database latency, runner state, queue
+age/failures, worker heartbeats, and total execution capacity only after a
+constant-time bearer-token check using `TRACE_DIAGNOSTICS_TOKEN`.
+
 The runner supplies source and one test input at a time over `docker exec` standard input. It does not mount the repository, application environment, or database credentials into the sandbox. The container uses a pinned Java 21 image, a non-root user, a read-only root filesystem, bounded temporary filesystems, no network, no Linux capabilities, and forced cleanup. Hidden expected outputs stay in the worker process and are never written into the container.
 
 Run requests contain visible tests only. Submit requests contain visible and hidden tests. Student DTOs filter out every hidden test record before serialization and return only hidden pass/total counters; owner-scoped teacher DTOs may return the stored hidden details. Suggested scoring is deterministic and separate from teacher-authored marks.

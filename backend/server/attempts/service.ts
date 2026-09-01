@@ -67,6 +67,7 @@ type WorkspaceSession = Prisma.CodingSessionGetPayload<{
 
 export interface StudentWorkspace {
   executionMode: ExecutionModeDisclosure;
+  activeExecutionJob?: StudentExecutionJob;
   classroom: { id: string; name: string };
   task: {
     id: string;
@@ -203,6 +204,26 @@ async function findActiveSession(studentId: string, taskId: string) {
   });
 }
 
+async function withActiveExecutionJob(
+  studentId: string,
+  workspace: StudentWorkspace,
+): Promise<StudentWorkspace> {
+  const activeJob = await prisma.executionJob.findFirst({
+    where: {
+      studentId,
+      codingSessionId: workspace.session.id,
+      status: { in: ["QUEUED", "RUNNING"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!activeJob) return workspace;
+  return {
+    ...workspace,
+    activeExecutionJob: await getStudentExecutionJob(studentId, activeJob.id),
+  };
+}
+
 export async function getOrCreateStudentWorkspace(
   studentId: string,
   taskId: string,
@@ -211,7 +232,7 @@ export async function getOrCreateStudentWorkspace(
   const existing = await findActiveSession(studentId, taskId);
   if (existing) {
     const executionMode = configuredWorkspaceExecutionMode(existing.language);
-    return toWorkspace(task, existing, executionMode);
+    return withActiveExecutionJob(studentId, toWorkspace(task, existing, executionMode));
   }
 
   try {
@@ -253,13 +274,13 @@ export async function getOrCreateStudentWorkspace(
       },
     );
     const executionMode = configuredWorkspaceExecutionMode(created.language);
-    return toWorkspace(task, created, executionMode);
+    return withActiveExecutionJob(studentId, toWorkspace(task, created, executionMode));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const concurrent = await findActiveSession(studentId, taskId);
       if (concurrent) {
         const executionMode = configuredWorkspaceExecutionMode(concurrent.language);
-        return toWorkspace(task, concurrent, executionMode);
+        return withActiveExecutionJob(studentId, toWorkspace(task, concurrent, executionMode));
       }
     }
     throw error;

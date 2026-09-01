@@ -87,13 +87,13 @@ export function PersistedWorkspace({ workspace }: { workspace: StudentWorkspace 
   const [saveMessage, setSaveMessage] = useState<string>();
   const [run, setRun] = useState<PersistedRun>();
   const [runFailure, setRunFailure] = useState<string>();
-  const [running, setRunning] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [running, setRunning] = useState(workspace.activeExecutionJob?.kind === "RUN");
+  const [submitting, setSubmitting] = useState(workspace.activeExecutionJob?.kind === "SUBMIT");
   const [submission, setSubmission] = useState<PersistedSubmission>();
   const [submissionFailure, setSubmissionFailure] = useState<string>();
-  const [executionJob, setExecutionJob] = useState<StudentExecutionJob>();
+  const [executionJob, setExecutionJob] = useState<StudentExecutionJob | undefined>(workspace.activeExecutionJob);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
-  const [activePanel, setActivePanel] = useState<WorkspacePanel>("code");
+  const [activePanel, setActivePanel] = useState<WorkspacePanel>(workspace.activeExecutionJob ? "results" : "code");
   const [workspaceOpenedAt] = useState(() => Date.now());
   const isOnline = useNetworkOnlineState();
   const lastPersisted = useRef<DraftVersion>({

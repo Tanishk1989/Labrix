@@ -10,7 +10,9 @@ Status reflects repository behavior as of 2026-08-27.
 - A server-resolved seeded student/teacher identity boundary that accepts no browser user ID or role.
 - Active `CodingSession` plus one mutable `Draft`; the first draft uses the practical's language-specific starter template, while change-aware server autosave resumes saved work without overwriting it, skips identical updates, and exposes Saving, Saved, and Save failed states.
 - Server-owned `ServerExecutionProvider` with a deterministic mock implementation.
-- Durable PostgreSQL execution jobs for production Run/Submit, with leased worker claims, bounded retry, worker heartbeat, queue position, and idempotent result/submission finalization on a separate Google Cloud worker.
+- Durable PostgreSQL execution jobs for production Run/Submit, with leased worker claims, bounded retry, worker heartbeat, queue position, refresh-safe active-job recovery, and idempotent result/submission finalization on a separate Google Cloud worker.
+- Minimal public liveness health plus bearer-protected runtime diagnostics for database, runner, worker, queue-age, failure, capacity, and release checks.
+- Fail-closed 40–50 student capacity and pre-class verification commands with explicit web, runner, worker-capacity, backup, restore-drill, and authenticated-smoke gates.
 - Persisted `RunAttempt` and immutable `ResultSnapshot` records.
 - Run evaluates visible tests only; Submit evaluates visible and hidden tests. Students receive visible details plus a hidden aggregate, while the owning teacher can inspect both groups.
 - New result snapshots store visible/hidden counters and a one-decimal, equal-weight suggested test score out of ten. This never overwrites teacher-awarded marks; legacy snapshots remain readable.

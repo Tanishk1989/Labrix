@@ -340,6 +340,12 @@ describe.sequential("persisted student-attempt service", () => {
     });
     expect(queuedRun.status).toBe("QUEUED");
     expect(queuedRun.queuePosition).toBeGreaterThan(0);
+    const resumedWhileQueued = await getOrCreateStudentWorkspace(studentId, taskId);
+    expect(resumedWhileQueued.activeExecutionJob).toMatchObject({
+      id: queuedRun.id,
+      kind: "RUN",
+      status: "QUEUED",
+    });
 
     const claimedRun = await claimNextExecutionJob("integration-worker:1");
     expect(claimedRun?.id).toBe(queuedRun.id);

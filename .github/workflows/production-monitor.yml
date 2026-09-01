@@ -1,0 +1,30 @@
+name: TRACE Production Runtime Monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  runtime-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TRACE_BASE_URL: ${{ secrets.TRACE_PRODUCTION_URL }}
+      TRACE_DIAGNOSTICS_TOKEN: ${{ secrets.TRACE_DIAGNOSTICS_TOKEN }}
+      TRACE_CLUB_MIN_EXECUTION_CAPACITY: "8"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Verify monitoring secrets
+        shell: bash
+        run: |
+          test -n "$TRACE_BASE_URL" || { echo "Missing TRACE_PRODUCTION_URL repository secret"; exit 1; }
+          test ${#TRACE_DIAGNOSTICS_TOKEN} -ge 32 || { echo "Missing/short TRACE_DIAGNOSTICS_TOKEN repository secret"; exit 1; }
+      - name: Check production runtime
+        shell: bash
+        run: npm run verify:runtime || { sleep 15; npm run verify:runtime; }

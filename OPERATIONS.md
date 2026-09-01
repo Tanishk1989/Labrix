@@ -19,8 +19,9 @@
 
 ## 2. Monitoring, Health Checks & Observability
 
-### Endpoint: `/api/health`
-Returns HTTP 200 JSON with status of:
+### Endpoints
+`/api/health` is public and returns only liveness, release, and timestamp.
+Bearer-protected `/api/health/details` returns HTTP 200 JSON with status of:
 - PostgreSQL connection & query latency
 - Active execution runners (Java, C++)
 - In-flight execution queue depth

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { diagnosticsTokenConfigured } from "@/server/observability/runtime-diagnostics";
+
 export interface EnvValidationResult {
   isValid: boolean;
   mode: "demo" | "clerk";
@@ -10,6 +12,7 @@ export interface EnvValidationResult {
     geminiAiEnabled: boolean;
     upstashRateLimiting: boolean;
     runnerConfigured: boolean;
+    diagnosticsEnabled: boolean;
   };
 }
 
@@ -28,6 +31,7 @@ export function validateEnvironment(): EnvValidationResult {
     process.env.NEXT_PUBLIC_LABRIX_DEMO_RUNTIME === "local-real";
   const missingRequired: string[] = [];
   const warnings: string[] = [];
+  const diagnosticsEnabled = diagnosticsTokenConfigured();
 
   // 1. Database URL
   if (!process.env.DATABASE_URL) {
@@ -78,6 +82,9 @@ export function validateEnvironment(): EnvValidationResult {
   if (isSupervisedLocalDemo && !upstashRateLimiting) {
     warnings.push("Shared rate limiting is not configured for this supervised single-host demo.");
   }
+  if (isProduction && !isSupervisedLocalDemo && !diagnosticsEnabled) {
+    warnings.push("Private runtime diagnostics are disabled. Configure TRACE_DIAGNOSTICS_TOKEN with at least 32 characters.");
+  }
 
   // 5. Runner Configuration
   if (isProduction && !isSupervisedLocalDemo && process.env.LABRIX_EXECUTION_DISPATCH !== "queued") {
@@ -125,6 +132,7 @@ export function validateEnvironment(): EnvValidationResult {
       geminiAiEnabled,
       upstashRateLimiting,
       runnerConfigured,
+      diagnosticsEnabled,
     },
   };
 }

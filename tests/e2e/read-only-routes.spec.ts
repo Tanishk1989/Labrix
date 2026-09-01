@@ -30,8 +30,10 @@ test("read-only professor route smoke check", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Live lab summary" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Coding now" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
-  await expect(page.getByRole("complementary", { name: "Diya Sharma" })).toBeVisible();
-  await expect(page.getByText("2 consecutive test runs need correction.")).toBeVisible();
+  await page.getByRole("link", { name: /^Diya Sharma / }).click();
+  const diyaDetail = page.getByRole("complementary", { name: "Diya Sharma" });
+  await expect(diyaDetail).toBeVisible();
+  await expect(diyaDetail.getByLabel("Diya Sharma activity summary").getByText("Failed runs", { exact: true })).toBeVisible();
 
   await page.goto("/classes/dsa-2026/students");
   await expect(page.getByRole("heading", { name: "DSA Practical Lab students" })).toBeVisible();

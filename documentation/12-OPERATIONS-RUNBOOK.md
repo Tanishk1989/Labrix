@@ -4,12 +4,14 @@ This runbook is the minimum operating procedure for a real class. Do not open en
 
 ## Service readiness
 
-- `GET /api/health` must return HTTP 200 and `status: healthy`.
+- `GET /api/health` must return HTTP 200 and `status: healthy`; it intentionally exposes no database, runner, configuration, or queue details.
+- `GET /api/health/details` requires `Authorization: Bearer <TRACE_DIAGNOSTICS_TOKEN>` and is the monitoring source for database latency, runners, workers, queue age/failures, capacity, and deployed release.
 - A 503 means the database, required configuration, or either production runner is unavailable. Stop new submissions and investigate; do not route around this check.
 - Java and C++ workers expose `GET /healthz`. Keep worker ports private and expose execution endpoints only through an HTTPS reverse proxy.
 - Production health must report at least one recent execution-worker heartbeat and nonzero queue capacity. Zero workers is a 503 even when both compiler endpoints answer.
 - Alert when the oldest queued job exceeds 45 seconds, any job remains running beyond its lease, or failed-job count increases.
 - Alert after two consecutive health failures or when database latency remains above 500 ms for five minutes.
+- The included production-monitor workflow retries once after 15 seconds and runs every 15 minutes. Configure repository secrets `TRACE_PRODUCTION_URL` and `TRACE_DIAGNOSTICS_TOKEN`, then enable GitHub Actions failure notifications for the operators.
 
 ## Backup schedule
 
@@ -64,3 +66,17 @@ The restore refuses to run without the matching checksum metadata and the exact 
 - Both languages pass one real visible-test execution.
 - Queue capacity matches expected class size; overload returns a controlled retry response.
 - A second operator knows how to disable traffic, rotate secrets, and restore the prior image.
+
+Record the evidence and run the fail-closed gate:
+
+```powershell
+$env:TRACE_BASE_URL = "https://your-trace-domain.example"
+$env:TRACE_DIAGNOSTICS_TOKEN = "<deployment diagnostics token>"
+$env:TRACE_BACKUP_VERIFIED_AT = "<ISO-8601 upload time>"
+$env:TRACE_RESTORE_DRILL_VERIFIED_AT = "<ISO-8601 successful drill time>"
+$env:TRACE_AUTHENTICATED_SMOKE_VERIFIED_AT = "<ISO-8601 real teacher/student smoke time>"
+npm run verify:preclass
+```
+
+Do not open the session unless the result is `GO`. The timestamps are operator
+attestations and must refer to actual evidence, not planned work.

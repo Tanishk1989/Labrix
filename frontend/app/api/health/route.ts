@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { validateEnvironment } from "@/server/config/env-validator";
+import { configuredRelease } from "@/server/observability/runtime-diagnostics";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "degraded",
+        release: configuredRelease(),
         timestamp: new Date().toISOString(),
       },
       { status: 503 },
@@ -71,6 +73,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: healthy ? "healthy" : "degraded",
+      release: configuredRelease(),
       timestamp: new Date().toISOString(),
     },
     {

@@ -55,8 +55,13 @@ npm run build
 4. **Post-Deployment Verification**:
    Execute the automated production smoke test against the live instance:
    ```bash
-   npx tsx scripts/verify-production.ts --url https://trace.your-domain.edu
+   npm run verify:production -- https://trace.your-domain.edu
    ```
+
+5. **Club Capacity and Pre-Class Gates**:
+   Run `npm run verify:club-capacity` after deploying or resizing runners. Run
+   `npm run verify:preclass` immediately before enrollment opens. A blocked or
+   failed result is a release no-go.
 
 ---
 
