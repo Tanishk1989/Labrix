@@ -14,7 +14,9 @@ const minimumExecutionCapacity = boundedInteger(
   250,
 );
 const requestTimeoutMs = 15_000;
-const paths = ["/", "/api/health", "/sign-in"];
+// Keep infrastructure probes out of browser latency percentiles. The private
+// diagnostics request below evaluates runtime health and execution capacity once.
+const paths = ["/", "/sign-in", "/privacy"];
 
 async function timedFetch(url: string, init?: RequestInit) {
   const startedAt = performance.now();

@@ -6,7 +6,9 @@ if (!baseUrl || !/^https?:\/\//.test(baseUrl)) {
 }
 const concurrency = Math.min(Number(process.env.LABRIX_LOAD_TEST_USERS ?? 100), 250);
 const requestsPerUser = Math.min(Number(process.env.LABRIX_LOAD_TEST_REQUESTS_PER_USER ?? 10), 100);
-const paths = ["/", "/api/health", "/sign-in"];
+// Model ordinary signed-out browser navigation. Runtime health is verified
+// separately because students do not poll the database/runner health endpoint.
+const paths = ["/", "/sign-in", "/privacy"];
 const latencies: number[] = [];
 let failures = 0;
 

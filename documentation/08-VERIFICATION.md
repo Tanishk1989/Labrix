@@ -65,8 +65,10 @@ Full Playwright refuses to reuse an already-running server. This prevents an iso
 
 ## Club capacity rehearsal
 
-`verify:club-capacity` defaults to 50 students, three public web requests per
-student, and a synchronized 50-request Java/C++ burst. It requires both runner
+`verify:club-capacity` defaults to 50 students, three ordinary public page
+requests per student, one separate runtime-diagnostics probe, and a synchronized
+50-request Java/C++ burst. Infrastructure health is deliberately excluded from
+browser latency percentiles because students do not poll that endpoint. It requires both runner
 URLs, the runner bearer token, and the private diagnostics token; missing runner
 or worker-capacity evidence is `BLOCKED`, never a pass. Default gates are at most
 1% web failures, web p95 at most 2 seconds, zero runner failures, runner p95 at
