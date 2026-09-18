@@ -35,8 +35,8 @@ function fakeDb(
 }
 
 describe("authenticated current actor resolution", () => {
-  it("defaults to Clerk when identity mode is omitted", () => {
-    expect(resolveIdentityMode({ nodeEnv: "development" })).toBe("clerk");
+  it("defaults to the no-login demo identity in development", () => {
+    expect(resolveIdentityMode({ nodeEnv: "development" })).toBe("demo");
   });
 
   it("rejects a missing Clerk session", async () => {
@@ -198,6 +198,12 @@ describe("authenticated current actor resolution", () => {
         demoActor: "teacher",
       }),
     ).rejects.toBeInstanceOf(IdentityConfigurationError);
+  });
+
+  it("does not silently enable the no-login identity in production", () => {
+    expect(() => resolveIdentityMode({ nodeEnv: "production" })).toThrow(
+      IdentityConfigurationError,
+    );
   });
 
   it("permits the exact supervised local production-build demo acknowledgement", async () => {

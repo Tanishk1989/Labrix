@@ -12,7 +12,7 @@ export function resolveIdentityMode(input: {
   nodeEnv?: string;
   allowProductionBuildDemo?: string;
 } = {}): IdentityMode {
-  const mode = input.mode;
+  const mode = input.mode ?? "demo";
   if (mode === "clerk") {
     return "clerk";
   }
