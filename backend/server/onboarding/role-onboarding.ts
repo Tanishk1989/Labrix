@@ -19,7 +19,7 @@ const roleOnboardingSchema = z.object({
 });
 
 export type RoleOnboardingResult =
-  | { ok: true; status: "CREATED" | "ALREADY_CONFIGURED" | "PROMOTED_TO_TEACHER"; userId: string; role: PlatformRole }
+  | { ok: true; status: "CREATED" | "ALREADY_CONFIGURED" | "ROLE_CHANGED"; userId: string; role: PlatformRole }
   | { ok: false; code: "INVALID_INPUT" | "DISABLED_ACCOUNT" | "EMAIL_IN_USE" | "CONFLICT" };
 
 type RoleOnboardingDb = Pick<PrismaClient, "$transaction" | "externalIdentity" | "user">;
@@ -55,14 +55,14 @@ export async function onboardRole(
           return { ok: false, code: "DISABLED_ACCOUNT" } as const;
         }
 
-        // Promotion is deliberately self-service. A teacher is never silently
-        // demoted by choosing the student sign-in card, because that could
-        // orphan classrooms they own.
-        if (role === PlatformRole.TEACHER && mapping.user.platformRole === PlatformRole.STUDENT) {
+        // The role explicitly selected during sign-in is authoritative. Keep
+        // owned classrooms and memberships intact so switching workspaces is
+        // reversible and does not discard user data.
+        if (role !== mapping.user.platformRole) {
           await tx.user.update({
             where: { id: mapping.user.id },
             data: {
-              platformRole: PlatformRole.TEACHER,
+              platformRole: role,
               accountStatus: AccountStatus.ACTIVE,
               teacherApprovalRequestedAt: null,
               teacherApprovalNotifiedAt: null,
@@ -71,9 +71,9 @@ export async function onboardRole(
           });
           return {
             ok: true,
-            status: "PROMOTED_TO_TEACHER",
+            status: "ROLE_CHANGED",
             userId: mapping.user.id,
-            role: PlatformRole.TEACHER,
+            role,
           } as const;
         }
 

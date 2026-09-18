@@ -23,7 +23,7 @@ export function RoleOnboardingForm({ role }: { role: SignInIntent | null }) {
         <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-700">TRACE account setup</p>
           <h1 className="mt-3 text-2xl font-semibold text-slate-950">Choose your role</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">Both roles are available immediately. Students can promote their account to Teacher later.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-600">Both roles are available immediately. You can switch workspaces whenever you sign in.</p>
           <div className="mt-6 grid gap-3">
             {roles.map((option) => {
               const Icon = option.icon;
@@ -48,8 +48,8 @@ export function RoleOnboardingForm({ role }: { role: SignInIntent | null }) {
         <h1 className="mt-3 text-2xl font-semibold text-slate-950">Continue as {teacher ? "Teacher" : "Student"}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           {teacher
-            ? "Teacher access is available immediately. If this is currently a student account, it will be promoted to Teacher."
-            : "Your student account will be ready immediately. You can join a classroom from the Classes page when you have a code."}
+            ? "Teacher access is available immediately. Your existing data is kept if you are switching from Student."
+            : "Student access is available immediately. Your existing data is kept if you are switching from Teacher."}
         </p>
         <form action={action} className="mt-6">
           <input type="hidden" name="role" value={role} />

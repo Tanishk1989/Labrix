@@ -38,15 +38,17 @@ describe.sequential("self-service role onboarding", () => {
 
   it("lets an existing student promote to teacher", async () => {
     await expect(onboardRole(prisma, input("student", PlatformRole.TEACHER)))
-      .resolves.toMatchObject({ ok: true, status: "PROMOTED_TO_TEACHER", role: "TEACHER" });
+      .resolves.toMatchObject({ ok: true, status: "ROLE_CHANGED", role: "TEACHER" });
     await expect(prisma.user.findUnique({ where: { email: emails.student } }))
       .resolves.toMatchObject({ platformRole: "TEACHER", accountStatus: "ACTIVE" });
   });
 
-  it("creates a teacher immediately and never silently demotes it", async () => {
+  it("lets an existing teacher choose the student workspace", async () => {
     await expect(onboardRole(prisma, input("teacher", PlatformRole.TEACHER)))
       .resolves.toMatchObject({ ok: true, status: "CREATED", role: "TEACHER" });
     await expect(onboardRole(prisma, input("teacher", PlatformRole.STUDENT)))
-      .resolves.toMatchObject({ ok: true, status: "ALREADY_CONFIGURED", role: "TEACHER" });
+      .resolves.toMatchObject({ ok: true, status: "ROLE_CHANGED", role: "STUDENT" });
+    await expect(prisma.user.findUnique({ where: { email: emails.teacher } }))
+      .resolves.toMatchObject({ platformRole: "STUDENT", accountStatus: "ACTIVE" });
   });
 });

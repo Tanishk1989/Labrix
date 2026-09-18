@@ -14,8 +14,8 @@ export default async function AuthCompletePage({
 
   try {
     const actor = await resolveCurrentActor();
-    if (intent === "teacher" && actor.role === "STUDENT") {
-      redirect("/account-setup?role=teacher");
+    if (intent && actor.role !== intent.toUpperCase()) {
+      redirect(`/account-setup?role=${intent}`);
     }
   } catch (error) {
     const destination = postSignInErrorDestination(error, intent);
