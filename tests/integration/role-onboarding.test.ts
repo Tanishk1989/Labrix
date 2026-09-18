@@ -18,7 +18,7 @@ function input(kind: keyof typeof subjects, role: PlatformRole) {
   return {
     role,
     identity: { provider: "clerk" as const, providerSubject: subjects[kind] },
-    profile: { name: `Role ${kind}`, email: emails[kind] },
+    profile: { name: `Role ${kind}`, email: emails[kind], emailVerified: true as const },
   };
 }
 
@@ -41,6 +41,20 @@ describe.sequential("self-service role onboarding", () => {
       .resolves.toMatchObject({ ok: true, status: "ROLE_CHANGED", role: "TEACHER" });
     await expect(prisma.user.findUnique({ where: { email: emails.student } }))
       .resolves.toMatchObject({ platformRole: "TEACHER", accountStatus: "ACTIVE" });
+  });
+
+  it("relinks a verified email when Clerk issues a new subject", async () => {
+    const relinkedSubject = `role-student-relinked-${suffix}`;
+    await expect(onboardRole(prisma, {
+      ...input("student", PlatformRole.STUDENT),
+      identity: { provider: "clerk" as const, providerSubject: relinkedSubject },
+    })).resolves.toMatchObject({ ok: true, status: "IDENTITY_LINKED", role: "STUDENT" });
+
+    await expect(prisma.externalIdentity.findUnique({
+      where: {
+        provider_providerSubject: { provider: "clerk", providerSubject: relinkedSubject },
+      },
+    })).resolves.toMatchObject({ providerSubject: relinkedSubject });
   });
 
   it("lets an existing teacher choose the student workspace", async () => {

@@ -15,11 +15,12 @@ const roleOnboardingSchema = z.object({
   profile: z.object({
     name: z.string().trim().min(1).max(120),
     email: z.string().trim().toLowerCase().email().max(320),
+    emailVerified: z.literal(true),
   }),
 });
 
 export type RoleOnboardingResult =
-  | { ok: true; status: "CREATED" | "ALREADY_CONFIGURED" | "ROLE_CHANGED"; userId: string; role: PlatformRole }
+  | { ok: true; status: "CREATED" | "ALREADY_CONFIGURED" | "ROLE_CHANGED" | "IDENTITY_LINKED"; userId: string; role: PlatformRole }
   | { ok: false; code: "INVALID_INPUT" | "DISABLED_ACCOUNT" | "EMAIL_IN_USE" | "CONFLICT" };
 
 type RoleOnboardingDb = Pick<PrismaClient, "$transaction" | "externalIdentity" | "user">;
@@ -87,14 +88,54 @@ export async function onboardRole(
 
       const emailOwner = await tx.user.findUnique({
         where: { email: profile.email },
-        select: { id: true, accountStatus: true },
+        select: {
+          id: true,
+          accountStatus: true,
+          externalIdentities: {
+            where: { provider: identity.provider },
+            select: { id: true },
+          },
+        },
       });
       if (emailOwner) {
+        if (emailOwner.accountStatus === AccountStatus.DISABLED) {
+          return { ok: false, code: "DISABLED_ACCOUNT" } as const;
+        }
+
+        // The caller only reaches this path after Clerk verifies the primary
+        // email. Relink stale Clerk subjects (for example after an instance or
+        // connection migration) while preserving the user's TRACE data.
+        const existingClerkIdentity = emailOwner.externalIdentities[0];
+        if (existingClerkIdentity) {
+          await tx.externalIdentity.update({
+            where: { id: existingClerkIdentity.id },
+            data: { providerSubject: identity.providerSubject },
+          });
+        } else {
+          await tx.externalIdentity.create({
+            data: {
+              userId: emailOwner.id,
+              provider: identity.provider,
+              providerSubject: identity.providerSubject,
+            },
+          });
+        }
+        await tx.user.update({
+          where: { id: emailOwner.id },
+          data: {
+            name: profile.name,
+            platformRole: role,
+            accountStatus: AccountStatus.ACTIVE,
+            teacherApprovalRequestedAt: null,
+            teacherApprovalNotifiedAt: null,
+            teacherApprovedAt: null,
+          },
+        });
         return {
-          ok: false,
-          code: emailOwner.accountStatus === AccountStatus.DISABLED
-            ? "DISABLED_ACCOUNT"
-            : "EMAIL_IN_USE",
+          ok: true,
+          status: "IDENTITY_LINKED",
+          userId: emailOwner.id,
+          role,
         } as const;
       }
 

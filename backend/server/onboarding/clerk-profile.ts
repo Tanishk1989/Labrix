@@ -36,6 +36,7 @@ export async function getClerkOnboardingProfile() {
         primaryEmail.emailAddress.split("@")[0] ||
         "TRACE User",
       email: primaryEmail.emailAddress,
+      emailVerified: true as const,
     },
   };
 }
