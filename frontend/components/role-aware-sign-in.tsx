@@ -1,7 +1,8 @@
 "use client";
 
-import { SignIn } from "@clerk/nextjs";
-import { GraduationCap, Presentation, ChevronDown } from "lucide-react";
+import { SignIn, useAuth } from "@clerk/nextjs";
+import Link from "next/link";
+import { ArrowRight, GraduationCap, Presentation, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { SignInIntent } from "@/server/actors/sign-in-intent";
 
@@ -12,6 +13,7 @@ const roleOptions: { value: SignInIntent; label: string; icon: React.ElementType
 
 export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
   const [selected, setSelected] = useState<SignInIntent>(intent ?? "student");
+  const { isLoaded, isSignedIn } = useAuth();
 
   const current = roleOptions.find((r) => r.value === selected)!;
   const Icon = current.icon;
@@ -49,13 +51,29 @@ export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
         <p className="mt-2 text-xs leading-5 text-slate-500">{current.description}</p>
       </div>
 
-      {/* Clerk sign-in form */}
-      <SignIn
-        path="/sign-in"
-        routing="path"
-        signUpUrl={`/sign-up?role=${selected}`}
-        forceRedirectUrl={`/auth/complete?role=${selected}`}
-      />
+      {isLoaded && !isSignedIn ? (
+        <SignIn
+          path="/sign-in"
+          routing="path"
+          signUpUrl={`/sign-up?role=${selected}`}
+          forceRedirectUrl={`/auth/complete?role=${selected}`}
+        />
+      ) : null}
+      {isLoaded && isSignedIn ? (
+        <div className="rounded-2xl border border-indigo-400/20 bg-indigo-400/[0.06] p-5">
+          <p className="text-sm font-semibold text-white">You are already signed in.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-400">
+            Continue to your selected TRACE workspace.
+          </p>
+          <Link
+            href={`/auth/complete?role=${selected}`}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+          >
+            Enter {current.label} workspace
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      ) : null}
     </section>
   );
 }
