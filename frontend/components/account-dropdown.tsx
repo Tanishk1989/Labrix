@@ -139,13 +139,13 @@ export function AccountDropdown({
                 {roleLabel} Active
               </span>
               <span className="text-[10px] font-mono text-white/40">
-                {identityMode === "demo" ? "Demo Mode" : "Verified"}
+                {identityMode === "demo" ? "Demo Mode" : "Demo"}
               </span>
             </div>
           </div>
 
-          {/* Role Switching / Perspective View */}
-          {identityMode === "demo" ? <div className="py-1.5">
+          {/* Role Switching / Perspective View — always shown */}
+          <div className="py-1.5">
             <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-white/40">
               Perspective View
             </div>
@@ -180,7 +180,7 @@ export function AccountDropdown({
               </div>
               {currentRole === "student" && <Check size={14} className="text-lime-400" />}
             </button>
-          </div> : null}
+          </div>
 
           {/* Quick Links */}
           <div className="py-1.5">

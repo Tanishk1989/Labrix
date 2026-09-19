@@ -60,21 +60,37 @@ function supportsDemoRolePreview(pathname: string) {
 }
 
 export function DemoRoleControl({ role, setRole }: { role: DemoRole; setRole: (role: DemoRole) => void }) {
+  function selectRole(nextRole: DemoRole) {
+    window.sessionStorage.setItem(demoRoleStorageKey, nextRole);
+    setRole(nextRole);
+  }
+
   return (
-    <div className="inline-flex items-center shrink-0">
-      <select
-        aria-label="Preview as"
-        className="min-h-11 rounded-full border border-white/[0.12] bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white cursor-pointer outline-none"
-        value={role}
-        onChange={(event) => {
-          const nextRole = event.target.value as DemoRole;
-          window.sessionStorage.setItem(demoRoleStorageKey, nextRole);
-          setRole(nextRole);
-        }}
-      >
-        <option value="teacher" className="bg-[#121420] text-white">Preview: Teacher</option>
-        <option value="student" className="bg-[#121420] text-white">Preview: Student</option>
-      </select>
+    <div
+      aria-label="Switch workspace"
+      className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-white/[0.12] bg-white/[0.04] p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-md"
+      role="group"
+    >
+      {(["teacher", "student"] as const).map((workspaceRole) => {
+        const active = role === workspaceRole;
+        const label = workspaceRole === "teacher" ? "Teacher" : "Student";
+        return (
+          <button
+            key={workspaceRole}
+            type="button"
+            aria-pressed={active}
+            aria-label={`Switch to ${label} workspace`}
+            className={`min-h-9 rounded-full px-3 text-[11px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+              active
+                ? "bg-white text-[#0c0e15] shadow-sm"
+                : "text-white/65 hover:bg-white/[0.08] hover:text-white"
+            }`}
+            onClick={() => selectRole(workspaceRole)}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -165,12 +181,10 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   const identityMode = useIdentityMode();
   const rolePreviewAvailable = supportsDemoRolePreview(pathname);
   const actorRole: DemoRole = actor?.role === "STUDENT" ? "student" : "teacher";
-  const effectiveRole: DemoRole = identityMode === "demo" && rolePreviewAvailable
-    ? role
-    : actorRole;
+  const effectiveRole: DemoRole = rolePreviewAvailable ? role : actorRole;
   const previewActorName = effectiveRole === "student" ? "Aarav Mehta" : "Dr. Meera Sharma";
   const profileName = customUser ?? (
-    identityMode === "demo" && rolePreviewAvailable && effectiveRole !== actorRole
+    rolePreviewAvailable && effectiveRole !== actorRole
       ? previewActorName
       : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student")
   );
@@ -256,7 +270,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                   <CommandPalette />
                   <ThemeSelector />
                   <DemoRuntimeBadge />
-                  {identityMode === "demo" && rolePreviewAvailable
+                  {rolePreviewAvailable
                     ? <DemoRoleControl role={role} setRole={setRole} />
                     : null}
                   <AccountDropdown
@@ -295,7 +309,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               <div className="editorial-drawer-footer">
                 <ThemeSelector />
                 <DemoRuntimeBadge />
-                {identityMode === "demo" && rolePreviewAvailable
+                {rolePreviewAvailable
                   ? <DemoRoleControl role={role} setRole={setRole} />
                   : null}
                 <AccountDropdown
