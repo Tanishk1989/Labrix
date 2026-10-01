@@ -61,9 +61,18 @@ function requestFitsLimits(request: ServerExecutionRequest) {
 }
 
 function responseState(response: WandboxResponse): ServerExecutionState {
-  if (normalizedOutput(response.compiler_error || response.compiler_message)) return "compilation_error";
-  if (normalizedOutput(response.program_error || response.program_message) || response.signal) return "runtime_error";
-  return response.status === "0" ? "completed" : "internal_error";
+  if (response.status === "0") return "completed";
+  if (normalizedOutput(response.compiler_error)) return "compilation_error";
+  if (normalizedOutput(response.program_error) || response.signal) return "runtime_error";
+  return "internal_error";
+}
+
+function sourceForWandbox(request: ServerExecutionRequest) {
+  // Wandbox saves the primary Java source as prog.java. A package-private
+  // main class compiles there and runs identically to the public class.
+  return request.language === "JAVA"
+    ? request.sourceCode.replace(/\bpublic(\s+(?:(?:final|abstract)\s+)*class\s+[A-Za-z_$][\w$]*)/, "$1")
+    : request.sourceCode;
 }
 
 export class WandboxExecutionProvider implements ServerExecutionProvider {
@@ -97,7 +106,7 @@ export class WandboxExecutionProvider implements ServerExecutionProvider {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            code: request.sourceCode,
+            code: sourceForWandbox(request),
             compiler: this.compiler,
             stdin: test.input,
             save: false,

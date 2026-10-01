@@ -9,7 +9,7 @@ const request = {
 
 describe("Wandbox execution provider", () => {
   it("maps successful output to a passing test", async () => {
-    const fetchImplementation = vi.fn(async () => new Response(JSON.stringify({
+    const fetchImplementation = vi.fn(async (..._args: Parameters<typeof fetch>) => new Response(JSON.stringify({
       status: "0", program_output: "8\n", compiler_error: "", program_error: "",
     }), { status: 200 }));
     const provider = new WandboxExecutionProvider({ fetchImplementation }, "CPP");
@@ -34,5 +34,21 @@ describe("Wandbox execution provider", () => {
     await expect(provider.execute({ ...request, language: "JAVA" })).resolves.toMatchObject({
       state: "internal_error", errorText: expect.stringContaining("temporarily busy"),
     });
+  });
+
+  it("adapts Java public Main to Wandbox's prog.java filename", async () => {
+    const fetchImplementation = vi.fn(async (..._args: Parameters<typeof fetch>) => new Response(JSON.stringify({
+      status: "0", program_output: "ok\n",
+    }), { status: 200 }));
+    const provider = new WandboxExecutionProvider({ fetchImplementation }, "JAVA");
+    await provider.execute({
+      language: "JAVA",
+      sourceCode: "public class Main { public static void main(String[] args) { System.out.println(\"ok\"); } }",
+      tests: [{ id: "java-1", input: "", expectedOutput: "ok", visibility: "VISIBLE" }],
+    });
+    const requestInit = fetchImplementation.mock.calls[0][1];
+    expect(requestInit).toBeDefined();
+    expect(JSON.parse(String(requestInit?.body)).code).toContain("class Main");
+    expect(JSON.parse(String(requestInit?.body)).code).not.toContain("public class Main");
   });
 });
