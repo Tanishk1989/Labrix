@@ -87,31 +87,47 @@ export function validateEnvironment(): EnvValidationResult {
   }
 
   // 5. Runner Configuration
-  if (isProduction && !isSupervisedLocalDemo && process.env.LABRIX_EXECUTION_DISPATCH !== "queued") {
-    missingRequired.push("LABRIX_EXECUTION_DISPATCH=queued");
-  }
   const configuredExecutionProvider = process.env.LABRIX_EXECUTION_PROVIDER;
+  const judge0Configured = configuredExecutionProvider === "judge0";
+  const wandboxConfigured = configuredExecutionProvider === "wandbox";
+  if (isProduction && !isSupervisedLocalDemo &&
+      process.env.LABRIX_EXECUTION_DISPATCH !== (judge0Configured || wandboxConfigured ? "inline" : "queued")) {
+    missingRequired.push(judge0Configured || wandboxConfigured
+      ? "LABRIX_EXECUTION_DISPATCH=inline"
+      : "LABRIX_EXECUTION_DISPATCH=queued");
+  }
   const supportedExecutionProvider = isProduction
     ? configuredExecutionProvider === "remote-docker" ||
+      configuredExecutionProvider === "judge0" ||
+      configuredExecutionProvider === "wandbox" ||
       (isSupervisedLocalDemo && configuredExecutionProvider === "local-docker")
-    : ["local-docker", "remote-docker"].includes(configuredExecutionProvider ?? "");
-  const runnerConfigured = supportedExecutionProvider &&
-    Boolean(process.env.LABRIX_JAVA_RUNNER_URL) &&
-    Boolean(process.env.LABRIX_CPP_RUNNER_URL) &&
-    (configuredExecutionProvider !== "remote-docker" ||
-      (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) >= 32);
+    : ["local-docker", "remote-docker", "judge0", "wandbox"].includes(configuredExecutionProvider ?? "");
+  const runnerConfigured = wandboxConfigured
+    ? supportedExecutionProvider
+    : judge0Configured
+    ? supportedExecutionProvider && Boolean(process.env.JUDGE0_API_URL) &&
+      Boolean(process.env.JUDGE0_API_KEY || process.env.JUDGE0_AUTH_TOKEN)
+    : supportedExecutionProvider &&
+      Boolean(process.env.LABRIX_JAVA_RUNNER_URL) &&
+      Boolean(process.env.LABRIX_CPP_RUNNER_URL) &&
+      (configuredExecutionProvider !== "remote-docker" ||
+        (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) >= 32);
 
   if (!runnerConfigured) {
     if (isProduction) {
-      for (const name of [
-        "LABRIX_EXECUTION_PROVIDER",
-        "LABRIX_JAVA_RUNNER_URL",
-        "LABRIX_CPP_RUNNER_URL",
-      ] as const) {
+      const requiredNames = wandboxConfigured
+        ? []
+        : judge0Configured
+        ? ["JUDGE0_API_URL"]
+        : ["LABRIX_EXECUTION_PROVIDER", "LABRIX_JAVA_RUNNER_URL", "LABRIX_CPP_RUNNER_URL"];
+      for (const name of requiredNames) {
         if (!process.env[name]) missingRequired.push(name);
       }
+      if (judge0Configured && !process.env.JUDGE0_API_KEY && !process.env.JUDGE0_AUTH_TOKEN) {
+        missingRequired.push("JUDGE0_API_KEY or JUDGE0_AUTH_TOKEN");
+      }
       if (!supportedExecutionProvider && configuredExecutionProvider) {
-        missingRequired.push("LABRIX_EXECUTION_PROVIDER=remote-docker");
+        missingRequired.push("LABRIX_EXECUTION_PROVIDER=remote-docker, judge0, or wandbox");
       }
       if (configuredExecutionProvider === "remote-docker" &&
         (process.env.LABRIX_RUNNER_BEARER_TOKEN?.length ?? 0) < 32) {

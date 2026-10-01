@@ -100,6 +100,6 @@ describe("production environment validation", () => {
     const result = validateEnvironment();
 
     expect(result.isValid).toBe(false);
-    expect(result.missingRequired).toContain("LABRIX_EXECUTION_PROVIDER=remote-docker");
+    expect(result.missingRequired).toContain("LABRIX_EXECUTION_PROVIDER=remote-docker, judge0, or wandbox");
   });
 });

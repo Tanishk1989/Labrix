@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { getServerExecutionProvider } from "@/server/execution";
 import { CppHttpExecutionProvider } from "@/server/execution/cpp-http-provider";
 import { JavaHttpExecutionProvider } from "@/server/execution/java-http-provider";
+import { Judge0ExecutionProvider } from "@/server/execution/judge0-provider";
+import { WandboxExecutionProvider } from "@/server/execution/wandbox-provider";
 
 const localProviders = [
   {
@@ -19,6 +21,26 @@ const localProviders = [
 ] as const;
 
 describe("execution provider production safety configuration", () => {
+  it("selects the zero-cost Wandbox provider without credentials", () => {
+    const environment = {
+      NODE_ENV: "production",
+      LABRIX_EXECUTION_PROVIDER: "wandbox",
+    };
+    expect(getServerExecutionProvider(environment, "JAVA")).toBeInstanceOf(WandboxExecutionProvider);
+    expect(getServerExecutionProvider(environment, "CPP")).toBeInstanceOf(WandboxExecutionProvider);
+  });
+
+  it("selects Judge0 for production Java and C++ execution", () => {
+    const environment = {
+      NODE_ENV: "production",
+      LABRIX_EXECUTION_PROVIDER: "judge0",
+      JUDGE0_API_URL: "https://judge0-ce.p.rapidapi.com",
+      JUDGE0_API_KEY: "free-plan-key",
+    };
+    expect(getServerExecutionProvider(environment, "JAVA")).toBeInstanceOf(Judge0ExecutionProvider);
+    expect(getServerExecutionProvider(environment, "CPP")).toBeInstanceOf(Judge0ExecutionProvider);
+  });
+
   it("fails closed when production has no real execution provider", () => {
     expect(() => getServerExecutionProvider({ NODE_ENV: "production" })).toThrow(
       /mock execution is forbidden in production/,

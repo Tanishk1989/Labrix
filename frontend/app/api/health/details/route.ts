@@ -37,6 +37,48 @@ async function checkRunner(endpoint: string | undefined) {
   }
 }
 
+async function checkJudge0() {
+  const endpoint = process.env.JUDGE0_API_URL;
+  if (!endpoint) return { status: "not-configured" as const };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RUNNER_HEALTH_TIMEOUT_MS);
+  const startedAt = Date.now();
+  try {
+    const url = new URL(endpoint);
+    url.pathname = `${url.pathname.replace(/\/$/, "")}/workers`;
+    const response = await fetch(url, {
+      headers: {
+        ...(process.env.JUDGE0_API_KEY ? {
+          "x-rapidapi-key": process.env.JUDGE0_API_KEY,
+          "x-rapidapi-host": process.env.JUDGE0_API_HOST ?? url.host,
+        } : {}),
+        ...(process.env.JUDGE0_AUTH_TOKEN ? { "x-auth-token": process.env.JUDGE0_AUTH_TOKEN } : {}),
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    return { status: response.ok ? "connected" as const : "error" as const, latencyMs: Date.now() - startedAt };
+  } catch {
+    return { status: "error" as const };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function checkWandbox() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RUNNER_HEALTH_TIMEOUT_MS);
+  const startedAt = Date.now();
+  try {
+    const response = await fetch("https://wandbox.org/api/list.json", { cache: "no-store", signal: controller.signal });
+    return { status: response.ok ? "connected" as const : "error" as const, latencyMs: Date.now() - startedAt };
+  } catch {
+    return { status: "error" as const };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function GET(request: NextRequest) {
   if (!isDiagnosticsRequestAuthorized(request.headers.get("authorization"))) {
     return NextResponse.json({ status: "not-found" }, { status: 404 });
@@ -56,9 +98,13 @@ export async function GET(request: NextRequest) {
   }
   const databaseLatencyMs = Date.now() - databaseStartedAt;
 
-  const [java, cpp, queued, running, failed, failedLastHour, oldestQueued, activeWorkers] = await Promise.all([
+  const judge0Mode = process.env.LABRIX_EXECUTION_PROVIDER === "judge0";
+  const wandboxMode = process.env.LABRIX_EXECUTION_PROVIDER === "wandbox";
+  const [java, cpp, judge0, wandbox, queued, running, failed, failedLastHour, oldestQueued, activeWorkers] = await Promise.all([
     checkRunner(process.env.LABRIX_JAVA_RUNNER_URL),
     checkRunner(process.env.LABRIX_CPP_RUNNER_URL),
+    judge0Mode ? checkJudge0() : Promise.resolve({ status: "not-checked" as const }),
+    wandboxMode ? checkWandbox() : Promise.resolve({ status: "not-checked" as const }),
     prisma.executionJob.count({ where: { status: "QUEUED" } }),
     prisma.executionJob.count({ where: { status: "RUNNING" } }),
     prisma.executionJob.count({ where: { status: "FAILED" } }),
@@ -75,8 +121,12 @@ export async function GET(request: NextRequest) {
       select: { concurrency: true },
     }),
   ]);
-  const runnersHealthy = java.status === "connected" && cpp.status === "connected";
-  const workersHealthy = activeWorkers.length > 0;
+  const runnersHealthy = judge0Mode
+    ? judge0.status === "connected"
+    : wandboxMode
+      ? wandbox.status === "connected"
+    : java.status === "connected" && cpp.status === "connected";
+  const workersHealthy = judge0Mode || wandboxMode || activeWorkers.length > 0;
   const healthy = configuration.isValid && runnersHealthy && workersHealthy;
 
   return NextResponse.json({
@@ -89,7 +139,7 @@ export async function GET(request: NextRequest) {
       warnings: configuration.warnings,
       missingRequired: configuration.missingRequired,
     },
-    runners: { java, cpp },
+    runners: judge0Mode ? { judge0 } : wandboxMode ? { wandbox } : { java, cpp },
     executionQueue: {
       queued,
       running,

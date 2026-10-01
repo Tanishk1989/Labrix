@@ -31,6 +31,46 @@ async function checkRunner(endpoint: string | undefined) {
   }
 }
 
+async function checkJudge0() {
+  const endpoint = process.env.JUDGE0_API_URL;
+  if (!endpoint) return { status: "not-configured" as const };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RUNNER_HEALTH_TIMEOUT_MS);
+  try {
+    const url = new URL(endpoint);
+    url.pathname = `${url.pathname.replace(/\/$/, "")}/workers`;
+    const response = await fetch(url, {
+      headers: {
+        ...(process.env.JUDGE0_API_KEY ? {
+          "x-rapidapi-key": process.env.JUDGE0_API_KEY,
+          "x-rapidapi-host": process.env.JUDGE0_API_HOST ?? url.host,
+        } : {}),
+        ...(process.env.JUDGE0_AUTH_TOKEN ? { "x-auth-token": process.env.JUDGE0_AUTH_TOKEN } : {}),
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    return { status: response.ok ? "connected" as const : "error" as const };
+  } catch {
+    return { status: "error" as const };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function checkWandbox() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RUNNER_HEALTH_TIMEOUT_MS);
+  try {
+    const response = await fetch("https://wandbox.org/api/list.json", { cache: "no-store", signal: controller.signal });
+    return { status: response.ok ? "connected" as const : "error" as const };
+  } catch {
+    return { status: "error" as const };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function GET() {
   const configuration = validateEnvironment();
   const shouldCheckRunners =
@@ -50,7 +90,11 @@ export async function GET() {
     );
   }
 
-  const [javaRunner, cppRunner] = shouldCheckRunners
+  const judge0Mode = process.env.LABRIX_EXECUTION_PROVIDER === "judge0";
+  const wandboxMode = process.env.LABRIX_EXECUTION_PROVIDER === "wandbox";
+  const judge0 = judge0Mode ? await checkJudge0() : { status: "not-checked" as const };
+  const wandbox = wandboxMode ? await checkWandbox() : { status: "not-checked" as const };
+  const [javaRunner, cppRunner] = shouldCheckRunners && !judge0Mode && !wandboxMode
     ? await Promise.all([
         checkRunner(process.env.LABRIX_JAVA_RUNNER_URL),
         checkRunner(process.env.LABRIX_CPP_RUNNER_URL),
@@ -64,7 +108,8 @@ export async function GET() {
         select: { workerId: true, concurrency: true, lastSeenAt: true },
       })
     : [];
-  const runnersHealthy =
+  const runnersHealthy = judge0Mode ? judge0.status === "connected" :
+    wandboxMode ? wandbox.status === "connected" :
     !shouldCheckRunners ||
     (javaRunner.status === "connected" && cppRunner.status === "connected");
   const workersHealthy = !queueEnabled || activeWorkers.length > 0;

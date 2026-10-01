@@ -1,6 +1,8 @@
 import { JavaHttpExecutionProvider } from "./java-http-provider";
 import { CppHttpExecutionProvider } from "./cpp-http-provider";
 import { ServerMockExecutionProvider } from "./mock-provider";
+import { Judge0ExecutionProvider } from "./judge0-provider";
+import { WandboxExecutionProvider } from "./wandbox-provider";
 import type { AllowedLanguage } from "@prisma/client";
 import type { ServerExecutionProvider } from "./provider";
 
@@ -13,6 +15,15 @@ export interface ExecutionProviderEnvironment {
   LABRIX_CPP_RUNNER_URL?: string;
   LABRIX_RUNNER_BEARER_TOKEN?: string;
   LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION?: string;
+  JUDGE0_API_URL?: string;
+  JUDGE0_API_KEY?: string;
+  JUDGE0_AUTH_TOKEN?: string;
+  JUDGE0_API_HOST?: string;
+  JUDGE0_JAVA_LANGUAGE_ID?: string;
+  JUDGE0_CPP_LANGUAGE_ID?: string;
+  WANDBOX_API_URL?: string;
+  WANDBOX_JAVA_COMPILER?: string;
+  WANDBOX_CPP_COMPILER?: string;
 }
 
 type LocalProviderMode = "java-http" | "cpp-http" | "local-docker";
@@ -66,7 +77,7 @@ function requireLoopbackRunnerUrl(
 
 function requireRemoteRunnerUrl(
   value: string | undefined,
-  variableName: "LABRIX_JAVA_RUNNER_URL" | "LABRIX_CPP_RUNNER_URL",
+  variableName: string,
 ) {
   if (!value) {
     throw new Error(`Invalid execution provider configuration: ${variableName} is required.`);
@@ -101,6 +112,15 @@ export function getServerExecutionProvider(
     LABRIX_RUNNER_BEARER_TOKEN: process.env.LABRIX_RUNNER_BEARER_TOKEN,
     LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION:
       process.env.LABRIX_ALLOW_LOCAL_RUNNERS_IN_PRODUCTION,
+    JUDGE0_API_URL: process.env.JUDGE0_API_URL,
+    JUDGE0_API_KEY: process.env.JUDGE0_API_KEY,
+    JUDGE0_AUTH_TOKEN: process.env.JUDGE0_AUTH_TOKEN,
+    JUDGE0_API_HOST: process.env.JUDGE0_API_HOST,
+    JUDGE0_JAVA_LANGUAGE_ID: process.env.JUDGE0_JAVA_LANGUAGE_ID,
+    JUDGE0_CPP_LANGUAGE_ID: process.env.JUDGE0_CPP_LANGUAGE_ID,
+    WANDBOX_API_URL: process.env.WANDBOX_API_URL,
+    WANDBOX_JAVA_COMPILER: process.env.WANDBOX_JAVA_COMPILER,
+    WANDBOX_CPP_COMPILER: process.env.WANDBOX_CPP_COMPILER,
   },
   language?: AllowedLanguage,
 ): ServerExecutionProvider {
@@ -112,6 +132,35 @@ export function getServerExecutionProvider(
       );
     }
     return mockProvider;
+  }
+  if (mode === "judge0") {
+    if (!language) {
+      throw new Error("Invalid execution provider configuration: judge0 requires a server-resolved execution language.");
+    }
+    const baseUrl = requireRemoteRunnerUrl(environment.JUDGE0_API_URL, "JUDGE0_API_URL");
+    if (!environment.JUDGE0_API_KEY && !environment.JUDGE0_AUTH_TOKEN) {
+      throw new Error("Invalid execution provider configuration: JUDGE0_API_KEY or JUDGE0_AUTH_TOKEN is required.");
+    }
+    return new Judge0ExecutionProvider({
+      baseUrl,
+      apiKey: environment.JUDGE0_API_KEY,
+      authToken: environment.JUDGE0_AUTH_TOKEN,
+      apiHost: environment.JUDGE0_API_HOST,
+      javaLanguageId: environment.JUDGE0_JAVA_LANGUAGE_ID ? Number(environment.JUDGE0_JAVA_LANGUAGE_ID) : undefined,
+      cppLanguageId: environment.JUDGE0_CPP_LANGUAGE_ID ? Number(environment.JUDGE0_CPP_LANGUAGE_ID) : undefined,
+    }, language);
+  }
+  if (mode === "wandbox") {
+    if (!language) {
+      throw new Error("Invalid execution provider configuration: wandbox requires a server-resolved execution language.");
+    }
+    return new WandboxExecutionProvider({
+      endpoint: environment.WANDBOX_API_URL
+        ? requireRemoteRunnerUrl(environment.WANDBOX_API_URL, "WANDBOX_API_URL")
+        : undefined,
+      javaCompiler: environment.WANDBOX_JAVA_COMPILER,
+      cppCompiler: environment.WANDBOX_CPP_COMPILER,
+    }, language);
   }
   if (mode === "java-http") {
     requireLocalRunnerProductionAllowance(mode, environment);
