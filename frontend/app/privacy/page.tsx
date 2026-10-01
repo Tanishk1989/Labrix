@@ -17,7 +17,7 @@ const sections = [
   },
   {
     title: "Service providers",
-    body: "TRACE relies on carefully selected infrastructure providers for authentication, hosting, databases, code execution, and optional AI-assisted teacher guidance. They process only the information needed to provide those services under their own security and privacy commitments.",
+    body: "TRACE uses third-party providers for authentication, hosting, databases, and optional AI-assisted teacher guidance. When you run Java or C++ code, TRACE sends the source code and test input to Wandbox for execution and receives the execution result. Do not put passwords or other sensitive personal information in code or test input.",
   },
   {
     title: "Academic evidence",
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
         <Link href="/" className="text-sm font-semibold tracking-[0.18em] text-indigo-300">
           TRACE
         </Link>
-        <p className="mt-10 text-sm font-medium text-indigo-300">Effective August 26, 2026</p>
+        <p className="mt-10 text-sm font-medium text-indigo-300">Effective October 1, 2026</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
           Privacy Policy
         </h1>

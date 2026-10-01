@@ -15,6 +15,13 @@ export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
   const [selected, setSelected] = useState<SignInIntent>(intent ?? "student");
   const { isLoaded, isSignedIn } = useAuth();
 
+  function selectRole(role: SignInIntent) {
+    setSelected(role);
+    const url = new URL(window.location.href);
+    url.searchParams.set("role", role);
+    window.history.replaceState(null, "", url);
+  }
+
   const current = roleOptions.find((r) => r.value === selected)!;
   const Icon = current.icon;
 
@@ -35,7 +42,7 @@ export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
           <select
             id="role-select"
             value={selected}
-            onChange={(e) => setSelected(e.target.value as SignInIntent)}
+            onChange={(e) => selectRole(e.target.value as SignInIntent)}
             className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-10 text-sm font-medium text-white transition focus:border-indigo-400/60 focus:bg-indigo-400/[0.08] focus:outline-none focus:ring-2 focus:ring-indigo-400"
           >
             {roleOptions.map((r) => (
@@ -53,6 +60,7 @@ export function RoleAwareSignIn({ intent }: { intent: SignInIntent | null }) {
 
       {isLoaded && !isSignedIn ? (
         <SignIn
+          key={selected}
           path="/sign-in"
           routing="path"
           signUpUrl={`/sign-up?role=${selected}`}

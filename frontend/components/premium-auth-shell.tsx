@@ -42,7 +42,12 @@ export function PremiumAuthShell({
         <p className="premium-auth-quote">“Teach students to think in algorithms—not just submit code.”</p>
       </section>
       <section className="premium-auth-form" aria-label="Account access">
-        <div className="premium-auth-form-inner">{children}</div>
+        <div className="premium-auth-form-inner">
+          <Link href="/" className="premium-auth-form-logo" aria-label="TRACE home">
+            <TraceLogo size={27} />
+          </Link>
+          {children}
+        </div>
       </section>
     </main>
   );
