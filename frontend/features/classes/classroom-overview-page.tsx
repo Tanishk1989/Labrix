@@ -58,7 +58,12 @@ export function ClassroomOverviewPage({ classroom }: { classroom: ClassroomOverv
               <div className="divide-y divide-[var(--border-subtle)]">
                 {classroom.outstandingStudents.slice(0, 6).map((student) => <div key={student.id} className="flex items-center gap-3 px-4 py-3"><span className="grid size-7 place-items-center rounded-full bg-[var(--surface-elevated)]"><Users size={13} /></span><div><p className="text-xs font-semibold text-white">{student.name}</p><p className="text-xs text-[var(--text-muted)]">{student.email}</p></div><span className="ml-auto status-badge status-warning">Not submitted</span></div>)}
               </div>
-            ) : <div className="p-4"><EmptyState title={task ? "Everyone has submitted" : "No active practical"} description={task ? "Every enrolled student has submitted this practical." : "Attention items appear after a practical is published."} actionLabel={task ? "View submissions" : "Create practical"} actionHref={task ? `/submissions?classroom=${encodeURIComponent(classroom.id)}` : `/classes/${classroom.id}/tasks/new`} /></div>}
+            ) : <div className="p-4"><EmptyState
+              title={classroom.studentCount === 0 ? "No students enrolled yet" : task ? "Everyone has submitted" : "No active practical"}
+              description={classroom.studentCount === 0 ? "Share the join code with students to start tracking submissions." : task ? "Every enrolled student has submitted this practical." : "Attention items appear after a practical is published."}
+              actionLabel={classroom.studentCount === 0 ? "View students" : task ? "View submissions" : "Create practical"}
+              actionHref={classroom.studentCount === 0 ? `/classes/${classroom.id}/students` : task ? `/submissions?classroom=${encodeURIComponent(classroom.id)}` : `/classes/${classroom.id}/tasks/new`}
+            /></div>}
           </section>
         </div>
 

@@ -27,6 +27,7 @@ export function CreatePracticalForm({
   const router = useRouter();
   const isEditing = Boolean(taskId);
   const isPublished = initialStatus === "PUBLISHED";
+  const [persistedTaskId, setPersistedTaskId] = useState(taskId);
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string>(
@@ -88,9 +89,10 @@ export function CreatePracticalForm({
       ...values,
       deadlineLocal: serializeLocalDeadline(values.deadlineLocal ?? ""),
     };
-    const result = await saveTaskDraft(classroomId, taskId, submissionValues);
+    const result = await saveTaskDraft(classroomId, persistedTaskId, submissionValues);
     setIsSaving(false);
     if (result.ok) {
+      setPersistedTaskId(result.taskId);
       setSavedAt(`Saved at ${new Date().toLocaleTimeString()}`);
     } else {
       setServerError(result.message);
@@ -105,7 +107,7 @@ export function CreatePracticalForm({
       ...values,
       deadlineLocal: serializeLocalDeadline(values.deadlineLocal ?? ""),
     };
-    const result = await publishTask(classroomId, taskId, submissionValues);
+    const result = await publishTask(classroomId, persistedTaskId, submissionValues);
     setIsSaving(false);
     if (result.ok) {
       router.push(`/classes/${classroomId}`);
