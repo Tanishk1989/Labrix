@@ -14,6 +14,7 @@ interface WandboxProviderOptions {
   cppCompiler?: string;
   fetchImplementation?: FetchImplementation;
   requestTimeoutMs?: number;
+  retryDelayMs?: number;
 }
 
 interface WandboxResponse {
@@ -31,6 +32,13 @@ const MAX_SOURCE_BYTES = 262_144;
 const MAX_TEST_VALUE_BYTES = 65_536;
 const MAX_TESTS = 100;
 const MAX_OUTPUT_BYTES = 16_384;
+const RETRYABLE_HTTP_STATUSES = new Set([502, 503, 504]);
+
+class WandboxHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Wandbox returned ${status}.`);
+  }
+}
 
 function byteLength(value: string) {
   return new TextEncoder().encode(value).byteLength;
@@ -81,6 +89,7 @@ export class WandboxExecutionProvider implements ServerExecutionProvider {
   private readonly compiler: string;
   private readonly fetchImplementation: FetchImplementation;
   private readonly requestTimeoutMs: number;
+  private readonly retryDelayMs: number;
 
   constructor(options: WandboxProviderOptions, language: "JAVA" | "CPP") {
     this.executionMode = language === "JAVA" ? "java-docker-remote" : "cpp-docker-remote";
@@ -90,6 +99,28 @@ export class WandboxExecutionProvider implements ServerExecutionProvider {
       : (options.cppCompiler ?? "gcc-13.2.0");
     this.fetchImplementation = options.fetchImplementation ?? fetch;
     this.requestTimeoutMs = options.requestTimeoutMs ?? 45_000;
+    this.retryDelayMs = options.retryDelayMs ?? 750;
+  }
+
+  private async runTest(body: string, signal: AbortSignal): Promise<WandboxResponse> {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await this.fetchImplementation(this.endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+          cache: "no-store",
+          signal,
+        });
+        if (!response.ok) throw new WandboxHttpError(response.status);
+        return await response.json() as WandboxResponse;
+      } catch (error) {
+        const retryable = !(error instanceof WandboxHttpError) || RETRYABLE_HTTP_STATUSES.has(error.status);
+        if (attempt > 0 || signal.aborted || !retryable) throw error;
+        await new Promise((resolve) => setTimeout(resolve, this.retryDelayMs));
+      }
+    }
+    throw new Error("Wandbox request failed after retry.");
   }
 
   async execute(request: ServerExecutionRequest): Promise<ServerExecutionResult> {
@@ -102,20 +133,12 @@ export class WandboxExecutionProvider implements ServerExecutionProvider {
     try {
       const responses: WandboxResponse[] = [];
       for (const test of request.tests) {
-        const response = await this.fetchImplementation(this.endpoint, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            code: sourceForWandbox(request),
-            compiler: this.compiler,
-            stdin: test.input,
-            save: false,
-          }),
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`Wandbox returned ${response.status}.`);
-        responses.push(await response.json() as WandboxResponse);
+        responses.push(await this.runTest(JSON.stringify({
+          code: sourceForWandbox(request),
+          compiler: this.compiler,
+          stdin: test.input,
+          save: false,
+        }), controller.signal));
       }
 
       const firstFailure = responses.find((response) => responseState(response) !== "completed");
@@ -144,10 +167,12 @@ export class WandboxExecutionProvider implements ServerExecutionProvider {
         ...(errorText ? { errorText } : {}),
         testResults,
       };
-    } catch {
+    } catch (error) {
       return internalError(
         request.tests.length,
-        "The zero-cost compiler is temporarily busy. Please retry in a moment.",
+        error instanceof WandboxHttpError && error.status === 429
+          ? "The free compiler rate limit was reached. Please retry later."
+          : "The zero-cost compiler is temporarily busy. Please retry in a moment.",
       );
     } finally {
       clearTimeout(timeout);

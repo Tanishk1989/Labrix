@@ -30,10 +30,29 @@ describe("Wandbox execution provider", () => {
   it("fails safely when the public service is busy", async () => {
     const provider = new WandboxExecutionProvider({
       fetchImplementation: vi.fn(async () => { throw new Error("offline"); }),
+      retryDelayMs: 0,
     }, "JAVA");
     await expect(provider.execute({ ...request, language: "JAVA" })).resolves.toMatchObject({
       state: "internal_error", errorText: expect.stringContaining("temporarily busy"),
     });
+  });
+
+  it("retries a temporary upstream failure once", async () => {
+    const fetchImplementation = vi.fn()
+      .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "0", program_output: "8\n" }), { status: 200 }));
+    const provider = new WandboxExecutionProvider({ fetchImplementation, retryDelayMs: 0 }, "CPP");
+    await expect(provider.execute(request)).resolves.toMatchObject({ state: "completed", passedTests: 1 });
+    expect(fetchImplementation).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a rate limit", async () => {
+    const fetchImplementation = vi.fn(async () => new Response("rate limited", { status: 429 }));
+    const provider = new WandboxExecutionProvider({ fetchImplementation, retryDelayMs: 0 }, "CPP");
+    await expect(provider.execute(request)).resolves.toMatchObject({
+      state: "internal_error", errorText: expect.stringContaining("rate limit"),
+    });
+    expect(fetchImplementation).toHaveBeenCalledTimes(1);
   });
 
   it("adapts Java public Main to Wandbox's prog.java filename", async () => {
