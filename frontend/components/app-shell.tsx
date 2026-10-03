@@ -180,11 +180,12 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   const isCodingWorkspace = pathname.startsWith("/tasks/");
   const identityMode = useIdentityMode();
   const rolePreviewAvailable = supportsDemoRolePreview(pathname);
+  const allowRolePreview = identityMode === "demo" && rolePreviewAvailable;
   const actorRole: DemoRole = actor?.role === "STUDENT" ? "student" : "teacher";
-  const effectiveRole: DemoRole = rolePreviewAvailable ? role : actorRole;
+  const effectiveRole: DemoRole = allowRolePreview ? role : actorRole;
   const previewActorName = effectiveRole === "student" ? "Aarav Mehta" : "Dr. Meera Sharma";
-  const profileName = customUser ?? (
-    rolePreviewAvailable && effectiveRole !== actorRole
+  const profileName = (identityMode === "demo" ? customUser : null) ?? (
+    allowRolePreview && effectiveRole !== actorRole
       ? previewActorName
       : actor?.name ?? (effectiveRole === "teacher" ? "Teacher" : "Student")
   );
@@ -253,7 +254,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
   }
 
   return (
-    <DemoRoleContext.Provider value={role}>
+    <DemoRoleContext.Provider value={effectiveRole}>
       <div className="editorial-shell" onClickCapture={showPendingForInternalLink} onSubmitCapture={showPendingForGetForm}>
         {navigationPending ? <div className="shell-navigation-progress" role="status" aria-label="Opening page"><span /></div> : null}
         <header className="editorial-app-header" inert={drawerOpen} aria-hidden={drawerOpen || undefined}>
@@ -270,7 +271,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
                   <CommandPalette />
                   <ThemeSelector />
                   <DemoRuntimeBadge />
-                  {rolePreviewAvailable
+                  {allowRolePreview
                     ? <DemoRoleControl role={role} setRole={setRole} />
                     : null}
                   <AccountDropdown
@@ -309,7 +310,7 @@ export function AppShell({ role, setRole, actor, children }: { role: DemoRole; s
               <div className="editorial-drawer-footer">
                 <ThemeSelector />
                 <DemoRuntimeBadge />
-                {rolePreviewAvailable
+                {allowRolePreview
                   ? <DemoRoleControl role={role} setRole={setRole} />
                   : null}
                 <AccountDropdown
@@ -339,5 +340,8 @@ export function DemoShell({ children, actor }: { children: ReactNode; actor?: Sh
     setRole(getStoredDemoRole());
   }, [actor?.role, identityMode]);
 
-  return <AppShell role={role} setRole={setRole} actor={actor}>{children}</AppShell>;
+  const effectiveRole = identityMode === "clerk"
+    ? (actor?.role === "STUDENT" ? "student" : "teacher")
+    : role;
+  return <AppShell role={effectiveRole} setRole={setRole} actor={actor}>{children}</AppShell>;
 }

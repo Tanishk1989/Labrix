@@ -69,7 +69,7 @@ export function AccountDropdown({
   }, [isOpen]);
 
   const displayEmail =
-    storedEmail || (identityMode === "demo" ? `${currentRole.toLowerCase()}@university.edu` : "");
+    identityMode === "demo" ? (storedEmail || `${currentRole.toLowerCase()}@university.edu`) : "";
 
   function handleLogout() {
     setIsOpen(false);
@@ -81,6 +81,7 @@ export function AccountDropdown({
   }
 
   function handleRoleSwitch(newRole: DemoRole) {
+    if (identityMode !== "demo") return;
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem("trace:demo-role", newRole);
     }
@@ -139,13 +140,13 @@ export function AccountDropdown({
                 {roleLabel} Active
               </span>
               <span className="text-[10px] font-mono text-white/40">
-                {identityMode === "demo" ? "Demo Mode" : "Demo"}
+                {identityMode === "demo" ? "Demo Mode" : "Signed in"}
               </span>
             </div>
           </div>
 
-          {/* Role Switching / Perspective View — always shown */}
-          <div className="py-1.5">
+          {/* Perspective switching is only available for demo identities. */}
+          {identityMode === "demo" ? <div className="py-1.5">
             <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-white/40">
               Perspective View
             </div>
@@ -180,7 +181,7 @@ export function AccountDropdown({
               </div>
               {currentRole === "student" && <Check size={14} className="text-lime-400" />}
             </button>
-          </div>
+          </div> : null}
 
           {/* Quick Links */}
           <div className="py-1.5">
